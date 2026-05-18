@@ -98,6 +98,30 @@ Skill names use the `fab-` prefix to avoid collision with generic skill names in
 
 ---
 
+## 4b. Skill Dependency Graph
+
+Each skill declares its prerequisites. A skill must not run until all prerequisites are satisfied. `fab-trace` uses this graph to diagnose `prerequisite_missing` errors.
+
+| Skill | Prerequisites | Blocks |
+|-------|---------------|--------|
+| `/fab-intake` | None (entry point) | All skills |
+| `/fab-blueprint` | `fab-intake` complete, `docs/spec.md` exists | `fab-frame`, `fab-weave` |
+| `/fab-frame` | `fab-blueprint` complete, `docs/blueprint.md` exists | `fab-forge` |
+| `/fab-forge` | `fab-frame` complete, named app stage in blueprint | `fab-check` |
+| `/fab-check` | `fab-forge` complete, implementation files exist | `fab-weave`, `fab-trace` (if blocked) |
+| `/fab-trace` | Failing stage with error output | `fab-forge` (retry), `fab-check` (re-evaluate) |
+| `/fab-weave` | All required app stages done and checked | `fab-launch` |
+| `/fab-launch` | `fab-weave` complete, `docs/integration.md` exists | None (terminal) |
+| `/fab-pulse` | `fabrica.run.json` exists | None (read-only) |
+| `/fab-ledger` | `fabrica.run.json` exists | None (read-only) |
+| `/fab-signal` | Decision context available | Depends on decision outcome |
+| `/fab-passport` | `fabrica.run.json` exists | None (handoff) |
+| `/fab-retro` | Run complete, abandoned, or stopped | None (terminal) |
+
+**Parallel execution:** `fab-pulse`, `fab-ledger`, and `fab-signal` may run at any point after `fab-intake` creates the run object. They do not block or block other skills.
+
+---
+
 ## 5. Run Object — State Contract
 
 `fabrica.run.json` lives in the generated app project root. During Phase 0, if no app project exists yet, it may live beside the generated docs until `fab-frame` creates the project.
@@ -112,8 +136,6 @@ experiment_phase: enum [phase_0_spec, phase_1_slice, phase_2_pipeline]
 created_at: ISO8601
 updated_at: ISO8601
 status: enum [
-  init,
-  specifying,
   designing,
   framing,
   forging,
@@ -188,6 +210,46 @@ gate_levels:
 
 ---
 
+## 5b. Run Object Validation
+
+Skills validate their writes to `fabrica.run.json` against a JSON Schema file at `schemas/run-object.schema.json`. The schema enforces:
+
+- `status` must be one of the defined enum values
+- `experiment_phase` must be one of the defined enum values
+- `quality_score` must be 0-10 or null
+- `costs.precision` must be one of `unknown`, `estimated`, `measured`
+- All required fields must be present after `fab-intake` creates the file
+- `app_stages[].status` must be one of `pending`, `active`, `done`, `blocked`, `failed`
+
+**Enforcement:** Skills reference the schema in their spec. Before writing, the skill (or operator) validates the updated run object against the schema. If validation fails, the skill stops with a `validation_failed` error and does not write the corrupted state.
+
+**Schema file:** `schemas/run-object.schema.json` — created during `fab-frame` alongside the project skeleton. Until then, validation is advisory (skills check their writes mentally against the schema).
+
+---
+
+## 5c. Error Taxonomy
+
+All skills use a standardized error taxonomy. `last_error` in the run object stores both the error type and message: `{ "type": "error_type", "message": "human-readable detail" }`.
+
+| Error Type | Meaning | Example |
+|------------|---------|---------|
+| `missing_input` | Required input not provided | "docs/spec.md not found" |
+| `invalid_state` | Run object in unexpected state | "status=complete but fab-forge called" |
+| `gate_blocked` | Operator did not approve gate | "fab-intake checkpoint not approved" |
+| `validation_failed` | Run object write failed schema validation | "status 'draft' not in enum" |
+| `prerequisite_missing` | Skill prerequisite not satisfied | "fab-forge called before fab-frame" |
+| `external_failure` | External service or command failed | "test command exited with code 1" |
+
+**fab-trace automation:** `fab-trace` uses the error type to prioritize diagnosis:
+- `missing_input` → check file paths, suggest creating missing input
+- `invalid_state` → check run object status, suggest corrective skill
+- `gate_blocked` → show gate context, re-present approval
+- `validation_failed` → show schema violation, suggest corrected value
+- `prerequisite_missing` → check dependency graph, run missing prerequisite
+- `external_failure` → re-run command, capture output, diagnose root cause
+
+---
+
 ## 6. Skill Specifications
 
 Each skill defines trigger, input, output, behavior, gate, and run object updates.
@@ -203,9 +265,10 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 **Behavior:**
 1. Ask 5 to 7 targeted questions covering user, problem, core job, input, output, AI role, success metric, and non-goals.
 2. Refuse vague user or core job answers; push until the app can be tested by a stranger.
-3. Write `docs/spec.md` with: Overview, Users, Jobs, Inputs, Outputs, AI Role, Success Criteria, Non-Goals.
-4. Create `fabrica.run.json` if missing.
-5. Set `experiment_phase = phase_0_spec`, `status = designing`, `spec_path = "docs/spec.md"`, and `next_action = "/fab-blueprint"`.
+3. If the operator skips or refuses to answer a question, proceed with a partial spec: mark the unanswered section as `INCOMPLETE: <section name>` in the spec, and add a warning note at the top of `docs/spec.md` listing missing areas.
+4. Write `docs/spec.md` with: Overview, Users, Jobs, Inputs, Outputs, AI Role, Success Criteria, Non-Goals. Incomplete sections are marked and warned.
+5. Create `fabrica.run.json` if missing.
+6. Set `experiment_phase = phase_0_spec`, `status = designing`, `spec_path = "docs/spec.md"`, and `next_action = "/fab-blueprint"`.
 
 **Default gate:** `checkpoint` — show the spec before writing.
 
@@ -485,7 +548,107 @@ Gate level definitions:
 
 ---
 
-## 8. Repo Structure
+## 7b. Secrets Management
+
+Secrets (API keys, tokens, credentials) are never committed to the repository. The following rules apply:
+
+**Storage:**
+- Required environment variables are documented in `.env.example` (created by `fab-frame`)
+- Actual values live in `.env` (gitignored) or the operator's secure credential store
+- No secrets in `fabrica.run.json`, skill docs, or generated files
+
+**Pre-launch checklist (`fab-launch`):**
+- Verify `.env.example` exists and documents all required variables
+- Verify `.env` is in `.gitignore`
+- Scan committed files for common secret patterns (API keys, tokens, passwords)
+- Fail the checklist if any secrets are found in committed files
+
+**Env var validation:**
+- `fab-launch` checks that all required env vars are set before local launch
+- Missing vars produce a clear error: "Missing required env var: X. See .env.example"
+- Skills that require env vars at runtime must fail fast with the same error format
+
+**Secret rotation:**
+- MVP does not require automated rotation
+- Operators should rotate API keys manually on a regular cadence
+- Documented in `docs/ops/secrets.md` if the project grows beyond MVP
+
+---
+
+## 8. Error & Rescue Map
+
+Every skill defines how it handles failures. This map ensures no silent failures in the pipeline.
+
+### Error & Rescue Registry
+
+```
+SKILL/CODEPATH          | WHAT CAN GO WRONG              | ERROR TYPE
+------------------------|--------------------------------|------------------
+fab-intake              | Operator gives vague answers   | missing_input
+                        | Run object already exists      | invalid_state
+fab-blueprint           | Spec missing or malformed      | missing_input
+                        | Blueprint conflicts with spec  | invalid_state
+fab-frame               | Blueprint not confirmed        | prerequisite_missing
+                        | Project skeleton already exists| invalid_state
+fab-forge               | App stage name invalid         | missing_input
+                        | Stubs don't match blueprint    | invalid_state
+                        | Tests fail after implementation| external_failure
+fab-check               | App stage not implemented      | prerequisite_missing
+                        | Quality score below threshold  | gate_blocked
+fab-trace               | Error not reproducible         | external_failure
+                        | Fix doesn't resolve root cause | external_failure
+fab-weave               | Required stages not done       | prerequisite_missing
+                        | Integration test fails         | external_failure
+fab-launch              | Pre-launch checklist fails     | gate_blocked
+                        | External deploy without approval| gate_blocked
+fab-pulse               | Run object missing             | missing_input
+                        | Run object corrupted           | invalid_state
+fab-ledger              | Cost data missing              | missing_input
+fab-signal              | Decision timeout               | gate_blocked
+fab-passport            | Handoff context incomplete     | missing_input
+fab-retro               | Run not complete/abandoned     | invalid_state
+```
+
+### Rescue Actions
+
+```
+ERROR TYPE + SCENARIO              | RESCUE ACTION                          | USER SEES
+-----------------------------------|----------------------------------------|------------------
+missing_input (vague answers)      | Re-ask with specific prompts           | "Need more detail on X"
+invalid_state (duplicate run)      | Load existing run, show status         | "Run already exists: <name>"
+missing_input (spec missing)       | Halt, suggest /fab-intake first        | "Run /fab-intake before /fab-blueprint"
+invalid_state (spec conflict)      | Show conflict, suggest spec revision   | "Blueprint conflicts with spec: X vs Y"
+prerequisite_missing (no blueprint)| Halt, suggest /fab-blueprint           | "Run /fab-blueprint before /fab-frame"
+invalid_state (project exists)     | Warn, offer to overwrite or skip       | "Project exists: overwrite?"
+missing_input (invalid stage)      | List valid stages from blueprint       | "Unknown stage. Valid: X, Y, Z"
+invalid_state (stub mismatch)      | Regenerate stubs from blueprint        | "Stubs regenerated to match blueprint"
+external_failure (tests fail)      | Set status=failed, suggest trace       | "Tests failed: run /fab-trace"
+prerequisite_missing (no impl)     | Halt, suggest /fab-forge               | "Run /fab-forge before /fab-check"
+gate_blocked (quality low)         | List blocking fixes, set blocked       | "Stage blocked: fix X, Y, Z"
+external_failure (unreproducible)  | Log context, suggest manual diagnosis  | "Can't reproduce: check X, Y, Z manually"
+external_failure (incomplete fix)  | Re-analyze root cause, suggest deeper  | "Fix incomplete: root cause may be X"
+prerequisite_missing (stages)      | List missing stages                    | "Stages incomplete: X, Y needed"
+external_failure (integration)     | Set status=failed, suggest trace       | "Integration failed: run /fab-trace"
+gate_blocked (pre-launch)          | Show checklist failures                | "Pre-launch failed: X, Y, Z"
+gate_blocked (unauthorized deploy) | Halt, require explicit approval        | "Deploy requires approval"
+missing_input (no run object)      | Halt, suggest /fab-intake              | "No run object: run /fab-intake"
+invalid_state (corrupted run)      | Show last valid state, suggest restore | "Run object corrupted: last valid state was X"
+missing_input (no cost data)       | Show "unknown", state what's missing   | "Cost unknown: missing X"
+gate_blocked (decision timeout)    | Keep decision pending, show next       | "Decision pending: choose A/B/C"
+missing_input (incomplete handoff) | Include available context, note gaps   | "Handoff incomplete: missing X"
+invalid_state (premature retro)    | Halt, show current status              | "Run not complete: status is X"
+```
+
+**Critical gap resolution:** Five error types previously had no rescue action. All are now covered:
+- `SpecConflictError` → show conflict, suggest spec revision
+- `StubMismatchError` → regenerate stubs from blueprint
+- `UnreproducibleError` → log context, suggest manual diagnosis
+- `IncompleteFixError` → re-analyze root cause, suggest deeper fix
+- `CorruptedRunObjectError` → show last valid state, suggest restore from backup or re-run fab-intake
+
+---
+
+## 9. Repo Structure
 
 ```text
 fabrica-skills/
@@ -512,6 +675,8 @@ fabrica-skills/
       fab-retro/SKILL.md
   scripts/
     link-skills.mjs
+  schemas/
+    run-object.schema.json
 ```
 
 **File roles:**
@@ -520,15 +685,16 @@ fabrica-skills/
 |---|---|
 | `README.md` | Public description, install command, skill table, and phase diagram |
 | `CLAUDE.md` | Agent-facing rules: skill discovery, run object, gate model, naming convention |
-| `CONTEXT.md` | Domain vocabulary and first-principles factory model |
+| `CONTEXT.md` | Domain vocabulary, architectural decisions, and review metadata |
 | `.claude-plugin/plugin.json` | Plugin manifest for agents that support plugin discovery |
 | `skills/core/*/SKILL.md` | Core MVP skill docs |
 | `skills/prototype/*/SKILL.md` | Thin full-pipeline skill docs |
 | `scripts/link-skills.mjs` | Cross-platform script that creates or refreshes a flat `.skills/` directory |
+| `schemas/run-object.schema.json` | JSON Schema for validating `fabrica.run.json` writes |
 
 ---
 
-## 9. SKILL.md Format
+## 10. SKILL.md Format
 
 Every `SKILL.md` uses this structure.
 
@@ -585,7 +751,7 @@ Rules:
 
 ---
 
-## 10. Install and Discovery
+## 11. Install and Discovery
 
 **Install:**
 
@@ -601,7 +767,7 @@ npx skills@latest add your-username/fabrica-skills
 
 ---
 
-## 11. Non-Goals
+## 12. Non-Goals
 
 - No application code in this repository.
 - No proprietary runtime or hosted control plane.
@@ -613,7 +779,7 @@ npx skills@latest add your-username/fabrica-skills
 
 ---
 
-## 12. Success Criteria
+## 13. Success Criteria
 
 | # | Criterion |
 |---|---|
@@ -627,12 +793,60 @@ npx skills@latest add your-username/fabrica-skills
 
 ---
 
-## 13. Validation Plan
+## 14. Validation Plan
 
 Before implementation is considered ready:
 
-1. PRD contradiction review: run object creation, score scale, gate semantics, and naming convention must be internally consistent.
-2. Sample run: execute Phase 0 and Phase 1 against the invoice parser idea.
-3. Status test: confirm `fab-pulse` handles missing costs as `unknown`.
-4. Handoff test: start a fresh session using only `fabrica.run.json` and `docs/handoff.md`.
-5. Launch safety test: verify `fab-launch` asks before any external network deploy.
+1. **PRD contradiction review** — run object creation, score scale, gate semantics, and naming convention must be internally consistent.
+   - **Pass:** No contradictions found in schema, enums, or skill specifications.
+   - **Fail:** Any contradiction must be resolved before proceeding.
+
+2. **Sample run: Phase 0** — execute `fab-intake` and `fab-blueprint` against the invoice parser idea.
+   - **Pass:** `docs/spec.md` and `docs/blueprint.md` are generated, internally consistent, and a cold reader could implement the app from them.
+   - **Fail:** Spec or blueprint is incomplete, contradictory, or ambiguous.
+
+3. **Sample run: Phase 1** — execute `fab-frame`, `fab-forge`, and `fab-check` for one app stage.
+   - **Pass:** One app stage has code, tests, quality score ≥ 6 on all axes, and status output.
+   - **Fail:** Tests fail, quality score < 6 on any axis, or stage status is blocked/failed.
+
+4. **Status test** — confirm `fab-pulse` handles missing costs as `unknown`.
+   - **Pass:** `fab-pulse` renders all three panels (pipeline, quality, cost) with `unknown` displayed for missing cost values.
+   - **Fail:** `fab-pulse` fails, crashes, or invents cost data when values are missing.
+
+5. **Handoff test** — start a fresh session using only `fabrica.run.json` and `docs/handoff.md`.
+   - **Pass:** New session resumes without asking what happened before; next action is clear.
+   - **Fail:** New session requires operator to explain prior work or cannot determine next action.
+
+6. **Launch safety test** — verify `fab-launch` asks before any external network deploy.
+   - **Pass:** External deploy action is blocked until explicit operator approval is given.
+   - **Fail:** External deploy proceeds without approval.
+
+### Phase 0 Demo Script
+
+To validate Success Criterion #1 (Phase 0 in under 15 minutes), run this demo:
+
+1. Start a fresh session with no prior context.
+2. Run `/fab-intake` with the invoice parser idea. Record start time.
+3. Answer all intake questions. Note any skipped questions and partial spec warnings.
+4. Confirm the spec. Run `/fab-blueprint`.
+5. Confirm the blueprint. Record end time.
+6. Verify: `docs/spec.md` exists, `docs/blueprint.md` exists, `fabrica.run.json` has correct state.
+7. **Pass if:** Total time < 15 minutes, both docs are useful, run object state is correct.
+8. **Fail if:** Time ≥ 15 minutes, docs are incomplete or contradictory, or run object state is incorrect.
+
+---
+
+## 15. Experiment Failure Criteria
+
+The experiment is considered failed if any of the following occur:
+
+| Failure Condition | Signal | Action |
+|---|---|---|
+| Phase 0 cannot produce a useful spec | `fab-intake` produces spec that a cold reader cannot implement | Pivot: simplify the intake questions or reduce spec scope |
+| Phase 0 cannot produce a useful blueprint | `fab-blueprint` produces architecture that cannot be implemented | Pivot: constrain blueprint to simpler patterns |
+| Phase 1 cannot build one app stage | `fab-forge` cannot produce working code with tests after 3 attempts | Pivot: reduce app stage scope or change stack choice |
+| Quality scores consistently < 6 | `fab-check` scores < 6 on any axis for 3+ consecutive stages | Pivot: improve skill specifications or reduce stage complexity |
+| Run object corruption | `fabrica.run.json` becomes unusable and cannot be recovered | Pivot: add stronger validation or simplify state contract |
+| Operator time per run > 60 minutes | Total operator time for Phase 0 + Phase 1 exceeds 60 minutes | Pivot: reduce skill complexity or automate more steps |
+
+**Abort criteria:** If all three phases fail after 5 attempts each with different pivot strategies, the premise is falsified. Document findings in `docs/retro.md` and consider alternative approaches.
