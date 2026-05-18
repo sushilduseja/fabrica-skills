@@ -1,0 +1,49 @@
+---
+name: fab-frame
+description: Create project skeleton and first-stage contracts for a named app.
+category: core
+phase: 1
+---
+
+## Job
+
+Scaffold the app project directory, stub files with correct signatures, dependency manifest, and cross-platform build commands.
+
+## Trigger
+
+Blueprint confirmed.
+
+## Input
+
+- `docs/blueprint.md` (required)
+- `fabrica.run.json` (required)
+
+## Output
+
+- App project skeleton in sibling directory `../<app-name>/`
+- Stub files with correct signatures, no implementation logic
+- Dependency manifest (`pyproject.toml`, `requirements.txt`)
+- `.env.example` for required environment variables
+- Cross-platform commands (`Makefile` — POSIX + Windows compatible)
+
+## Behavior
+
+1. Read `app_stages` from run object. Identify the first stage.
+2. Create the app project root at `../<name>/` (sibling to the skills repo).
+3. Create only the folders needed for the first app stage plus shared contracts.
+4. Write stub Python files with correct function signatures, imports, and docstrings — no implementation logic.
+5. Add `pyproject.toml` and `requirements.txt` for the selected stack.
+6. Write `.env.example` only for required environment variables (e.g. `OLLAMA_HOST`).
+7. Add a `Makefile` with targets: `install`, `test`, `run`, `lint`. Use cross-platform commands that work on Windows (cmd/powershell compatible).
+8. Update `status = forging`, set first stage `status = active`, set `current_app_stage` to the stage name, set `next_action = "/fab-forge <first-stage-name>"`.
+
+## Gate
+
+**Default:** auto
+**Overridable:** yes
+
+## Run Object Updates
+
+- `status`, `current_app_stage`, `app_stages[].status`, `next_action`
+- `current_step = "fab-frame"`
+- `updated_at`

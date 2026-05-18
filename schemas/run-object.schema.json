@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "fabrica.run.json",
+  "description": "Durable state file for one fabrica-skills run",
+  "type": "object",
+  "required": [
+    "schema_version", "id", "name", "experiment_phase",
+    "created_at", "updated_at", "status", "current_step",
+    "current_app_stage", "next_action", "last_error",
+    "spec_path", "blueprint_path", "app_stages",
+    "costs", "verifications", "human_decisions", "gate_levels"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+    "id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1 },
+    "experiment_phase": {
+      "type": "string",
+      "enum": ["phase_0_spec", "phase_1_slice", "phase_2_pipeline"]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "status": {
+      "type": "string",
+      "enum": [
+        "designing", "framing", "forging", "checking",
+        "weaving", "verifying", "complete", "blocked", "abandoned"
+      ]
+    },
+    "current_step": { "type": ["string", "null"] },
+    "current_app_stage": { "type": ["string", "null"] },
+    "next_action": { "type": ["string", "null"] },
+    "last_error": { "type": ["string", "null"] },
+    "spec_path": { "type": ["string", "null"] },
+    "blueprint_path": { "type": ["string", "null"] },
+    "app_stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "purpose", "status", "quality_score", "artifacts", "notes"],
+        "properties": {
+          "name": { "type": "string" },
+          "purpose": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "active", "done", "blocked", "failed"]
+          },
+          "quality_score": { "type": ["number", "null"], "minimum": 0, "maximum": 10 },
+          "artifacts": { "type": "array", "items": { "type": "string" } },
+          "notes": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "costs": {
+      "type": "object",
+      "required": [
+        "precision", "tokens_in", "tokens_out", "api_calls",
+        "estimated_usd", "budget_usd", "by_step"
+      ],
+      "properties": {
+        "precision": { "type": "string", "enum": ["unknown", "estimated", "measured"] },
+        "tokens_in": { "type": ["integer", "string"], "pattern": "^unknown$" },
+        "tokens_out": { "type": ["integer", "string"], "pattern": "^unknown$" },
+        "api_calls": { "type": ["integer", "string"], "pattern": "^unknown$" },
+        "estimated_usd": { "type": ["number", "string"], "pattern": "^unknown$" },
+        "budget_usd": { "type": ["number", "null"] },
+        "by_step": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["precision", "tokens_in", "tokens_out", "usd"],
+            "properties": {
+              "precision": { "type": "string", "enum": ["unknown", "estimated", "measured"] },
+              "tokens_in": { "type": ["integer", "string"], "pattern": "^unknown$" },
+              "tokens_out": { "type": ["integer", "string"], "pattern": "^unknown$" },
+              "usd": { "type": ["number", "string"], "pattern": "^unknown$" }
+            }
+          }
+        }
+      }
+    },
+    "verifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "command", "passed", "summary", "timestamp"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["unit", "integration", "local_launch", "external_deploy"]
+          },
+          "command": { "type": "string" },
+          "passed": { "type": "boolean" },
+          "summary": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "human_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "step", "decision_needed", "options",
+          "decision", "rationale", "triggered_at", "resolved_at"
+        ],
+        "properties": {
+          "step": { "type": "string" },
+          "decision_needed": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "decision": { "type": ["string", "null"] },
+          "rationale": { "type": ["string", "null"] },
+          "triggered_at": { "type": "string", "format": "date-time" },
+          "resolved_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      }
+    },
+    "gate_levels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["auto", "checkpoint", "review", "full"]
+      }
+    }
+  }
+}

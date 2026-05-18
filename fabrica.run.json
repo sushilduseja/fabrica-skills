@@ -2,13 +2,13 @@
   "schema_version": "0.2",
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "name": "invoice-note-parser",
-  "experiment_phase": "phase_0_spec",
+  "experiment_phase": "phase_1_slice",
   "created_at": "2026-05-18T14:30:00Z",
-  "updated_at": "2026-05-18T14:35:00Z",
-  "status": "framing",
-  "current_step": "fab-blueprint",
-  "current_app_stage": null,
-  "next_action": "/fab-frame",
+  "updated_at": "2026-05-18T17:00:00Z",
+  "status": "complete",
+  "current_step": null,
+  "current_app_stage": "parse-invoice-text",
+  "next_action": "/fab-passport",
   "last_error": null,
   "spec_path": "docs/spec.md",
   "blueprint_path": "docs/blueprint.md",
@@ -16,10 +16,22 @@
     {
       "name": "parse-invoice-text",
       "purpose": "Accept raw invoice text and return normalized JSON with extracted fields",
-      "status": "pending",
-      "quality_score": null,
-      "artifacts": [],
-      "notes": null
+      "status": "done",
+      "quality_score": 8.57,
+      "artifacts": [
+        "invoice_parser/__init__.py",
+        "invoice_parser/models.py",
+        "invoice_parser/prompts.py",
+        "invoice_parser/parser.py",
+        "invoice_parser/cli.py",
+        "invoice_parser/tests/test_parser.py",
+        "invoice_parser/tests/test_cli.py",
+        "pyproject.toml",
+        "requirements.txt",
+        "Makefile",
+        "docs/eval/parse-invoice-text.md"
+      ],
+      "notes": "18/18 tests passed. Quality score 8.57/10."
     }
   ],
   "costs": {
@@ -31,10 +43,29 @@
     "budget_usd": null,
     "by_step": {}
   },
-  "verifications": [],
+  "verifications": [
+    {
+      "kind": "unit",
+      "command": "pytest invoice_parser/tests/ -v",
+      "passed": true,
+      "summary": "18 tests passed: 5 happy path, 3 failure, 4 edge case, 4 CLI, 2 helper",
+      "timestamp": "2026-05-18T17:00:00Z"
+    }
+  ],
   "human_decisions": [],
   "gate_levels": {
     "fab-intake": "checkpoint",
-    "fab-blueprint": "checkpoint"
+    "fab-blueprint": "checkpoint",
+    "fab-frame": "auto",
+    "fab-forge": "auto",
+    "fab-check": "auto",
+    "fab-pulse": "auto",
+    "fab-passport": "auto",
+    "fab-trace": "auto",
+    "fab-weave": "checkpoint",
+    "fab-launch": "review",
+    "fab-ledger": "auto",
+    "fab-signal": "full",
+    "fab-retro": "auto"
   }
 }
