@@ -1,5 +1,6 @@
 .env
 fabrica.run.json
+.skills/
 __pycache__/
 .venv/
 *.pyc

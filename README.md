@@ -157,17 +157,31 @@ Useful commands:
 
 ## Install Options
 
-### Recommended: local `.skills/`
+### Local: `.skills/` (recommended for per-project use)
 
 ```bash
 node scripts/link-skills.mjs
 ```
 
-The script refreshes only `fab-*` entries inside `.skills/`. Non-`fab-*` entries are left alone.
+Creates `.skills/` inside the repo with 13 `fab-*` entries. Only `fab-*` entries are refreshed — unrelated skills are left alone.
 
-### Claude Code plugin manifest
+### Global: `~/.fabrica-skills/` (for cross-project agent access)
 
-Agents that support `.claude-plugin/plugin.json` can discover all 13 skills from the plugin manifest.
+```bash
+node scripts/link-skills.mjs --global
+```
+
+Installs to `~/.fabrica-skills/.skills/` using `os.homedir()` for cross-platform resolution (`C:\Users\<name>` on Windows, `/home/<name>` or `/Users/<name>` on Unix). The agent must be pointed at this path to discover skills.
+
+### Agent Discovery
+
+| Agent | Discovery mechanism |
+|---|---|
+| Claude Code | `.claude-plugin/plugin.json` + `CLAUDE.md` |
+| OpenCode / Codex CLI | `AGENTS.md` (already in repo) |
+| Any agent with configurable skill path | Point to `.skills/` directory |
+
+The `AGENTS.md` at the repo root covers non-Claude agents. After a global install, point each agent's skill search path to `~/.fabrica-skills/.skills/`.
 
 ### Manual copy
 

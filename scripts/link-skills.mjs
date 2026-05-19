@@ -6,10 +6,20 @@ import {
 } from 'fs';
 import { join, resolve, relative } from 'path';
 import { fileURLToPath } from 'url';
+import { homedir } from 'os';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
-const targetDir = resolve(root, '.skills');
+const global = process.argv.includes('--global');
+const targetDir = global
+  ? join(homedir(), '.fabrica-skills', '.skills')
+  : resolve(root, '.skills');
+
+if (global) {
+  console.log(`[link-skills] GLOBAL install → ${targetDir}`);
+} else {
+  console.log(`[link-skills] LOCAL install → ${targetDir}`);
+}
 const isWindows = process.platform === 'win32';
 
 const SKILL_DIRS = [
