@@ -1,4 +1,5 @@
 .env
+fabrica.run.json
 __pycache__/
 .venv/
 *.pyc
