@@ -1,4 +1,4 @@
-# fabrica-skills
+# fabrica-skills [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sushilduseja/fabrica-skills)
 
 A set of agent-readable markdown skills for testing one premise:
 
