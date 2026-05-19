@@ -13,6 +13,10 @@ Display cost data from the run object: precision level, totals, and per-step bre
 
 Operator wants cost review.
 
+## Prerequisites
+
+- `fabrica.run.json` exists
+
 ## Input
 
 - `fabrica.run.json` (required)
@@ -29,6 +33,10 @@ Inline cost report. No files written.
 4. If precision is unknown, state what data is missing instead of inventing numbers.
 5. Provide one concrete cost-reduction suggestion only when total cost is known or estimated.
 6. Do not modify files.
+
+## Error Handling
+
+- `missing_input`: Cost data missing → show "unknown", state what's missing.
 
 ## Gate
 

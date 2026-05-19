@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdirSync, readdirSync, existsSync, symlinkSync, copyFileSync } from 'fs';
+import { mkdirSync, readdirSync, existsSync, symlinkSync, copyFileSync, rmSync, lstatSync } from 'fs';
 import { join, relative } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -24,11 +24,13 @@ const SKILL_DIRS = [
   'skills/prototype/fab-retro',
 ];
 
-try {
-  mkdirSync(targetDir, { recursive: true });
-} catch {
-  // directory exists
+// Refresh: remove existing .skills/ directory before recreating
+if (existsSync(targetDir)) {
+  rmSync(targetDir, { recursive: true, force: true });
+  console.log('[link-skills] REFRESH — cleared existing .skills/');
 }
+
+mkdirSync(targetDir, { recursive: true });
 
 for (const dir of SKILL_DIRS) {
   const skillPath = join(root, dir);
@@ -37,13 +39,12 @@ for (const dir of SKILL_DIRS) {
     continue;
   }
   const skillName = dir.split('/').pop();
-  const linkPath = join(targetDir, skillName);
   try {
     const rel = relative(targetDir, skillPath).replace(/\\/g, '/');
     if (process.platform === 'win32') {
       copyFileSync(join(skillPath, 'SKILL.md'), join(targetDir, `${skillName}.md`));
     } else {
-      symlinkSync(rel, linkPath, 'junction');
+      symlinkSync(rel, join(targetDir, skillName), 'junction');
     }
     console.log(`[link-skills] LINK ${skillName} → .skills/`);
   } catch (err) {

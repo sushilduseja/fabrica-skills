@@ -13,6 +13,10 @@ Show the operator the current run state in a single glance.
 
 Operator wants current run state.
 
+## Prerequisites
+
+- `fabrica.run.json` exists
+
 ## Input
 
 - `fabrica.run.json` (required)
@@ -31,6 +35,11 @@ Inline terminal-style dashboard. No files written.
 6. Render `next_action` prominently at the bottom.
 7. Highlight blocked or failed items in red.
 8. Do not modify any files.
+
+## Error Handling
+
+- `missing_input`: Run object missing → halt, suggest `/fab-intake`.
+- `invalid_state`: Run object corrupted → show last valid state, suggest restore.
 
 ## Reference Layout
 

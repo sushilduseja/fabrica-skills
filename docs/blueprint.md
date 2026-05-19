@@ -75,7 +75,7 @@ No persistence needed — stateless single-run tool.
 
 **Outputs:**
 - Normalized JSON matching spec schema
-- Confidence scores per field
+- Single top-level confidence score (`high|medium|low`)
 - Validation errors (if any)
 
 **Files expected:**

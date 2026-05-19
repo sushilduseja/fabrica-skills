@@ -1,7 +1,7 @@
 {
   "name": "fabrica-skills",
   "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "skills": [
     { "name": "fab-intake", "path": "skills/core/fab-intake/SKILL.md" },
     { "name": "fab-blueprint", "path": "skills/core/fab-blueprint/SKILL.md" },

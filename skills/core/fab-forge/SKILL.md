@@ -11,12 +11,20 @@ Build working implementation and focused tests for one named app stage.
 
 ## Trigger
 
-One named app stage is ready to implement.
+One named app stage is ready to implement (`status = active` or `status = pending` in run object).
+
+## Prerequisites
+
+- `fab-frame` complete
+- Named app stage exists in `app_stages`
+- `docs/blueprint.md` exists
+- `fabrica.run.json` exists
 
 ## Input
 
 - App stage name (required, from run object `app_stages`)
 - `docs/blueprint.md` (required)
+- `fabrica.run.json` (required)
 - Existing stubs and shared contracts
 
 ## Output
@@ -32,9 +40,16 @@ One named app stage is ready to implement.
 3. Keep behavior aligned with the spec and blueprint; do not add speculative features.
 4. Write tests covering: happy path, one realistic failure, one edge case.
 5. Run the narrowest available test command for the stage.
-6. If tests fail, fix until they pass. If cannot fix in 3 attempts, set stage `status = failed` and set `next_action` to `/fab-trace <stage>`.
+6. If tests fail, fix until they pass. If cannot fix in 3 attempts, set stage `status = failed`, set `last_error = { type: "external_failure", message: "Tests failed after 3 attempts" }`, and set `next_action` to `/fab-trace <stage>`.
 7. If tests pass, update stage `status = done`, add artifacts to the stage record, add verification result.
 8. Set `next_action = "/fab-check <stage>"`.
+9. Validate the run object against `schemas/run-object.schema.json` before writing.
+
+## Error Handling
+
+- `missing_input`: App stage name invalid → list valid stages from blueprint.
+- `invalid_state`: Stubs don't match blueprint → regenerate stubs from blueprint.
+- `external_failure`: Tests fail after implementation → set `status = failed`, set `last_error`, suggest `/fab-trace`.
 
 ## Gate
 
@@ -44,6 +59,6 @@ One named app stage is ready to implement.
 ## Run Object Updates
 
 - `app_stages[].status`, `app_stages[].artifacts`, `verifications[]`
-- `next_action`
+- `next_action`, `last_error` (on failure)
 - `current_step = "fab-forge"`
 - `updated_at`

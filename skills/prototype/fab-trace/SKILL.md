@@ -13,6 +13,11 @@ Fix a failing app stage by identifying root cause, applying the smallest viable 
 
 A stage is blocked, failing, or has a supplied error.
 
+## Prerequisites
+
+- Failing stage with error output
+- `fabrica.run.json` exists
+
 ## Input
 
 - App stage name (required)
@@ -30,12 +35,24 @@ A stage is blocked, failing, or has a supplied error.
 ## Behavior
 
 1. State root cause in one sentence before proposing changes.
-2. Use error type from `last_error` to prioritize: missing_input → check paths, invalid_state → check run object, external_failure → re-run and capture output.
+2. Use error type from `last_error` to prioritize diagnosis:
+   - `missing_input` → check file paths, suggest creating missing input
+   - `invalid_state` → check run object status, suggest corrective skill
+   - `gate_blocked` → show gate context, re-present approval
+   - `validation_failed` → show schema violation, suggest corrected value
+   - `prerequisite_missing` → check dependency graph, run missing prerequisite
+   - `external_failure` → re-run command, capture output, diagnose root cause
 3. Apply the smallest fix that addresses the root cause.
 4. Add or update a regression test if the failure can be reproduced locally.
 5. Run the narrowest relevant test command.
 6. If fix resolves: update stage `status = done`, clear `last_error`, set `next_action` to resume.
 7. If fix does not resolve: re-analyze root cause, try once more. If still failing, set `next_action = "/fab-signal"` to request operator help.
+8. Validate the run object against `schemas/run-object.schema.json` before writing.
+
+## Error Handling
+
+- `external_failure`: Error not reproducible → log context, suggest manual diagnosis.
+- `external_failure`: Fix doesn't resolve root cause → re-analyze, suggest deeper fix.
 
 ## Gate
 

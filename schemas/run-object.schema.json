@@ -30,7 +30,23 @@
     "current_step": { "type": ["string", "null"] },
     "current_app_stage": { "type": ["string", "null"] },
     "next_action": { "type": ["string", "null"] },
-    "last_error": { "type": ["string", "null"] },
+    "last_error": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" },
+        {
+          "type": "object",
+          "required": ["type", "message"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["missing_input", "invalid_state", "gate_blocked", "validation_failed", "prerequisite_missing", "external_failure"]
+            },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    },
     "spec_path": { "type": ["string", "null"] },
     "blueprint_path": { "type": ["string", "null"] },
     "app_stages": {
@@ -117,6 +133,11 @@
     },
     "gate_levels": {
       "type": "object",
+      "required": [
+        "fab-intake", "fab-blueprint", "fab-frame", "fab-forge",
+        "fab-check", "fab-pulse", "fab-passport", "fab-trace",
+        "fab-weave", "fab-launch", "fab-ledger", "fab-signal", "fab-retro"
+      ],
       "additionalProperties": {
         "type": "string",
         "enum": ["auto", "checkpoint", "review", "full"]

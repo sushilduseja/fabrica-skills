@@ -11,7 +11,13 @@ Derive minimal app architecture from the spec and define the app stages in build
 
 ## Trigger
 
-Confirmed spec exists.
+Confirmed spec exists (`docs/spec.md` present, `status = designing` in run object).
+
+## Prerequisites
+
+- `fab-intake` complete
+- `docs/spec.md` exists
+- `fabrica.run.json` exists
 
 ## Input
 
@@ -30,6 +36,12 @@ Confirmed spec exists.
 4. Define app stages in build order. Each stage must have purpose, inputs, outputs, files expected, and test shape.
 5. Write `docs/blueprint.md` with a small ASCII data-flow diagram.
 6. Update `blueprint_path`, `app_stages`, `status = framing`, `next_action = "/fab-frame"`.
+7. Validate the run object against `schemas/run-object.schema.json` before writing. If validation fails, stop with `validation_failed` error.
+
+## Error Handling
+
+- `missing_input`: Spec missing or malformed → halt, suggest `/fab-intake` first.
+- `invalid_state`: Blueprint conflicts with spec → show conflict, suggest spec revision.
 
 ## Gate
 

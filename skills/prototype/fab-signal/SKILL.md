@@ -13,6 +13,11 @@ Present a decision to the operator and record the outcome in `human_decisions`.
 
 A human decision is needed.
 
+## Prerequisites
+
+- Decision context available
+- `fabrica.run.json` exists
+
 ## Input
 
 - Decision context (required)
@@ -29,7 +34,13 @@ A human decision is needed.
 2. Present two or three meaningful options with concrete tradeoffs.
 3. Wait for operator input.
 4. Record decision, rationale, timestamp (both triggered_at and resolved_at), and resumed next action.
-5. If operator does not respond within a reasonable window, keep decision pending (do not auto-decide).
+5. Update `next_action` to reflect the decision outcome.
+6. If operator does not respond within a reasonable window, keep decision pending (do not auto-decide).
+7. Validate the run object against `schemas/run-object.schema.json` before writing.
+
+## Error Handling
+
+- `gate_blocked`: Decision timeout → keep decision pending, show next action.
 
 ## Gate
 
@@ -39,5 +50,6 @@ A human decision is needed.
 ## Run Object Updates
 
 - `human_decisions[]`
+- `next_action` (updated to reflect decision outcome)
 - `current_step = "fab-signal"`
 - `updated_at`

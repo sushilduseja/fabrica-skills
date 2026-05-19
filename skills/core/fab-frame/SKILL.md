@@ -11,7 +11,12 @@ Scaffold the app project directory, stub files with correct signatures, dependen
 
 ## Trigger
 
-Blueprint confirmed.
+Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exists).
+
+## Prerequisites
+
+- `fab-blueprint` complete
+- `docs/blueprint.md` exists
 
 ## Input
 
@@ -24,7 +29,7 @@ Blueprint confirmed.
 - Stub files with correct signatures, no implementation logic
 - Dependency manifest (`pyproject.toml`, `requirements.txt`)
 - `.env.example` for required environment variables
-- Cross-platform commands (`Makefile` — POSIX + Windows compatible)
+- Cross-platform commands (`Makefile` for POSIX, `package.json` scripts for Windows)
 
 ## Behavior
 
@@ -34,8 +39,15 @@ Blueprint confirmed.
 4. Write stub Python files with correct function signatures, imports, and docstrings — no implementation logic.
 5. Add `pyproject.toml` and `requirements.txt` for the selected stack.
 6. Write `.env.example` only for required environment variables (e.g. `OLLAMA_HOST`).
-7. Add a `Makefile` with targets: `install`, `test`, `run`, `lint`. Use cross-platform commands that work on Windows (cmd/powershell compatible).
-8. Update `status = forging`, set first stage `status = active`, set `current_app_stage` to the stage name, set `next_action = "/fab-forge <first-stage-name>"`.
+7. Add a `Makefile` with targets: `install`, `test`, `run`, `lint` (POSIX). Also add `package.json` with equivalent `scripts` for Windows users who don't have `make`.
+8. **Move the run object**: Copy `fabrica.run.json` from the skills repo to the app project root (`../<name>/fabrica.run.json`). Add `fabrica.run.json` to the skills repo `.gitignore`. Update all path references in the run object to be relative to the new location.
+9. Update `status = forging`, set first stage `status = active`, set `current_app_stage` to the stage name, set `next_action = "/fab-forge <first-stage-name>"`.
+10. Validate the run object against `schemas/run-object.schema.json` before writing.
+
+## Error Handling
+
+- `prerequisite_missing`: Blueprint not confirmed → halt, suggest `/fab-blueprint` first.
+- `invalid_state`: Project skeleton already exists → warn, offer to overwrite or skip.
 
 ## Gate
 
@@ -47,3 +59,4 @@ Blueprint confirmed.
 - `status`, `current_app_stage`, `app_stages[].status`, `next_action`
 - `current_step = "fab-frame"`
 - `updated_at`
+- Run object location moved to app project root (see Behavior step 8)

@@ -13,6 +13,10 @@ Produce `docs/handoff.md` so a fresh session can resume without asking what happ
 
 End of session or transfer to another agent/session.
 
+## Prerequisites
+
+- `fabrica.run.json` exists
+
 ## Input
 
 - `fabrica.run.json` (required)
@@ -30,6 +34,10 @@ End of session or transfer to another agent/session.
 4. Include any important context not captured in the run object.
 5. Overwrite `docs/handoff.md`; do not append.
 6. If handoff context is incomplete (e.g., missing artifacts), note gaps in the document rather than blocking.
+
+## Error Handling
+
+- `missing_input`: Handoff context incomplete → include available context, note gaps.
 
 ## Gate
 

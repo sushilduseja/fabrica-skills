@@ -13,6 +13,11 @@ Produce a retrospective document once a run is complete, abandoned, or stopped.
 
 Run is complete, abandoned, or intentionally stopped.
 
+## Prerequisites
+
+- Run complete, abandoned, or stopped
+- `fabrica.run.json` exists
+
 ## Input
 
 - `fabrica.run.json`
@@ -32,6 +37,11 @@ Run is complete, abandoned, or intentionally stopped.
 5. Write three concrete process changes for the next run.
 6. Estimate how long the same toy run would take manually.
 7. Write `docs/retro.md`.
+8. Validate the run object against `schemas/run-object.schema.json` before writing.
+
+## Error Handling
+
+- `invalid_state`: Run not complete/abandoned → halt, show current status.
 
 ## Gate
 

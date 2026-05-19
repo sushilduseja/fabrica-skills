@@ -8,9 +8,26 @@ This is not a runtime, SaaS, or orchestration framework. The product surface is 
 
 ## Install
 
+### Option 1: Manual link (recommended)
+
 ```bash
-npx skills@latest add your-username/fabrica-skills
+# Clone this repo
+git clone https://github.com/your-username/fabrica-skills.git
+cd fabrica-skills
+
+# Create a flat .skills/ directory that agents can discover
+node scripts/link-skills.mjs
 ```
+
+This creates a `.skills/` directory with all 13 skill documents. Agents that scan `.skills/` will load them automatically.
+
+### Option 2: Claude Code plugin
+
+If your agent supports `.claude-plugin/plugin.json`, clone this repo and the plugin manifest registers all 13 skills for discovery.
+
+### Option 3: Copy skills manually
+
+Copy individual `skills/core/*/SKILL.md` or `skills/prototype/*/SKILL.md` files into your project's skill directory. Each `SKILL.md` is self-contained.
 
 ## Skill Inventory
 
@@ -60,3 +77,7 @@ Phase 2 — Thin full-pipeline prototype
 3. Confirm the blueprint, run `/fab-frame`
 4. Build stages with `/fab-forge`, check with `/fab-check`
 5. Monitor progress with `/fab-pulse`
+
+## Example Output
+
+The `docs/spec.md` and `docs/blueprint.md` files in this repo are **generated examples** from a sample run (the invoice-note-parser experiment). They demonstrate what `fab-intake` and `fab-blueprint` produce. They are not part of the skill set itself.
