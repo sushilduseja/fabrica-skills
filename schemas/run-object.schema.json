@@ -33,7 +33,6 @@
     "last_error": {
       "oneOf": [
         { "type": "null" },
-        { "type": "string" },
         {
           "type": "object",
           "required": ["type", "message"],
@@ -138,6 +137,10 @@
         "fab-check", "fab-pulse", "fab-passport", "fab-trace",
         "fab-weave", "fab-launch", "fab-ledger", "fab-signal", "fab-retro"
       ],
+      "properties": {
+        "fab-launch": { "const": "review" },
+        "fab-signal": { "const": "full" }
+      },
       "additionalProperties": {
         "type": "string",
         "enum": ["auto", "checkpoint", "review", "full"]

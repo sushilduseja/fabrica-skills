@@ -12,7 +12,7 @@ This is not a runtime, SaaS, or orchestration framework. The product surface is 
 
 ```bash
 # Clone this repo
-git clone https://github.com/your-username/fabrica-skills.git
+git clone https://github.com/sushilduseja/fabrica-skills.git
 cd fabrica-skills
 
 # Create a flat .skills/ directory that agents can discover

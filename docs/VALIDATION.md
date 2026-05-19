@@ -12,7 +12,7 @@
 
 **Status:** PASS
 
-No contradictions found in schema, enums, or skill specifications. All skill names use unique `fab-*` prefix. Gate levels are consistent across PRD, schema, and skill docs. Score scale (0-10) is uniform.
+No contradictions found in schema, enum, or skill specifications. All skill names use unique `fab-*` prefix. Gate levels are consistent across PRD, schema, and skill docs. Score scale (0-10) is uniform.
 
 ### 2. Sample Run: Phase 0
 
@@ -56,7 +56,7 @@ No contradictions found in schema, enums, or skill specifications. All skill nam
 
 - `fab-launch` requires explicit approval before external deploy
 - Pre-launch checklist gates local verification
-- `.env.example` documents required variables
+- `.env.example` exists but is currently blank; required variables (`OLLAMA_HOST`, `OLLAMA_MODEL`) must be added manually. This is a known blocker documented in handoff/retro.
 - `.env` is in `.gitignore`
 - No committed secrets in source code
 
