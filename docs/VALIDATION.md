@@ -56,7 +56,7 @@ No contradictions found in schema, enum, or skill specifications. All skill name
 
 - `fab-launch` requires explicit approval before external deploy
 - Pre-launch checklist gates local verification
-- `.env.example` exists but is currently blank; required variables (`OLLAMA_HOST`, `OLLAMA_MODEL`) must be added manually. This is a known blocker documented in handoff/retro.
+- `.env.example` exists; required variables (`OLLAMA_HOST`, `OLLAMA_MODEL`) must be added manually due to system write restrictions. This is a documented manual setup step.
 - `.env` is in `.gitignore`
 - No committed secrets in source code
 

@@ -32,9 +32,14 @@ Integrated app ready for MVP verification (`status = verifying`, `docs/integrati
 
 ## Behavior
 
-1. Run pre-launch checklist: tests pass, env vars documented, no committed secrets, integration verified.
+1. Run pre-launch checklist:
+   - Package installed in editable mode (`pip install -e .` ran)
+   - Tests pass
+   - Env vars documented in `.env.example`
+   - No committed secrets
+   - Integration verified
 2. Show checklist and require explicit approval before running any external, destructive, or network deploy action.
-3. For MVP, verify locally via `python -m invoice_parser` with a test invoice.
+3. For MVP, verify locally via `python -m invoice_parser.cli` with a test invoice.
 4. Check expected output: valid JSON, non-zero confidence, no errors.
 5. Record verification with `kind = local_launch` and set `status = complete` only if verified.
 6. Verify `.env.example` documents all required vars. Verify `.env` is in `.gitignore`. Scan for committed secrets.
