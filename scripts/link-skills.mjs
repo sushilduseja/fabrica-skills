@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 
-import { mkdirSync, readdirSync, existsSync, symlinkSync, copyFileSync, rmSync, lstatSync } from 'fs';
-import { join, relative } from 'path';
+import {
+  mkdirSync, readdirSync, existsSync,
+  symlinkSync, cpSync, rmSync,
+} from 'fs';
+import { join, resolve, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const root = join(__dirname, '..');
-const targetDir = join(root, '.skills');
+const root = resolve(__dirname, '..');
+const targetDir = resolve(root, '.skills');
+const isWindows = process.platform === 'win32';
 
 const SKILL_DIRS = [
   'skills/core/fab-intake',
@@ -24,30 +28,56 @@ const SKILL_DIRS = [
   'skills/prototype/fab-retro',
 ];
 
-// Refresh: remove existing .skills/ directory before recreating
-if (existsSync(targetDir)) {
-  rmSync(targetDir, { recursive: true, force: true });
-  console.log('[link-skills] REFRESH — cleared existing .skills/');
-}
+const FAB_NAMES = new Set(SKILL_DIRS.map(d => d.split('/').pop()));
 
+// Ensure .skills/ exists — do NOT wipe it
 mkdirSync(targetDir, { recursive: true });
 
+// Remove only fab-* entries — unrelated skills are untouched
+if (existsSync(targetDir)) {
+  for (const entry of readdirSync(targetDir)) {
+    if (FAB_NAMES.has(entry) || entry.startsWith('fab-')) {
+      rmSync(join(targetDir, entry), { recursive: true, force: true });
+      console.log(`[link-skills] CLEAN  ${entry}`);
+    }
+  }
+}
+
+// Link each skill into .skills/
 for (const dir of SKILL_DIRS) {
-  const skillPath = join(root, dir);
+  const skillPath = resolve(root, dir);
+  const skillName = dir.split('/').pop();
+  const linkDest = join(targetDir, skillName);
+
   if (!existsSync(skillPath)) {
-    console.warn(`[link-skills] SKIP ${dir} — not found`);
+    console.warn(`[link-skills] SKIP   ${skillName} — source directory not found`);
     continue;
   }
-  const skillName = dir.split('/').pop();
+
+  if (!existsSync(join(skillPath, 'SKILL.md'))) {
+    console.warn(`[link-skills] SKIP   ${skillName} — SKILL.md missing`);
+    continue;
+  }
+
   try {
-    const rel = relative(targetDir, skillPath).replace(/\\/g, '/');
-    if (process.platform === 'win32') {
-      copyFileSync(join(skillPath, 'SKILL.md'), join(targetDir, `${skillName}.md`));
+    if (isWindows) {
+      // Junctions on Windows: require absolute path, no elevated privileges needed
+      symlinkSync(skillPath, linkDest, 'junction');
+      console.log(`[link-skills] LINK   ${skillName} → .skills/ (junction)`);
     } else {
-      symlinkSync(rel, join(targetDir, skillName), 'junction');
+      // Unix/macOS: relative symlink keeps repo relocatable
+      const rel = relative(targetDir, skillPath);
+      symlinkSync(rel, linkDest, 'dir');
+      console.log(`[link-skills] LINK   ${skillName} → .skills/ (symlink)`);
     }
-    console.log(`[link-skills] LINK ${skillName} → .skills/`);
   } catch (err) {
-    console.error(`[link-skills] FAIL ${skillName}: ${err.message}`);
+    if (isWindows && err.code === 'EPERM') {
+      // Junction blocked (rare) — fall back to full recursive copy
+      // Requires Node >= 16.7.0
+      cpSync(skillPath, linkDest, { recursive: true });
+      console.log(`[link-skills] COPY   ${skillName} → .skills/ (junction fallback)`);
+    } else {
+      console.error(`[link-skills] FAIL   ${skillName}: ${err.message}`);
+    }
   }
 }
