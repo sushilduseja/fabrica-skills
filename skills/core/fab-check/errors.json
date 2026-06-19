@@ -1,0 +1,19 @@
+{
+  "skill_id": "fab-check",
+  "errors": [
+    {
+      "type": "prerequisite_missing",
+      "trigger": "App stage not implemented",
+      "diagnosis": "The stage to be checked has no implementation files to evaluate",
+      "rescue_action": "Halt and suggest running /fab-forge for the named stage first",
+      "user_message": "Stage has not been implemented yet. Run /fab-forge first."
+    },
+    {
+      "type": "gate_blocked",
+      "trigger": "Quality score below threshold on any axis",
+      "diagnosis": "One or more quality axes scored below the blocking threshold (6/10)",
+      "rescue_action": "List the blocking issues, set status = blocked, suggest /fab-trace",
+      "user_message": "Quality score below 6/10 on one or more axes. Blocking issues: {issues}"
+    }
+  ]
+}

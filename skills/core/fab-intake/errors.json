@@ -1,0 +1,19 @@
+{
+  "skill_id": "fab-intake",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "Operator gives vague answers",
+      "diagnosis": "Questions not answered with sufficient specificity to bound the app scope",
+      "rescue_action": "Re-ask with more specific prompts targeting the vague area",
+      "user_message": "The answers provided are too vague to define a bounded app. Please be more specific."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Run object already exists",
+      "diagnosis": "A run is already in progress; starting fresh would overwrite existing state",
+      "rescue_action": "Load existing run, show current status, offer to continue or start fresh",
+      "user_message": "A run is already in progress (status: {status}). Continue or start fresh?"
+    }
+  ]
+}

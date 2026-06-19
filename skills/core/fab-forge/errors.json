@@ -1,0 +1,26 @@
+{
+  "skill_id": "fab-forge",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "App stage name invalid",
+      "diagnosis": "The requested stage name does not match any stage defined in the blueprint",
+      "rescue_action": "List valid stages from the blueprint and ask the operator to pick one",
+      "user_message": "Stage not found. Valid stages: {stages}. Pick one."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Stubs don't match blueprint",
+      "diagnosis": "The generated stubs do not align with the blueprint's specified contracts",
+      "rescue_action": "Regenerate stubs from the blueprint",
+      "user_message": "Stubs are out of sync with the blueprint. Regenerating."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Tests fail after 3 implementation attempts",
+      "diagnosis": "The implementation satisfies the blueprint on inspection but tests fail repeatedly",
+      "rescue_action": "Set status = failed, set last_error, suggest running /fab-trace",
+      "user_message": "Tests fail after 3 attempts. Running /fab-trace for diagnosis."
+    }
+  ]
+}

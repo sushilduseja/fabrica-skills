@@ -1,0 +1,19 @@
+{
+  "skill_id": "fab-weave",
+  "errors": [
+    {
+      "type": "prerequisite_missing",
+      "trigger": "Required stages not done",
+      "diagnosis": "One or more app stages are not yet completed and checked",
+      "rescue_action": "List the missing stages and suggest completing them first",
+      "user_message": "Required stages not yet complete: {stages}. Complete them before weaving."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Integration test fails",
+      "diagnosis": "The wired end-to-end flow fails its integration test",
+      "rescue_action": "Set status = failed, set last_error, suggest running /fab-trace",
+      "user_message": "Integration test failed. Running /fab-trace for diagnosis."
+    }
+  ]
+}

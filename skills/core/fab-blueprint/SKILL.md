@@ -36,7 +36,7 @@ Confirmed spec exists (`docs/spec.md` present, `status = designing` in run objec
 4. Define app stages in build order. Each stage must have purpose, inputs, outputs, files expected, and test shape.
 5. Write `docs/blueprint.md` with a small ASCII data-flow diagram.
 6. Update `blueprint_path`, `app_stages`, `status = framing`, `next_action = "/fab-frame"`.
-7. Validate the run object against `schemas/run-object.schema.json` before writing. If validation fails, stop with `validation_failed` error.
+7. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 

@@ -36,11 +36,11 @@ Required app stages are done and checked (`status = done` for all required stage
 1. Wire only the app stages needed for the canonical happy path.
 2. Add one integration test from raw input to expected output.
 3. Run the integration test and record result.
-4. If integration fails, use `fab-trace` behavior inline (diagnose, fix, re-run). Set `last_error = { type: "external_failure", message: "Integration test failed" }` and retry.
+4. If integration fails, set `last_error = { "type": "external_failure", "message": "Integration test failed" }`, set `next_action = "/fab-trace"`, and stop. Do not inline `fab-trace` behavior.
 5. Write `docs/integration.md` describing the wired flow and how to run it.
 6. Update `status = verifying`, `next_action = "/fab-launch"`.
 7. Advance `experiment_phase = "phase_2_pipeline"` if currently `phase_1_slice`.
-8. Validate the run object against `schemas/run-object.schema.json` before writing.
+8. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 

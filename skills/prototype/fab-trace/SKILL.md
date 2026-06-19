@@ -35,19 +35,13 @@ A stage is blocked, failing, or has a supplied error.
 ## Behavior
 
 1. State root cause in one sentence before proposing changes.
-2. Use error type from `last_error` to prioritize diagnosis:
-   - `missing_input` → check file paths, suggest creating missing input
-   - `invalid_state` → check run object status, suggest corrective skill
-   - `gate_blocked` → show gate context, re-present approval
-   - `validation_failed` → show schema violation, suggest corrected value
-   - `prerequisite_missing` → check dependency graph, run missing prerequisite
-   - `external_failure` → re-run command, capture output, diagnose root cause
+2. Read `last_error.type` from the run object. Load the failing skill's `errors.json` (path from `skills/manifest.json`). Find the matching error type and apply its `diagnosis` and `rescue_action`. If no match, fall back to: "Unrecognized error type. Run the failing skill again and observe output."
 3. Apply the smallest fix that addresses the root cause.
 4. Add or update a regression test if the failure can be reproduced locally.
 5. Run the narrowest relevant test command.
 6. If fix resolves: update stage `status = done`, clear `last_error`, set `next_action` to resume.
 7. If fix does not resolve: re-analyze root cause, try once more. If still failing, set `next_action = "/fab-signal"` to request operator help.
-8. Validate the run object against `schemas/run-object.schema.json` before writing.
+8. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 

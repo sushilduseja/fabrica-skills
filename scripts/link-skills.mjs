@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import {
-  mkdirSync, readdirSync, existsSync,
+  mkdirSync, readdirSync, existsSync, readFileSync,
   symlinkSync, cpSync, rmSync,
 } from 'fs';
 import { join, resolve, relative } from 'path';
@@ -22,22 +22,15 @@ if (global) {
 }
 const isWindows = process.platform === 'win32';
 
-const SKILL_DIRS = [
-  'skills/core/fab-intake',
-  'skills/core/fab-blueprint',
-  'skills/core/fab-frame',
-  'skills/core/fab-forge',
-  'skills/core/fab-check',
-  'skills/core/fab-pulse',
-  'skills/core/fab-passport',
-  'skills/prototype/fab-trace',
-  'skills/prototype/fab-weave',
-  'skills/prototype/fab-launch',
-  'skills/prototype/fab-ledger',
-  'skills/prototype/fab-signal',
-  'skills/prototype/fab-retro',
-];
+let manifest;
+try {
+  manifest = JSON.parse(readFileSync(resolve(root, 'skills/manifest.json'), 'utf-8'));
+} catch {
+  console.error('[link-skills] FATAL: skills/manifest.json not found or invalid');
+  process.exit(1);
+}
 
+const SKILL_DIRS = manifest.skills.map(s => s.path);
 const FAB_NAMES = new Set(SKILL_DIRS.map(d => d.split('/').pop()));
 
 // Ensure .skills/ exists — do NOT wipe it

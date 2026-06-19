@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.2",
+  "id": "not-a-uuid",
+  "name": "",
+  "experiment_phase": "phase_99_nonexistent",
+  "created_at": "not-a-date",
+  "updated_at": "not-a-date",
+  "status": "invalid_status",
+  "current_step": "fab-intake",
+  "current_app_stage": null,
+  "next_action": "/fab-blueprint",
+  "last_error": null,
+  "spec_path": "docs/spec.md",
+  "blueprint_path": null,
+  "app_stages": [],
+  "costs": {
+    "precision": "unknown",
+    "tokens_in": "unknown",
+    "tokens_out": "unknown",
+    "api_calls": "unknown",
+    "estimated_usd": "unknown",
+    "budget_usd": null,
+    "by_step": {}
+  },
+  "verifications": [],
+  "human_decisions": [],
+  "gate_levels": {
+    "fab-intake": "checkpoint",
+    "fab-blueprint": "checkpoint",
+    "fab-frame": "auto",
+    "fab-forge": "auto",
+    "fab-check": "auto",
+    "fab-pulse": "auto",
+    "fab-passport": "auto",
+    "fab-trace": "auto",
+    "fab-weave": "checkpoint",
+    "fab-launch": "review",
+    "fab-ledger": "auto",
+    "fab-signal": "full",
+    "fab-retro": "auto"
+  }
+}

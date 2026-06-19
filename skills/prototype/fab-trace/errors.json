@@ -1,0 +1,12 @@
+{
+  "skill_id": "fab-trace",
+  "errors": [
+    {
+      "type": "external_failure",
+      "trigger": "Error not reproducible or fix doesn't resolve root cause",
+      "diagnosis": "The error cannot be reproduced in a clean environment or the applied fix did not resolve it",
+      "rescue_action": "Log full context, suggest manual diagnosis, or re-analyze for deeper fix",
+      "user_message": "Error not reproducible or fix did not resolve it. Manual diagnosis recommended."
+    }
+  ]
+}

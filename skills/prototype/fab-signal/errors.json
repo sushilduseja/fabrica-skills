@@ -1,0 +1,12 @@
+{
+  "skill_id": "fab-signal",
+  "errors": [
+    {
+      "type": "gate_blocked",
+      "trigger": "Decision timeout",
+      "diagnosis": "The operator did not respond to the decision prompt within the expected window",
+      "rescue_action": "Keep the decision pending in human_decisions, show next_action, and continue",
+      "user_message": "Decision pending. Showing next action while waiting for resolution."
+    }
+  ]
+}

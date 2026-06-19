@@ -6,6 +6,21 @@
 
 ---
 
+## Static Validation Gate
+
+After Track 5 of the factory plan, static validation runs in CI on every PR:
+
+```bash
+npm run validate
+```
+
+This runs:
+- `scripts/validate-run.mjs test/fixtures/valid-run.json` (exit 0 expected)
+- `scripts/validate-run.mjs test/fixtures/invalid-run.json` (exit 1 expected)
+- `scripts/sync-manifest.mjs --check` (exit 0 expected)
+
+---
+
 ## Validation Plan Results
 
 ### 1. PRD Contradiction Review
@@ -72,7 +87,7 @@ The run object (`fabrica.run.json`) validates against `schemas/run-object.schema
 - `quality_score` within 0-10 range
 - `costs.precision` is `unknown`
 - `app_stages[].status` is `done`
-- `gate_levels` contains all 13 skill keys
+- `gate_levels` contains all active skill keys (from `skills/manifest.json`)
 
 ---
 
@@ -82,7 +97,7 @@ The run object (`fabrica.run.json`) validates against `schemas/run-object.schema
 
 ## Skill File Validation
 
-All 13 `SKILL.md` files:
+All active `SKILL.md` files (see `skills/manifest.json`):
 - Have valid frontmatter (name, description, category, phase)
 - Include prerequisites, error handling, and validation steps
 - Are under 400 lines
@@ -90,4 +105,4 @@ All 13 `SKILL.md` files:
 
 ## link-skills.mjs Validation
 
-`node --check scripts/link-skills.mjs` passes. Script creates/refreshes `.skills/` directory with all 13 skills.
+`node --check scripts/link-skills.mjs` passes. Script creates/refreshes `.skills/` directory with all active skills (from `skills/manifest.json`).

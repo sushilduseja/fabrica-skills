@@ -1,0 +1,19 @@
+{
+  "name": "fabrica-skills",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
+  "scripts": {
+    "validate:run": "node scripts/validate-run.mjs",
+    "validate:manifest": "node scripts/sync-manifest.mjs --check",
+    "validate:run-pass": "node scripts/validate-run.mjs test/fixtures/valid-run.json",
+    "validate:run-fail": "node scripts/validate-run.mjs test/fixtures/invalid-run.json && node -e \"process.exit(1)\" || node -e \"process.exit(0)\"",
+    "validate": "npm run validate:run-pass && npm run validate:run-fail && npm run validate:manifest",
+    "setup": "npm run validate && node scripts/link-skills.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "skill_id": "fab-blueprint",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "Spec missing or malformed",
+      "diagnosis": "The product spec file does not exist or cannot be parsed",
+      "rescue_action": "Halt and suggest running /fab-intake first to create the spec",
+      "user_message": "docs/spec.md is missing or malformed. Run /fab-intake first."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Blueprint conflicts with spec",
+      "diagnosis": "The generated architecture contradicts the spec's stated constraints",
+      "rescue_action": "Show the conflict and suggest spec revision before retrying",
+      "user_message": "The blueprint conflicts with the spec. Review and revise the spec."
+    }
+  ]
+}

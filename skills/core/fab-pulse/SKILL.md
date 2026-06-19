@@ -20,6 +20,7 @@ Operator wants current run state.
 ## Input
 
 - `fabrica.run.json` (required)
+- `mode` (optional): `summary` (default) or `details`. Details mode adds a COST DETAILS section.
 
 ## Output
 
@@ -32,9 +33,10 @@ Inline terminal-style dashboard. No files written.
 3. Pipeline panel: for each skill, show icon (done/active/pending/blocked/failed) and status.
 4. Quality panel: for each app stage, show name, quality_score, status, and key artifacts.
 5. Cost panel: show precision, tokens_in, tokens_out, estimated_usd. Display `unknown` for missing values.
-6. Render `next_action` prominently at the bottom.
-7. Highlight blocked or failed items in red.
-8. Do not modify any files.
+6. If `mode=details` or any `costs.by_step` entry exceeds 20% of known spend, render a COST DETAILS section below the main dashboard: show per-step breakdown with precision, tokens, and usd for each. Flag steps above 20% of total. If precision is unknown, state what data is missing instead of inventing numbers. Provide one concrete cost-reduction suggestion only when total cost is known or estimated.
+7. Render `next_action` prominently at the bottom.
+8. Highlight blocked or failed items in red.
+9. Do not modify any files.
 
 ## Error Handling
 

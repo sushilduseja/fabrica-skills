@@ -1,0 +1,12 @@
+{
+  "skill_id": "fab-passport",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "Handoff context incomplete",
+      "diagnosis": "Some fields expected in the handoff document are missing or empty",
+      "rescue_action": "Include whatever context is available and clearly note the gaps",
+      "user_message": "Handoff context is incomplete. Missing: {gaps}. Proceeding with available context."
+    }
+  ]
+}

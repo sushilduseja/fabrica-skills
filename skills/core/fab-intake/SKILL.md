@@ -44,7 +44,7 @@ None (entry point).
    - `verifications: []` (empty array)
    - `human_decisions: []` (empty array)
    - `gate_levels` with all 13 skill defaults (see Run Object Updates)
-6. Validate the run object against `schemas/run-object.schema.json` before writing. If validation fails, stop with `validation_failed` error.
+6. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 
@@ -60,12 +60,6 @@ Show the spec before writing. Operator approves or requests changes.
 ## Run Object Updates
 
 - `experiment_phase`, `status`, `spec_path`, `next_action`
-- `gate_levels` (all 13 skills):
-  ```
-  fab-intake: checkpoint, fab-blueprint: checkpoint, fab-frame: auto,
-  fab-forge: auto, fab-check: auto, fab-pulse: auto, fab-passport: auto,
-  fab-trace: auto, fab-weave: checkpoint, fab-launch: review,
-  fab-ledger: auto, fab-signal: full, fab-retro: auto
-  ```
+    - `gate_levels` derived from `skills/manifest.json`: for each active skill, use its `default_gate` value
 - `current_step`, `updated_at`
 - All required fields initialized (see Behavior step 5)

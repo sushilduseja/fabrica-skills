@@ -43,7 +43,7 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 6. If tests fail, fix until they pass. If cannot fix in 3 attempts, set stage `status = failed`, set `last_error = { type: "external_failure", message: "Tests failed after 3 attempts" }`, and set `next_action` to `/fab-trace <stage>`.
 7. If tests pass, update stage `status = done`, add artifacts to the stage record, add verification result.
 8. Set `next_action = "/fab-check <stage>"`.
-9. Validate the run object against `schemas/run-object.schema.json` before writing.
+9. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 

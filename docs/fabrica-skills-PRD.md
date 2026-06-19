@@ -28,7 +28,7 @@ The MVP is layered. Each phase should be useful on its own and should create evi
 |---|---|---|---|
 | Phase 0 — Spec-only demo | Convert one raw app idea into a useful spec and architecture | `fab-intake`, `fab-blueprint` | A cold reader can implement the proposed app from the generated docs |
 | Phase 1 — Tiny vertical slice | Scaffold one app and build one named app stage | `fab-intake`, `fab-blueprint`, `fab-frame`, `fab-forge`, `fab-check`, `fab-pulse` | One stage has code, tests, quality score, and status output |
-| Phase 2 — Thin full-pipeline prototype | Provide all 13 skills as runnable docs without pretending production maturity | all skills | Operator can complete a toy app run with local verification and handoff |
+| Phase 2 — Thin full-pipeline prototype | Provide all skills as runnable docs without pretending production maturity | all skills | Operator can complete a toy app run with local verification and handoff |
 
 The canonical experiment app is: **a local AI invoice note parser**. It accepts pasted invoice text and returns normalized JSON. It is intentionally small, has clear input/output, and can be tested without payments, auth, background jobs, or production data.
 
@@ -65,6 +65,8 @@ All three appear in `fab-pulse`. Missing cost data must render as `unknown`, not
 
 Skill names use the `fab-` prefix to avoid collision with generic skill names in other repositories. The slash form is the invocation convention; the frontmatter name excludes the slash.
 
+The canonical inventory lives at `skills/manifest.json` — it is the single source of truth for skill ids, paths, categories, phases, prerequisites, gate defaults, and dependencies. The tables below are historical context.
+
 ### Core MVP Skills
 
 | # | Skill | Job |
@@ -84,7 +86,7 @@ Skill names use the `fab-` prefix to avoid collision with generic skill names in
 | 8 | `/fab-trace` | Diagnose a failing stage, state root cause, and apply a minimal fix |
 | 9 | `/fab-weave` | Connect completed app stages into one local end-to-end flow |
 | 10 | `/fab-launch` | Verify the integrated app locally; real external deploy is deferred |
-| 11 | `/fab-ledger` | Summarize estimated token/API cost and cost concentration |
+| 11 | ~~`/fab-ledger`~~ | ~~Summarize estimated token/API cost and cost concentration~~ — folded into `/fab-pulse` (see `skills/manifest.json` for active skills) |
 | 12 | `/fab-signal` | Capture a human decision and record why it was made |
 | 13 | `/fab-retro` | Review the run and identify process improvements |
 
@@ -118,7 +120,7 @@ Each skill declares its prerequisites. A skill must not run until all prerequisi
 | `/fab-passport` | `fabrica.run.json` exists | None (handoff) |
 | `/fab-retro` | Run complete, abandoned, or stopped | None (terminal) |
 
-**Parallel execution:** `fab-pulse`, `fab-ledger`, and `fab-signal` may run at any point after `fab-intake` creates the run object. They do not block or block other skills.
+**Parallel execution:** `fab-pulse` and `fab-signal` may run at any point after `fab-intake` creates the run object. They do not block or block other skills. Cost detail is available via `fab-pulse --mode=details`.
 
 ---
 
@@ -578,6 +580,8 @@ Secrets (API keys, tokens, credentials) are never committed to the repository. T
 ## 8. Error & Rescue Map
 
 Every skill defines how it handles failures. This map ensures no silent failures in the pipeline.
+
+**Canonical source:** Per-skill `errors.json` files adjacent to each `SKILL.md`. The table below is historical context; the `errors.json` files are the source of truth for `fab-trace` diagnosis.
 
 ### Error & Rescue Registry
 

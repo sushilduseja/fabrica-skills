@@ -7,6 +7,7 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 ## What You Get
 
 - 13 `fab-*` skills, each stored as a self-contained `SKILL.md`.
+- A canonical skill manifest at `skills/manifest.json` — the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
 - A spec-first workflow: idea -> product spec -> blueprint -> scaffold -> implementation -> quality check.
 - A durable run state file: `fabrica.run.json`.
 - A JSON Schema for validating run state: `schemas/run-object.schema.json`.
@@ -15,29 +16,28 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 ## Requirements
 
 - Git.
-- Node.js 16.7+ for `scripts/link-skills.mjs`.
+- Node.js 16.7+.
 - An AI coding agent that can read local markdown skill files.
-
-No package install is required for this repo.
 
 ## Quick Start
 
 Use a disposable clone or branch for your first run. The first two skills write `docs/spec.md`, `docs/blueprint.md`, and `fabrica.run.json`; `fab-frame` then creates the app in a sibling directory named `../<app-name>/`.
 
-### 1. Clone the skills repo
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/sushilduseja/fabrica-skills.git
 cd fabrica-skills
+npm ci
 ```
 
-### 2. Create the local skill index
+### 2. Validate and link
 
 ```bash
-node scripts/link-skills.mjs
+npm run setup
 ```
 
-Expected result: a `.skills/` directory with 13 entries, one per `fab-*` skill.
+Expected result: validation passes, and a `.skills/` directory contains one entry per active skill (see `skills/manifest.json`).
 
 On Windows, the script uses directory junctions. On macOS and Linux, it uses symlinks. If a Windows junction is blocked, it falls back to copying the skill directory.
 
@@ -147,12 +147,10 @@ Useful commands:
 
 ```text
 /fab-pulse
-/fab-ledger
 /fab-passport
 ```
 
-- `/fab-pulse` shows pipeline, quality, cost, and next action.
-- `/fab-ledger` shows cost estimates when available and `unknown` when not.
+- `/fab-pulse` shows pipeline, quality, cost, and next action. Pass `--mode=details` for per-step cost breakdown.
 - `/fab-passport` writes a resumable handoff at `docs/handoff.md`.
 
 ## Install Options
@@ -163,7 +161,7 @@ Useful commands:
 node scripts/link-skills.mjs
 ```
 
-Creates `.skills/` inside the repo with 13 `fab-*` entries. Only `fab-*` entries are refreshed — unrelated skills are left alone.
+Creates `.skills/` inside the repo with one entry per active skill (see `skills/manifest.json`). Only `fab-*` entries are refreshed — unrelated skills are left alone.
 
 ### Global: `~/.fabrica-skills/` (for cross-project agent access)
 
@@ -192,7 +190,7 @@ skills/core/fab-intake/SKILL.md
 skills/prototype/fab-trace/SKILL.md
 ```
 
-Each skill is designed to be readable on its own, but the full workflow works best when all 13 skills are available.
+Each skill is designed to be readable on its own, but the full workflow works best when all skills are available. The active skill count is defined in `skills/manifest.json`.
 
 ## Workflow
 
@@ -206,7 +204,7 @@ Phase 1: Tiny vertical slice
   Output: scaffolded app, tests, quality score, next action
 
 Phase 2: Thin full-pipeline prototype
-  /fab-trace -> /fab-weave -> /fab-launch -> /fab-ledger -> /fab-signal -> /fab-passport -> /fab-retro
+  /fab-trace -> /fab-weave -> /fab-launch -> /fab-signal -> /fab-passport -> /fab-retro
   Output: local end-to-end verification, cost review, decisions, handoff, retrospective
 ```
 
@@ -224,7 +222,7 @@ Phase 2: Thin full-pipeline prototype
 | `/fab-trace` | 2 | auto | Diagnose a failed stage, state root cause, and apply the smallest fix. |
 | `/fab-weave` | 2 | checkpoint | Connect completed stages into one local end-to-end flow. |
 | `/fab-launch` | 2 | review | Verify the integrated app locally. External deploy requires approval. |
-| `/fab-ledger` | 2 | auto | Show cost precision, totals, and per-step estimates when available. |
+| ~~`/fab-ledger`~~ (folded into `/fab-pulse --mode=details`) | - | - | Cost breakdown now in `fab-pulse` cost detail mode. |
 | `/fab-signal` | 2 | full | Capture a human decision with rationale and timestamp. |
 | `/fab-retro` | 2 | auto | Score the run and identify process improvements. |
 

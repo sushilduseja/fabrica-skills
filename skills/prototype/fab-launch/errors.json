@@ -1,0 +1,19 @@
+{
+  "skill_id": "fab-launch",
+  "errors": [
+    {
+      "type": "gate_blocked",
+      "trigger": "Pre-launch checklist fails",
+      "diagnosis": "One or more pre-launch checklist items did not pass",
+      "rescue_action": "Show the specific checklist failures and require resolution before retrying",
+      "user_message": "Pre-launch checklist failed: {failures}. Resolve before retrying."
+    },
+    {
+      "type": "gate_blocked",
+      "trigger": "External deploy without approval",
+      "diagnosis": "The operator attempted to deploy externally without explicit gate approval",
+      "rescue_action": "Halt and require explicit approval before proceeding with external deploy",
+      "user_message": "External deploy requires explicit approval. Please confirm."
+    }
+  ]
+}

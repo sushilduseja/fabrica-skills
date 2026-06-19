@@ -1,0 +1,12 @@
+{
+  "skill_id": "fab-retro",
+  "errors": [
+    {
+      "type": "invalid_state",
+      "trigger": "Run not complete or abandoned",
+      "diagnosis": "A retrospective requires a finished run (complete, blocked, or abandoned status)",
+      "rescue_action": "Halt and show the current run status",
+      "user_message": "Run is not finished (status: {status}). Complete or abandon the run before retro."
+    }
+  ]
+}

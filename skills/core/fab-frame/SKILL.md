@@ -47,7 +47,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
    - `"run": "python -m invoice_parser.cli"`
    - `"lint": "python -m flake8 invoice_parser/"`
 9. Update `status = forging`, set first stage `status = active`, set `current_app_stage` to the stage name, set `next_action = "/fab-forge <first-stage-name>"`.
-10. Validate the run object against `schemas/run-object.schema.json` before writing.
+10. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 

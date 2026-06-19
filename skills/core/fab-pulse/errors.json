@@ -1,0 +1,19 @@
+{
+  "skill_id": "fab-pulse",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "Run object missing",
+      "diagnosis": "The run object file does not exist; no pipeline state to display",
+      "rescue_action": "Halt and suggest running /fab-intake to initialize a run",
+      "user_message": "No run in progress. Run /fab-intake to start."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Run object corrupted",
+      "diagnosis": "The run object exists but fails schema validation or has unparseable fields",
+      "rescue_action": "Show the last valid state from backup or suggest restore",
+      "user_message": "Run object is corrupted. Showing last known valid state."
+    }
+  ]
+}

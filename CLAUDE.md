@@ -12,7 +12,17 @@ Invoke skills as `/fab-<name>`. The frontmatter name excludes the slash.
 
 ## Validation
 
-Before writing to `fabrica.run.json`, every skill validates the updated object against `schemas/run-object.schema.json`. If validation fails, the skill stops with a `validation_failed` error and does not write the corrupted state.
+Before every write to `fabrica.run.json`, run:
+```bash
+node <fabrica-skills>/scripts/validate-run.mjs <path-to-fabrica.run.json>
+```
+If validation fails, stop with a `validation_failed` error and do not write corrupted state.
+
+## Conventions
+
+- **`current_step`:** After every state change, set `current_step` to the current skill's id (e.g., `"fab-frame"`).
+- **`updated_at`:** After every state change, bump `updated_at` to the current ISO-8601 timestamp.
+- **Gate defaults:** Read from `skills/manifest.json` — do not hardcode individual gate levels.
 
 ## Gate Model
 

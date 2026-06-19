@@ -3,18 +3,53 @@
   "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
   "version": "0.2.0",
   "skills": [
-    { "name": "fab-intake", "path": "skills/core/fab-intake/SKILL.md" },
-    { "name": "fab-blueprint", "path": "skills/core/fab-blueprint/SKILL.md" },
-    { "name": "fab-frame", "path": "skills/core/fab-frame/SKILL.md" },
-    { "name": "fab-forge", "path": "skills/core/fab-forge/SKILL.md" },
-    { "name": "fab-check", "path": "skills/core/fab-check/SKILL.md" },
-    { "name": "fab-pulse", "path": "skills/core/fab-pulse/SKILL.md" },
-    { "name": "fab-passport", "path": "skills/core/fab-passport/SKILL.md" },
-    { "name": "fab-trace", "path": "skills/prototype/fab-trace/SKILL.md" },
-    { "name": "fab-weave", "path": "skills/prototype/fab-weave/SKILL.md" },
-    { "name": "fab-launch", "path": "skills/prototype/fab-launch/SKILL.md" },
-    { "name": "fab-ledger", "path": "skills/prototype/fab-ledger/SKILL.md" },
-    { "name": "fab-signal", "path": "skills/prototype/fab-signal/SKILL.md" },
-    { "name": "fab-retro", "path": "skills/prototype/fab-retro/SKILL.md" }
+    {
+      "name": "fab-intake",
+      "path": "skills/core/fab-intake/SKILL.md"
+    },
+    {
+      "name": "fab-blueprint",
+      "path": "skills/core/fab-blueprint/SKILL.md"
+    },
+    {
+      "name": "fab-frame",
+      "path": "skills/core/fab-frame/SKILL.md"
+    },
+    {
+      "name": "fab-forge",
+      "path": "skills/core/fab-forge/SKILL.md"
+    },
+    {
+      "name": "fab-check",
+      "path": "skills/core/fab-check/SKILL.md"
+    },
+    {
+      "name": "fab-pulse",
+      "path": "skills/core/fab-pulse/SKILL.md"
+    },
+    {
+      "name": "fab-passport",
+      "path": "skills/core/fab-passport/SKILL.md"
+    },
+    {
+      "name": "fab-trace",
+      "path": "skills/prototype/fab-trace/SKILL.md"
+    },
+    {
+      "name": "fab-weave",
+      "path": "skills/prototype/fab-weave/SKILL.md"
+    },
+    {
+      "name": "fab-launch",
+      "path": "skills/prototype/fab-launch/SKILL.md"
+    },
+    {
+      "name": "fab-signal",
+      "path": "skills/prototype/fab-signal/SKILL.md"
+    },
+    {
+      "name": "fab-retro",
+      "path": "skills/prototype/fab-retro/SKILL.md"
+    }
   ]
 }

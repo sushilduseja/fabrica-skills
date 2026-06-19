@@ -1,0 +1,19 @@
+{
+  "skill_id": "fab-frame",
+  "errors": [
+    {
+      "type": "prerequisite_missing",
+      "trigger": "Blueprint not confirmed",
+      "diagnosis": "The blueprint must exist and be approved before scaffolding can proceed",
+      "rescue_action": "Halt and suggest running /fab-blueprint first",
+      "user_message": "The blueprint has not been created. Run /fab-blueprint first."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Project skeleton already exists",
+      "diagnosis": "The target project directory already contains files from a previous run",
+      "rescue_action": "Warn about existing files and offer to overwrite or skip",
+      "user_message": "Project skeleton already exists. Overwrite or skip?"
+    }
+  ]
+}

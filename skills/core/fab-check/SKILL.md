@@ -46,7 +46,7 @@ One app stage has implementation and tests (`status = done` in run object).
 5. Write `docs/eval/<app-stage>.md` with: scores per axis, weighted average, blocking items, optional improvements.
 6. Update `quality_score` in app_stages entry (the weighted average, 0-10).
 7. Set `next_action`: if blocked, `/fab-trace <stage>`; if passed, next forge or weave command.
-8. Validate the run object against `schemas/run-object.schema.json` before writing.
+8. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 

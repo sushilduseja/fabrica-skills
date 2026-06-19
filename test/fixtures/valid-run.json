@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.2",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "name": "invoice-note-parser",
+  "experiment_phase": "phase_2_pipeline",
+  "created_at": "2026-06-19T10:00:00Z",
+  "updated_at": "2026-06-19T12:00:00Z",
+  "status": "designing",
+  "current_step": "fab-intake",
+  "current_app_stage": null,
+  "next_action": "/fab-blueprint",
+  "last_error": null,
+  "spec_path": "docs/spec.md",
+  "blueprint_path": null,
+  "app_stages": [],
+  "costs": {
+    "precision": "unknown",
+    "tokens_in": "unknown",
+    "tokens_out": "unknown",
+    "api_calls": "unknown",
+    "estimated_usd": "unknown",
+    "budget_usd": null,
+    "by_step": {}
+  },
+  "verifications": [],
+  "human_decisions": [],
+  "gate_levels": {
+    "fab-intake": "checkpoint",
+    "fab-blueprint": "checkpoint",
+    "fab-frame": "auto",
+    "fab-forge": "auto",
+    "fab-check": "auto",
+    "fab-pulse": "auto",
+    "fab-passport": "auto",
+    "fab-trace": "auto",
+    "fab-weave": "checkpoint",
+    "fab-launch": "review",
+    "fab-ledger": "auto",
+    "fab-signal": "full",
+    "fab-retro": "auto"
+  }
+}

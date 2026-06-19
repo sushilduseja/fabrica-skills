@@ -37,7 +37,7 @@ Run is complete, abandoned, or intentionally stopped.
 5. Write three concrete process changes for the next run.
 6. Estimate how long the same toy run would take manually.
 7. Write `docs/retro.md`.
-8. Validate the run object against `schemas/run-object.schema.json` before writing.
+8. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling
 
