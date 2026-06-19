@@ -6,7 +6,7 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 
 ## What You Get
 
-- 13 `fab-*` skills, each stored as a self-contained `SKILL.md`.
+- 12 `fab-*` skills, each stored as a self-contained `SKILL.md`.
 - A canonical skill manifest at `skills/manifest.json` — the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
 - A spec-first workflow: idea -> product spec -> blueprint -> scaffold -> implementation -> quality check.
 - A durable run state file: `fabrica.run.json`.

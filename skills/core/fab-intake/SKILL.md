@@ -43,7 +43,7 @@ None (entry point).
    - `costs: { precision: "unknown", tokens_in: "unknown", tokens_out: "unknown", api_calls: "unknown", estimated_usd: "unknown", budget_usd: null, by_step: {} }`
    - `verifications: []` (empty array)
    - `human_decisions: []` (empty array)
-   - `gate_levels` with all 13 skill defaults (see Run Object Updates)
+   - `gate_levels` derived from `skills/manifest.json`: for each active skill, use its `default_gate` value
 6. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
 
 ## Error Handling

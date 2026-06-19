@@ -115,7 +115,7 @@ Each skill declares its prerequisites. A skill must not run until all prerequisi
 | `/fab-weave` | All required app stages done and checked | `fab-launch` |
 | `/fab-launch` | `fab-weave` complete, `docs/integration.md` exists | None (terminal) |
 | `/fab-pulse` | `fabrica.run.json` exists | None (read-only) |
-| `/fab-ledger` | `fabrica.run.json` exists | None (read-only) |
+| ~~`/fab-ledger`~~ (folded into `/fab-pulse`) | `fabrica.run.json` exists | None (read-only) |
 | `/fab-signal` | Decision context available | Depends on decision outcome |
 | `/fab-passport` | `fabrica.run.json` exists | None (handoff) |
 | `/fab-retro` | Run complete, abandoned, or stopped | None (terminal) |
@@ -205,7 +205,7 @@ gate_levels:
   fab-trace: auto
   fab-weave: checkpoint
   fab-launch: review
-  fab-ledger: auto
+  # fab-ledger: auto  (folded into fab-pulse --mode=details)
   fab-signal: full
   fab-retro: auto
 ```
@@ -445,22 +445,20 @@ next: /fab-forge parse-invoice-text
 
 ---
 
-### `/fab-ledger`
+~~### `/fab-ledger` (folded into `/fab-pulse --mode=details`)~~
 
-**Trigger:** Operator wants cost review.
+~~**Trigger:** Operator wants cost review.~~  
+~~**Input:** `fabrica.run.json`.~~  
+~~**Output:** Inline cost report. No files written.~~  
 
-**Input:** `fabrica.run.json`.
+~~**Behavior:**~~  
+~~1. Show cost precision: `unknown`, `estimated`, or `measured`.~~  
+~~2. Show totals and per-step breakdown when available.~~  
+~~3. Flag any step above 20% of known spend.~~  
+~~4. If precision is `unknown`, state what data is missing instead of inventing numbers.~~  
+~~5. Provide one concrete cost-reduction suggestion only when total cost is known or estimated.~~  
 
-**Output:** Inline cost report. No files written.
-
-**Behavior:**
-1. Show cost precision: `unknown`, `estimated`, or `measured`.
-2. Show totals and per-step breakdown when available.
-3. Flag any step above 20% of known spend.
-4. If precision is `unknown`, state what data is missing instead of inventing numbers.
-5. Provide one concrete cost-reduction suggestion only when total cost is known or estimated.
-
-**Default gate:** `auto`.
+~~**Default gate:** `auto`.~~  
 
 ---
 
@@ -535,7 +533,7 @@ next: /fab-forge parse-invoice-text
 | `/fab-trace` | `auto` | yes |
 | `/fab-weave` | `checkpoint` | yes |
 | `/fab-launch` | `review` | no for external deploy approval |
-| `/fab-ledger` | `auto` | no |
+| ~~`/fab-ledger`~~ (folded into `/fab-pulse`) | `auto` | no |
 | `/fab-signal` | `full` | no |
 | `/fab-retro` | `auto` | yes |
 
@@ -607,7 +605,7 @@ fab-launch              | Pre-launch checklist fails     | gate_blocked
                         | External deploy without approval| gate_blocked
 fab-pulse               | Run object missing             | missing_input
                         | Run object corrupted           | invalid_state
-fab-ledger              | Cost data missing              | missing_input
+~~fab-ledger~~ (folded into `fab-pulse`) | Cost data missing | missing_input
 fab-signal              | Decision timeout               | gate_blocked
 fab-passport            | Handoff context incomplete     | missing_input
 fab-retro               | Run not complete/abandoned     | invalid_state
@@ -674,7 +672,7 @@ fabrica-skills/
       fab-trace/SKILL.md
       fab-weave/SKILL.md
       fab-launch/SKILL.md
-      fab-ledger/SKILL.md
+      # fab-ledger/SKILL.md  (deleted — folded into fab-pulse)
       fab-signal/SKILL.md
       fab-retro/SKILL.md
   scripts/
