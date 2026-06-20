@@ -1,10 +1,10 @@
 # fabrica-skills — Product Requirements Document
 
-**Version:** 0.2  
-**Status:** Draft MVP / Experiment Spec  
-**Type:** Skills-only repository  
-**Operator:** Solo technical founder / indie hacker  
-**Distribution:** Open source, self-hosted  
+**Version:** 0.2
+**Status:** Draft MVP / Experiment Spec
+**Type:** Skills-only repository
+**Operator:** Solo technical founder / indie hacker
+**Distribution:** Open source, self-hosted
 
 ---
 
@@ -151,7 +151,7 @@ status: enum [
 current_step: string | null # skill name, e.g. "fab-forge"
 current_app_stage: string | null # app stage name, e.g. "parse-invoice-text"
 next_action: string | null # exact next command or decision
-last_error: string | null
+last_error: null | { type: string, message: string }
 
 spec_path: string | null # docs/spec.md
 blueprint_path: string | null # docs/blueprint.md
@@ -225,7 +225,7 @@ Skills validate their writes to `fabrica.run.json` against a JSON Schema file at
 
 **Enforcement:** Skills reference the schema in their spec. Before writing, the skill (or operator) validates the updated run object against the schema. If validation fails, the skill stops with a `validation_failed` error and does not write the corrupted state.
 
-**Schema file:** `schemas/run-object.schema.json` — created during `fab-frame` alongside the project skeleton. Until then, validation is advisory (skills check their writes mentally against the schema).
+**Schema file:** `schemas/run-object.schema.json` — ships with the repo. Validation is executable via `node scripts/validate-run.mjs --stdin` (see CLAUDE.md for the candidate-write protocol).
 
 ---
 
@@ -447,18 +447,18 @@ next: /fab-forge parse-invoice-text
 
 ~~### `/fab-ledger` (folded into `/fab-pulse --mode=details`)~~
 
-~~**Trigger:** Operator wants cost review.~~  
-~~**Input:** `fabrica.run.json`.~~  
-~~**Output:** Inline cost report. No files written.~~  
+~~**Trigger:** Operator wants cost review.~~
+~~**Input:** `fabrica.run.json`.~~
+~~**Output:** Inline cost report. No files written.~~
 
-~~**Behavior:**~~  
-~~1. Show cost precision: `unknown`, `estimated`, or `measured`.~~  
-~~2. Show totals and per-step breakdown when available.~~  
-~~3. Flag any step above 20% of known spend.~~  
-~~4. If precision is `unknown`, state what data is missing instead of inventing numbers.~~  
-~~5. Provide one concrete cost-reduction suggestion only when total cost is known or estimated.~~  
+~~**Behavior:**~~
+~~1. Show cost precision: `unknown`, `estimated`, or `measured`.~~
+~~2. Show totals and per-step breakdown when available.~~
+~~3. Flag any step above 20% of known spend.~~
+~~4. If precision is `unknown`, state what data is missing instead of inventing numbers.~~
+~~5. Provide one concrete cost-reduction suggestion only when total cost is known or estimated.~~
 
-~~**Default gate:** `auto`.~~  
+~~**Default gate:** `auto`.~~
 
 ---
 
@@ -763,7 +763,7 @@ npx skills@latest add your-username/fabrica-skills
 
 **Agent discovery:** Agents load skills through `CLAUDE.md`, plugin metadata, or manual linking. Skill descriptions must be specific enough for an agent to choose the right `fab-*` skill without reading every file.
 
-**Plugin manifest:** `.claude-plugin/plugin.json` registers all 13 `fab-*` skills.
+**Plugin manifest:** `.claude-plugin/plugin.json` registers all active `fab-*` skills (see `skills/manifest.json` for the current count).
 
 **Manual link:** `scripts/link-skills.mjs` creates a flat `.skills/` directory for agents that require one. It must run on Windows, macOS, and Linux.
 

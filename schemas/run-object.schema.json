@@ -383,7 +383,26 @@
         "fab-signal",
         "fab-retro"
       ],
+      "propertyNames": {
+        "enum": [
+          "fab-intake",
+          "fab-blueprint",
+          "fab-frame",
+          "fab-forge",
+          "fab-check",
+          "fab-pulse",
+          "fab-passport",
+          "fab-trace",
+          "fab-weave",
+          "fab-launch",
+          "fab-signal",
+          "fab-retro"
+        ]
+      },
       "properties": {
+        "fab-pulse": {
+          "const": "auto"
+        },
         "fab-launch": {
           "const": "review"
         },

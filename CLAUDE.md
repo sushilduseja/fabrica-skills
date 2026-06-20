@@ -12,11 +12,18 @@ Invoke skills as `/fab-<name>`. The frontmatter name excludes the slash.
 
 ## Validation
 
-Before every write to `fabrica.run.json`, run:
-```bash
-node <fabrica-skills>/scripts/validate-run.mjs <path-to-fabrica.run.json>
-```
-If validation fails, stop with a `validation_failed` error and do not write corrupted state.
+### Candidate-write protocol
+
+Before replacing `fabrica.run.json`:
+
+1. Build the full candidate run object in memory with all mutations applied.
+2. Set `current_step` and `updated_at` on the candidate to reflect this skill's change.
+3. Pipe the candidate through the validator:
+   ```bash
+   echo '<candidate-json>' | node <fabrica-skills>/scripts/validate-run.mjs --stdin
+   ```
+4. Only if validation passes (exit 0), write the candidate to `fabrica.run.json`.
+5. If validation fails, stop with a `validation_failed` error. Do not write corrupted state.
 
 ## Conventions
 
@@ -41,9 +48,8 @@ All skills use the `fab-` prefix to avoid collision with generic skill names. Th
 
 ## Error Handling
 
-Skills use a standardized error taxonomy in `last_error`. The value can be:
+Skills use a standardized error taxonomy in `last_error`. The value is:
 - `null` (no error)
-- A string (legacy format)
 - An object: `{ "type": "<error_type>", "message": "<human-readable detail>" }`
 
 Error types: `missing_input`, `invalid_state`, `gate_blocked`, `validation_failed`, `prerequisite_missing`, `external_failure`.

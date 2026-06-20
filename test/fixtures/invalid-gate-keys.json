@@ -36,6 +36,7 @@
     "fab-weave": "checkpoint",
     "fab-launch": "review",
     "fab-signal": "full",
-    "fab-retro": "auto"
+    "fab-retro": "auto",
+    "not-a-skill": "auto"
   }
 }

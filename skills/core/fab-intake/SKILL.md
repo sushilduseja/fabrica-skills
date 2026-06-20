@@ -44,7 +44,7 @@ None (entry point).
    - `verifications: []` (empty array)
    - `human_decisions: []` (empty array)
    - `gate_levels` derived from `skills/manifest.json`: for each active skill, use its `default_gate` value
-6. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
+6. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
 
 ## Error Handling
 

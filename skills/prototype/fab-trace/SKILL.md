@@ -41,7 +41,7 @@ A stage is blocked, failing, or has a supplied error.
 5. Run the narrowest relevant test command.
 6. If fix resolves: update stage `status = done`, clear `last_error`, set `next_action` to resume.
 7. If fix does not resolve: re-analyze root cause, try once more. If still failing, set `next_action = "/fab-signal"` to request operator help.
-8. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
+8. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
 
 ## Error Handling
 

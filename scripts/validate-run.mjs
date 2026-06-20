@@ -16,28 +16,47 @@ function error(msg) {
   process.exit(1);
 }
 
-const targetPath = process.argv[2];
-if (!targetPath) {
-  error('Usage: node scripts/validate-run.mjs <path-to-fabrica.run.json>');
-}
+const args = process.argv.slice(2);
+const stdinMode = args.includes('--stdin');
 
-const absolutePath = resolve(process.cwd(), targetPath);
-if (!existsSync(absolutePath)) {
-  error(`File not found: ${targetPath}`);
+let instance;
+let inputLabel;
+
+if (stdinMode) {
+  const chunks = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk);
+  }
+  const input = Buffer.concat(chunks).toString('utf-8');
+  try {
+    instance = JSON.parse(input);
+  } catch (e) {
+    error(`Invalid JSON from stdin: ${e.message}`);
+  }
+  inputLabel = 'stdin';
+} else {
+  const targetPath = args[0];
+  if (!targetPath) {
+    error('Usage: node scripts/validate-run.mjs [--stdin | <path-to-fabrica.run.json>]');
+  }
+  const absolutePath = resolve(process.cwd(), targetPath);
+  if (!existsSync(absolutePath)) {
+    error(`File not found: ${targetPath}`);
+  }
+  instance = JSON.parse(readFileSync(absolutePath, 'utf-8'));
+  inputLabel = targetPath;
 }
 
 const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf-8'));
-const instance = JSON.parse(readFileSync(absolutePath, 'utf-8'));
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
-// Remove $schema reference to avoid external resolution
 const cleanSchema = { ...schema, $schema: undefined };
 const validate = ajv.compile(cleanSchema);
 const valid = validate(instance);
 
 if (valid) {
-  console.log('[validate-run] OK — run object is valid');
+  console.log(`[validate-run] OK — run object from ${inputLabel} is valid`);
   process.exit(0);
 }
 

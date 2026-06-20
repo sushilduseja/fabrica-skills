@@ -36,7 +36,7 @@ A human decision is needed.
 4. Record decision, rationale, timestamp (both triggered_at and resolved_at), and resumed next action.
 5. Update `next_action` to reflect the decision outcome.
 6. If operator does not respond within a reasonable window, keep decision pending (do not auto-decide).
-7. Run `node <fabrica-skills>/scripts/validate-run.mjs` (convention — see CLAUDE.md).
+7. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
 
 ## Error Handling
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -38,10 +38,25 @@ if (!manifest.repo_version) error('manifest missing repo_version');
 if (!Array.isArray(manifest.skills)) error('manifest.skills must be an array');
 if (manifest.skills.length === 0) error('manifest.skills is empty');
 
-// Step 4: Validate every skill path exists and contains SKILL.md
+// Load schema for valid error types
+const schema = loadJSON(SCHEMA_PATH);
+const validErrorTypes = schema.properties.last_error.oneOf[1].properties.type.enum;
+
+// Track for uniqueness validation
+const seenIds = new Set();
+const seenPaths = new Set();
+const allSkillIds = new Set();
+
+// Validate every skill
 for (const skill of manifest.skills) {
   if (!skill.id) error(`skill missing id at index ${manifest.skills.indexOf(skill)}`);
+  if (seenIds.has(skill.id)) error(`duplicate skill id: "${skill.id}"`);
+  seenIds.add(skill.id);
+  allSkillIds.add(skill.id);
+
   if (!skill.path) error(`skill "${skill.id}" missing path`);
+  if (seenPaths.has(skill.path)) error(`duplicate skill path "${skill.path}" for "${skill.id}"`);
+  seenPaths.add(skill.path);
 
   const skillDir = resolve(root, skill.path);
   const skillFile = resolve(skillDir, 'SKILL.md');
@@ -53,38 +68,67 @@ for (const skill of manifest.skills) {
     error(`skill "${skill.id}" missing SKILL.md at ${skill.path}/SKILL.md`);
   }
 
+  // Validate frontmatter name matches manifest id
+  const skillContent = readFileSync(skillFile, 'utf-8');
+  const fmMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
+  if (fmMatch) {
+    const fmName = fmMatch[1].match(/^name:\s*(.*)$/m);
+    if (fmName && fmName[1] !== skill.id) {
+      error(`skill "${skill.id}" frontmatter name "${fmName[1]}" does not match manifest id`);
+    }
+  }
+
   const validGates = ['auto', 'checkpoint', 'review', 'full'];
   if (skill.default_gate && !validGates.includes(skill.default_gate)) {
     error(`skill "${skill.id}" invalid default_gate "${skill.default_gate}"`);
   }
 
-  // Validate error_metadata_path
-  if (skill.error_metadata_path) {
-    const errPath = resolve(root, skill.error_metadata_path);
-    if (!existsSync(errPath)) {
-      error(`skill "${skill.id}" error_metadata_path not found: ${skill.error_metadata_path}`);
-    }
-    const errMeta = loadJSON(errPath);
-    if (errMeta.skill_id !== skill.id) {
-      error(`skill "${skill.id}" errors.json skill_id mismatch: "${errMeta.skill_id}"`);
-    }
-    if (!Array.isArray(errMeta.errors)) {
-      error(`skill "${skill.id}" errors.json.errors must be an array`);
-    }
-    const validErrorTypes = ['missing_input', 'invalid_state', 'gate_blocked', 'validation_failed', 'prerequisite_missing', 'external_failure'];
-    for (const e of errMeta.errors) {
-      if (!validErrorTypes.includes(e.type)) {
-        error(`skill "${skill.id}" errors.json has invalid error type "${e.type}"`);
+  // Validate prerequisites reference only existing skills
+  if (Array.isArray(skill.prerequisites)) {
+    for (const prereq of skill.prerequisites) {
+      if (!manifest.skills.some(s => s.id === prereq)) {
+        error(`skill "${skill.id}" prerequisite "${prereq}" not found in manifest`);
       }
-      if (!e.trigger) error(`skill "${skill.id}" errors.json error "${e.type}" missing trigger`);
-      if (!e.diagnosis) error(`skill "${skill.id}" errors.json error "${e.type}" missing diagnosis`);
-      if (!e.rescue_action) error(`skill "${skill.id}" errors.json error "${e.type}" missing rescue_action`);
-      if (!e.user_message) error(`skill "${skill.id}" errors.json error "${e.type}" missing user_message`);
     }
+  }
+
+  // Validate blocks reference only existing skills
+  if (Array.isArray(skill.blocks)) {
+    for (const blocked of skill.blocks) {
+      if (!manifest.skills.some(s => s.id === blocked)) {
+        error(`skill "${skill.id}" blocks "${blocked}" not found in manifest`);
+      }
+    }
+  }
+
+  // Require and validate error_metadata_path
+  if (!skill.error_metadata_path) {
+    error(`skill "${skill.id}" missing error_metadata_path`);
+  }
+
+  const errPath = resolve(root, skill.error_metadata_path);
+  if (!existsSync(errPath)) {
+    error(`skill "${skill.id}" error_metadata_path not found: ${skill.error_metadata_path}`);
+  }
+  const errMeta = loadJSON(errPath);
+  if (errMeta.skill_id !== skill.id) {
+    error(`skill "${skill.id}" errors.json skill_id mismatch: "${errMeta.skill_id}"`);
+  }
+  if (!Array.isArray(errMeta.errors)) {
+    error(`skill "${skill.id}" errors.json.errors must be an array`);
+  }
+  for (const e of errMeta.errors) {
+    if (!validErrorTypes.includes(e.type)) {
+      error(`skill "${skill.id}" errors.json has invalid error type "${e.type}"`);
+    }
+    if (!e.trigger) error(`skill "${skill.id}" errors.json error "${e.type}" missing trigger`);
+    if (!e.diagnosis) error(`skill "${skill.id}" errors.json error "${e.type}" missing diagnosis`);
+    if (!e.rescue_action) error(`skill "${skill.id}" errors.json error "${e.type}" missing rescue_action`);
+    if (!e.user_message) error(`skill "${skill.id}" errors.json error "${e.type}" missing user_message`);
   }
 }
 
-// Step 5: Generate .claude-plugin/plugin.json skill entries from manifest
+// Generate .claude-plugin/plugin.json skill entries from manifest
 const pluginSkills = manifest.skills.map(s => ({
   name: s.id,
   path: `${s.path}/SKILL.md`,
@@ -98,40 +142,34 @@ const generatedPlugin = {
   skills: pluginSkills,
 };
 
-// Step 6: Generate gate_levels.required from manifest skill ids
-const currentSchema = loadJSON(SCHEMA_PATH);
-const gateLevelsRequired = manifest.skills.map(s => s.id);
+// Generate gate_levels section entirely from manifest
+const skillIds = manifest.skills.map(s => s.id);
+const gateRequired = [...skillIds];
 
-const generatedSchema = JSON.parse(JSON.stringify(currentSchema));
-generatedSchema.properties.gate_levels.required = gateLevelsRequired;
-
-// Resolve remaining duplicate source-of-truth in schema gate_levels.properties
-// Keep the explicit const entries (fab-launch=review, fab-signal=full)
-// and the additionalProperties enum constraint
-// Remove any property entry that only duplicates the additionalProperties default
-const gateProps = generatedSchema.properties.gate_levels.properties || {};
-const manifestGateDefaults = {};
+// Build explicit properties: non-overridable skills get const
+const gateProperties = {};
 for (const s of manifest.skills) {
-  manifestGateDefaults[s.id] = s.default_gate;
+  if (!s.overridable && s.default_gate) {
+    gateProperties[s.id] = { const: s.default_gate };
+  }
 }
 
-// Keep only non-default overrides in gate_levels.properties
-const cleanedGateProps = {};
-for (const [prop, val] of Object.entries(gateProps)) {
-  const matchingSkill = manifest.skills.find(s => s.id === prop);
-  if (matchingSkill && val.const === matchingSkill.default_gate) {
-    continue;
+const gateLevels = {
+  type: "object",
+  required: gateRequired,
+  propertyNames: {
+    enum: skillIds
+  },
+  properties: gateProperties,
+  additionalProperties: {
+    type: "string",
+    enum: ["auto", "checkpoint", "review", "full"]
   }
-  if (val.enum || val.type) {
-    continue;
-  }
-  cleanedGateProps[prop] = val;
-}
-// Always keep explicit const entries that differ from default
-if (gateProps['fab-launch']) cleanedGateProps['fab-launch'] = gateProps['fab-launch'];
-if (gateProps['fab-signal']) cleanedGateProps['fab-signal'] = gateProps['fab-signal'];
+};
 
-generatedSchema.properties.gate_levels.properties = cleanedGateProps;
+// Generate full schema: start from current schema, replace gate_levels
+const generatedSchema = JSON.parse(JSON.stringify(schema));
+generatedSchema.properties.gate_levels = gateLevels;
 
 // --check mode: exit nonzero if generated files differ from current
 if (checkOnly) {
@@ -161,6 +199,6 @@ writeJSON(PLUGIN_PATH, generatedPlugin);
 console.log(`[sync-manifest] WROTE ${PLUGIN_PATH} (${pluginSkills.length} skills)`);
 
 writeJSON(SCHEMA_PATH, generatedSchema);
-console.log(`[sync-manifest] WROTE ${SCHEMA_PATH} gate_levels (${gateLevelsRequired.length} skills)`);
+console.log(`[sync-manifest] WROTE ${SCHEMA_PATH} gate_levels (${gateRequired.length} skills)`);
 
 console.log('[sync-manifest] DONE');

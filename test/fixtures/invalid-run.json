@@ -1,10 +1,10 @@
 {
   "schema_version": "0.2",
-  "id": "not-a-uuid",
-  "name": "",
-  "experiment_phase": "phase_99_nonexistent",
-  "created_at": "not-a-date",
-  "updated_at": "not-a-date",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "name": "invoice-note-parser",
+  "experiment_phase": "phase_2_pipeline",
+  "created_at": "2026-06-19T10:00:00Z",
+  "updated_at": "2026-06-19T12:00:00Z",
   "status": "invalid_status",
   "current_step": "fab-intake",
   "current_app_stage": null,
@@ -12,7 +12,16 @@
   "last_error": null,
   "spec_path": "docs/spec.md",
   "blueprint_path": null,
-  "app_stages": [],
+  "app_stages": [
+    {
+      "name": "parse-invoice-text",
+      "purpose": "Parse invoice PDFs into structured data",
+      "status": "done",
+      "quality_score": 15,
+      "artifacts": ["src/parser.ts"],
+      "notes": null
+    }
+  ],
   "costs": {
     "precision": "unknown",
     "tokens_in": "unknown",
@@ -35,7 +44,6 @@
     "fab-trace": "auto",
     "fab-weave": "checkpoint",
     "fab-launch": "review",
-    "fab-ledger": "auto",
     "fab-signal": "full",
     "fab-retro": "auto"
   }
