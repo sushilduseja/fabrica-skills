@@ -167,9 +167,12 @@
       "overridable": true,
       "prerequisites": [],
       "blocks": [],
-      "read_only": false,
+      "read_only": true,
       "writes_fields": [],
       "error_metadata_path": "skills/prototype/fab-retro/errors.json"
     }
   ]
 }
+
+
+

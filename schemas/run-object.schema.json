@@ -26,7 +26,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+$"
+      "const": "0.2"
     },
     "id": {
       "type": "string",
@@ -34,7 +34,9 @@
     },
     "name": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "maxLength": 63,
+      "pattern": "^(?!(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:[._-]|$))[a-z0-9](?:[a-z0-9._-]{0,61}[a-z0-9])?$"
     },
     "experiment_phase": {
       "type": "string",
@@ -67,21 +69,53 @@
       ]
     },
     "current_step": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "fab-intake",
+            "fab-blueprint",
+            "fab-frame",
+            "fab-forge",
+            "fab-check",
+            "fab-pulse",
+            "fab-passport",
+            "fab-trace",
+            "fab-weave",
+            "fab-launch",
+            "fab-signal",
+            "fab-retro"
+          ]
+        }
       ]
     },
     "current_app_stage": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^(?!(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:[._-]|$))[a-z0-9](?:[a-z0-9._-]{0,78}[a-z0-9])?$"
+        }
       ]
     },
     "next_action": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^/fab-[a-z0-9-]+( (?!(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:[._-]|$))[a-z0-9](?:[a-z0-9._-]{0,78}[a-z0-9])?)?$"
+        }
       ]
     },
     "last_error": {
@@ -108,22 +142,41 @@
               ]
             },
             "message": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     },
     "spec_path": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^docs/[A-Za-z0-9._/-]+\\.md$",
+          "not": {
+            "pattern": "(^|/)\\.\\.(/|$)"
+          }
+        }
       ]
     },
     "blueprint_path": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^docs/[A-Za-z0-9._/-]+\\.md$",
+          "not": {
+            "pattern": "(^|/)\\.\\.(/|$)"
+          }
+        }
       ]
     },
     "app_stages": {
@@ -140,10 +193,15 @@
         ],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^(?!(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:[._-]|$))[a-z0-9](?:[a-z0-9._-]{0,78}[a-z0-9])?$"
           },
           "purpose": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
           },
           "status": {
             "type": "string",
@@ -166,16 +224,21 @@
           "artifacts": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[A-Za-z0-9._/-]+$"
             }
           },
           "notes": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 1000
           }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "costs": {
@@ -199,38 +262,59 @@
           ]
         },
         "tokens_in": {
-          "type": [
-            "integer",
-            "string"
-          ],
-          "pattern": "^unknown$"
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "const": "unknown"
+            }
+          ]
         },
         "tokens_out": {
-          "type": [
-            "integer",
-            "string"
-          ],
-          "pattern": "^unknown$"
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "const": "unknown"
+            }
+          ]
         },
         "api_calls": {
-          "type": [
-            "integer",
-            "string"
-          ],
-          "pattern": "^unknown$"
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "const": "unknown"
+            }
+          ]
         },
         "estimated_usd": {
-          "type": [
-            "number",
-            "string"
-          ],
-          "pattern": "^unknown$"
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "const": "unknown"
+            }
+          ]
         },
         "budget_usd": {
           "type": [
             "number",
             "null"
-          ]
+          ],
+          "minimum": 0
         },
         "by_step": {
           "type": "object",
@@ -252,30 +336,47 @@
                 ]
               },
               "tokens_in": {
-                "type": [
-                  "integer",
-                  "string"
-                ],
-                "pattern": "^unknown$"
+                "oneOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "string",
+                    "const": "unknown"
+                  }
+                ]
               },
               "tokens_out": {
-                "type": [
-                  "integer",
-                  "string"
-                ],
-                "pattern": "^unknown$"
+                "oneOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "string",
+                    "const": "unknown"
+                  }
+                ]
               },
               "usd": {
-                "type": [
-                  "number",
-                  "string"
-                ],
-                "pattern": "^unknown$"
+                "oneOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "string",
+                    "const": "unknown"
+                  }
+                ]
               }
-            }
+            },
+            "additionalProperties": false
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "verifications": {
       "type": "array",
@@ -295,23 +396,30 @@
               "unit",
               "integration",
               "local_launch",
-              "external_deploy"
+              "external_deploy",
+              "container_build",
+              "static_analysis"
             ]
           },
           "command": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
           },
           "passed": {
             "type": "boolean"
           },
           "summary": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
           },
           "timestamp": {
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "human_decisions": {
@@ -329,15 +437,21 @@
         ],
         "properties": {
           "step": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
           },
           "decision_needed": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
           },
           "options": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
             },
             "minItems": 1
           },
@@ -345,13 +459,15 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 500
           },
           "rationale": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "maxLength": 1000
           },
           "triggered_at": {
             "type": "string",
@@ -364,7 +480,8 @@
             ],
             "format": "date-time"
           }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "gate_levels": {
@@ -420,5 +537,6 @@
         ]
       }
     }
-  }
+  },
+  "additionalProperties": false
 }

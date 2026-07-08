@@ -4,16 +4,16 @@
     {
       "type": "missing_input",
       "trigger": "Run object missing",
-      "diagnosis": "The run object file does not exist; no pipeline state to display",
+      "diagnosis": "The run object file does not exist; no pipeline state can be displayed",
       "rescue_action": "Halt and suggest running /fab-intake to initialize a run",
       "user_message": "No run in progress. Run /fab-intake to start."
     },
     {
       "type": "invalid_state",
-      "trigger": "Run object corrupted",
-      "diagnosis": "The run object exists but fails schema validation or has unparseable fields",
-      "rescue_action": "Show the last valid state from backup or suggest restore",
-      "user_message": "Run object is corrupted. Showing last known valid state."
+      "trigger": "Run object corrupted or schema-invalid",
+      "diagnosis": "The run object exists but fails JSON parse or schema validation",
+      "rescue_action": "Show validator output and suggest restore or rerun of the last successful skill",
+      "user_message": "Run object is corrupted or invalid. Restore it or rerun the last successful skill."
     }
   ]
 }

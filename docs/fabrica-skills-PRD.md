@@ -1,5 +1,7 @@
 # fabrica-skills — Product Requirements Document
 
+> Historical design record. Current implementation source of truth is `skills/manifest.json`, `schemas/run-object.schema.json`, `scripts/validate-run.mjs`, `docs/STATE_MACHINE.md`, and `docs/VALIDATION.md`. Do not treat this document as active workflow instructions.
+
 **Version:** 0.2
 **Status:** Draft MVP / Experiment Spec
 **Type:** Skills-only repository
@@ -934,3 +936,6 @@ The experiment is considered failed if any of the following occur:
 | Operator time per run > 60 minutes | Total operator time for Phase 0 + Phase 1 exceeds 60 minutes | Pivot: reduce skill complexity or automate more steps |
 
 **Abort criteria:** If all three phases fail after 5 attempts each with different pivot strategies, the premise is falsified. Document findings in `docs/retro.md` and consider alternative approaches.
+
+
+

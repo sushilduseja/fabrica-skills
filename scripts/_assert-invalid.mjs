@@ -1,47 +1,67 @@
 #!/usr/bin/env node
 
-import { readFileSync, existsSync } from 'fs';
-import { resolve } from 'path';
+import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import { resolve } from 'path';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
+const node = process.execPath;
 
-const SCHEMA_PATH = resolve(root, 'schemas/run-object.schema.json');
-const FIXTURE_PATH = resolve(root, 'test/fixtures/invalid-run.json');
+const DEFAULT_CASES = [
+  {
+    fixture: 'test/fixtures/invalid-run.json',
+    expected: ['/status', '/app_stages/0/quality_score'],
+  },
+  {
+    fixture: 'test/fixtures/invalid-gate-keys.json',
+    expected: ['/gate_levels'],
+  },
+];
 
-function error(msg) {
+function fail(msg, output = '') {
   console.error(`[assert-invalid] FAIL: ${msg}`);
+  if (output) {
+    console.error(output.trimEnd());
+  }
   process.exit(1);
 }
 
-if (!existsSync(FIXTURE_PATH)) {
-  error(`Fixture not found: invalid-run.json`);
+function assertInvalid(fixture, expected) {
+  const result = spawnSync(node, ['scripts/validate-run.mjs', fixture], {
+    cwd: root,
+    encoding: 'utf-8',
+  });
+  const output = `${result.stdout || ''}${result.stderr || ''}`;
+
+  if (result.error) {
+    fail(`Could not run validator for ${fixture}: ${result.error.message}`);
+  }
+  if (result.status === 0) {
+    fail(`Expected ${fixture} to fail validation, but it passed`, output);
+  }
+  if (/\n\s*at\s+/.test(output) || output.includes('Error [ERR_')) {
+    fail(`Validator produced a stack trace for ${fixture}`, output);
+  }
+
+  const missing = expected.filter((snippet) => !output.includes(snippet));
+  if (missing.length > 0) {
+    fail(`Expected ${fixture} output to include: ${missing.join(', ')}`, output);
+  }
+
+  console.log(`[assert-invalid] OK — ${fixture} fails as expected (${expected.join(', ')})`);
 }
 
-const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf-8'));
-const instance = JSON.parse(readFileSync(FIXTURE_PATH, 'utf-8'));
-
-const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
-const cleanSchema = { ...schema, $schema: undefined };
-const validate = ajv.compile(cleanSchema);
-const valid = validate(instance);
-
-if (valid) {
-  error('Expected invalid fixture to fail validation, but it passed');
+const args = process.argv.slice(2);
+if (args.length === 0) {
+  for (const testCase of DEFAULT_CASES) {
+    assertInvalid(testCase.fixture, testCase.expected);
+  }
+  process.exit(0);
 }
 
-const errorPaths = validate.errors.map(e => e.instancePath);
-
-const expectedErrors = ['/status', '/app_stages/0/quality_score'];
-const missing = expectedErrors.filter(p => !errorPaths.includes(p));
-
-if (missing.length > 0) {
-  error(`Expected errors at: ${expectedErrors.join(', ')} but missing: ${missing.join(', ')}`);
+if (args.length < 2) {
+  fail('Usage: node scripts/_assert-invalid.mjs [<fixture> <expected-output> ...]');
 }
 
-console.log('[assert-invalid] OK — fixture fails at /status and /app_stages/0/quality_score as expected');
-process.exit(0);
+assertInvalid(args[0], args.slice(1));

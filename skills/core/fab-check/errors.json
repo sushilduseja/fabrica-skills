@@ -2,8 +2,15 @@
   "skill_id": "fab-check",
   "errors": [
     {
+      "type": "missing_input",
+      "trigger": "App stage name missing or unsafe",
+      "diagnosis": "The requested eval report path cannot be derived safely",
+      "rescue_action": "List valid stage names and ask the operator to pick one",
+      "user_message": "Stage name missing or unsafe. Valid stages: {stages}."
+    },
+    {
       "type": "prerequisite_missing",
-      "trigger": "App stage not implemented",
+      "trigger": "App stage not implemented or artifacts/tests missing",
       "diagnosis": "The stage to be checked has no implementation files to evaluate",
       "rescue_action": "Halt and suggest running /fab-forge for the named stage first",
       "user_message": "Stage has not been implemented yet. Run /fab-forge first."
@@ -12,8 +19,22 @@
       "type": "gate_blocked",
       "trigger": "Quality score below threshold on any axis",
       "diagnosis": "One or more quality axes scored below the blocking threshold (6/10)",
-      "rescue_action": "List the blocking issues, set status = blocked, suggest /fab-trace",
+      "rescue_action": "List blocking issues, set status = blocked, and suggest /fab-trace",
       "user_message": "Quality score below 6/10 on one or more axes. Blocking issues: {issues}"
+    },
+    {
+      "type": "validation_failed",
+      "trigger": "Candidate run object fails schema validation",
+      "diagnosis": "Quality score or next action update would corrupt run state",
+      "rescue_action": "Show validator output and do not replace fabrica.run.json",
+      "user_message": "The candidate run state failed validation. No state was written."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Eval report write/rename fails or is interrupted",
+      "diagnosis": "Filesystem operation failed before commit",
+      "rescue_action": "Keep original files, clean temp files if possible, and retry",
+      "user_message": "Could not write the eval report safely. Existing files were left unchanged where possible."
     }
   ]
 }

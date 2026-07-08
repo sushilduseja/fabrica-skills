@@ -1,5 +1,7 @@
 # CEO Review — fabrica-skills
 
+> Historical design record. Current implementation source of truth is `skills/manifest.json`, `schemas/run-object.schema.json`, `scripts/validate-run.mjs`, `docs/STATE_MACHINE.md`, and `docs/VALIDATION.md`. Do not treat this document as active workflow instructions.
+
 **Status:** ACTIVE — findings captured for selective action
 **Date:** 2026-06-19
 **Mode:** SELECTIVE EXPANSION (cherry-pick high-leverage improvements from architecture review)
@@ -463,3 +465,6 @@ SECURITY FINDINGS
 2. Should `errors.json` per skill be a separate file or embedded in the manifest?
 3. What's the priority order for implementing accepted fixes?
 4. Should the `by_step.usd` → `estimated_usd` rename be a schema-only change, or does it need corresponding skill updates?
+
+
+

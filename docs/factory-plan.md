@@ -1,5 +1,7 @@
 # Factory Plan
 
+> Historical design record. Current implementation source of truth is `skills/manifest.json`, `schemas/run-object.schema.json`, `scripts/validate-run.mjs`, `docs/STATE_MACHINE.md`, and `docs/VALIDATION.md`. Do not treat this document as active workflow instructions.
+
 ### 1. Executive Summary
 
 This plan turns `fabrica-skills` from a readable post-MVP skill set into a deterministic open source AI factory. The core move is one machine-readable manifest that owns skill inventory, dependency order, gates, and generated discovery artifacts. The second move is making run-state validation and error rescue executable instead of advisory markdown. After this plan, a contributor can add or change a skill by editing one canonical record, running one validation command, and getting CI feedback before merge.
@@ -223,3 +225,6 @@ This plan turns `fabrica-skills` from a readable post-MVP skill set into a deter
 ### 6. Open Questions
 
 None. Decisions fixed: manifest lives at `skills/manifest.json`; error metadata lives beside each skill as `errors.json`; CI runs static validation only.
+
+
+

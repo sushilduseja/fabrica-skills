@@ -3,17 +3,38 @@
   "errors": [
     {
       "type": "missing_input",
-      "trigger": "Operator gives vague answers",
-      "diagnosis": "Questions not answered with sufficient specificity to bound the app scope",
-      "rescue_action": "Re-ask with more specific prompts targeting the vague area",
-      "user_message": "The answers provided are too vague to define a bounded app. Please be more specific."
+      "trigger": "Idea or required clarification is missing or too vague",
+      "diagnosis": "Questions cannot define a bounded, testable app",
+      "rescue_action": "Ask concrete follow-up questions for user, input, output, and core job",
+      "user_message": "The idea is too vague to define a bounded app. Please provide the missing details."
     },
     {
       "type": "invalid_state",
-      "trigger": "Run object already exists",
-      "diagnosis": "A run is already in progress; starting fresh would overwrite existing state",
-      "rescue_action": "Load existing run, show current status, offer to continue or start fresh",
-      "user_message": "A run is already in progress (status: {status}). Continue or start fresh?"
+      "trigger": "Existing run object is present, corrupted, or would be overwritten",
+      "diagnosis": "Starting fresh could overwrite existing state or continue from invalid state",
+      "rescue_action": "Validate existing run, show status if valid, otherwise require restore or explicit fresh start",
+      "user_message": "A run already exists or is invalid. Continue the valid run, restore it, or explicitly start fresh."
+    },
+    {
+      "type": "gate_blocked",
+      "trigger": "Operator does not approve the intake spec or write",
+      "diagnosis": "The checkpoint gate was not approved",
+      "rescue_action": "Leave files unchanged and wait for approval or requested edits",
+      "user_message": "Intake is pending approval. No files were changed."
+    },
+    {
+      "type": "validation_failed",
+      "trigger": "Candidate run object fails schema validation",
+      "diagnosis": "Generated run state would be invalid if written",
+      "rescue_action": "Show validator output and do not replace fabrica.run.json",
+      "user_message": "The candidate run state failed validation. No state was written."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Spec or run-object write/rename fails or is interrupted",
+      "diagnosis": "Filesystem operation failed before commit",
+      "rescue_action": "Keep original files, remove temp files if possible, and retry after fixing the filesystem issue",
+      "user_message": "Could not write intake files safely. Existing files were left unchanged where possible."
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-GitHub Issues on sushilduseja/fabrica-skills, operated via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+GitHub Issues on user/fabrica-skills, operated via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -11,3 +11,6 @@ Five canonical roles using default label strings: needs-triage, needs-info, read
 ### Domain docs
 
 Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+
+

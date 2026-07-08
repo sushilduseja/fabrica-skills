@@ -2,11 +2,25 @@
   "skill_id": "fab-retro",
   "errors": [
     {
+      "type": "missing_input",
+      "trigger": "Run object missing",
+      "diagnosis": "A retrospective requires the run object to summarize the run",
+      "rescue_action": "Halt and ask to restore the run object",
+      "user_message": "Run object is missing. Restore it before retro."
+    },
+    {
       "type": "invalid_state",
-      "trigger": "Run not complete or abandoned",
-      "diagnosis": "A retrospective requires a finished run (complete, blocked, or abandoned status)",
-      "rescue_action": "Halt and show the current run status",
-      "user_message": "Run is not finished (status: {status}). Complete or abandon the run before retro."
+      "trigger": "Run not complete, blocked, or abandoned, or run object invalid",
+      "diagnosis": "A retrospective requires a terminal run status and valid state",
+      "rescue_action": "Halt and show the current run status or validator output",
+      "user_message": "Run is not ready for retro (status: {status}). Complete, block, or abandon it first."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Retro write/rename fails or is interrupted",
+      "diagnosis": "Filesystem operation failed before commit",
+      "rescue_action": "Keep prior retro where possible, clean temp files, and retry",
+      "user_message": "Could not write retro safely. Existing retro was preserved where possible."
     }
   ]
 }

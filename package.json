@@ -8,9 +8,10 @@
     "validate:run": "node scripts/validate-run.mjs",
     "validate:manifest": "node scripts/sync-manifest.mjs --check",
     "validate:run-pass": "node scripts/validate-run.mjs test/fixtures/valid-run.json",
-    "validate:run-fail": "node scripts/_assert-invalid.mjs",
-    "validate:run-gate-fail": "node scripts/validate-run.mjs test/fixtures/invalid-gate-keys.json && node -e \"process.exit(1)\" || node -e \"process.exit(0)\"",
+    "validate:run-fail": "node scripts/_assert-invalid.mjs test/fixtures/invalid-run.json /status /app_stages/0/quality_score",
+    "validate:run-gate-fail": "node scripts/_assert-invalid.mjs test/fixtures/invalid-gate-keys.json /gate_levels",
     "validate": "npm run validate:run-pass && npm run validate:run-fail && npm run validate:run-gate-fail && npm run validate:manifest",
+    "test": "node test/run-tests.mjs",
     "setup": "npm run validate && node scripts/link-skills.mjs"
   },
   "devDependencies": {
@@ -18,3 +19,6 @@
     "ajv-formats": "^3.0.0"
   }
 }
+
+
+

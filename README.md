@@ -8,10 +8,10 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 
 - 12 `fab-*` skills, each stored as a self-contained `SKILL.md`.
 - A canonical skill manifest at `skills/manifest.json` — the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
-- A spec-first workflow: idea -> product spec -> blueprint -> scaffold -> implementation -> quality check.
+- A spec-first workflow: idea -> product spec -> blueprint -> scaffold -> implementation -> quality check -> integration -> local launch.
 - A durable run state file: `fabrica.run.json`.
 - A JSON Schema for validating run state: `schemas/run-object.schema.json`.
-- Local-first prototype behavior. External deploy is deferred and must be explicitly approved.
+- Local-first prototype behavior. External deploy is deferred and must be explicitly approved. Docker/container verification is supported when the blueprint calls for it, but static Docker checks must not be reported as runtime Docker verification.
 
 ## Requirements
 
@@ -37,9 +37,9 @@ npm ci
 npm run setup
 ```
 
-Expected result: validation passes, and a `.skills/` directory contains one entry per active skill (see `skills/manifest.json`).
+Expected result: validation passes, and a `.skills/` directory contains one entry per active skill (see `skills/manifest.json`). If validation or linking fails, the command exits nonzero and prints a `[validate-run]`, `[assert-invalid]`, `[sync-manifest]`, or `[link-skills]` error with the fix. For the full positive, negative, and security regression suite, run `npm test`.
 
-On Windows, the script uses directory junctions. On macOS and Linux, it uses symlinks. If a Windows junction is blocked, it falls back to copying the skill directory.
+On Windows, the script uses directory junctions. On macOS and Linux, it uses symlinks. If a Windows junction is blocked, it falls back to copying the skill directory and tells you to rerun setup after source updates to refresh copied skills.
 
 ### 3. Open this repo in your AI coding agent
 
@@ -141,7 +141,7 @@ It scores the stage from 0 to 10 on spec fit, contract fit, tests, clarity, and 
 
 ### 9. Continue from the run state
 
-Use `next_action` in `fabrica.run.json` as the source of truth.
+Use `next_action` in `fabrica.run.json` as the source of truth. For the full visual state machine and common command pathways, see [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md).
 
 Useful commands:
 
@@ -161,7 +161,7 @@ Useful commands:
 node scripts/link-skills.mjs
 ```
 
-Creates `.skills/` inside the repo with one entry per active skill (see `skills/manifest.json`). Only `fab-*` entries are refreshed — unrelated skills are left alone.
+Creates `.skills/` inside the repo with one entry per active skill (see `skills/manifest.json`). The command is idempotent and refreshes only manifest-managed skill entries; unrelated skills, including unrelated `fab-*` skills, are left alone. The command refuses to use `.skills/` if it is a symlink or junction.
 
 ### Global: `~/.fabrica-skills/` (for cross-project agent access)
 
@@ -169,7 +169,7 @@ Creates `.skills/` inside the repo with one entry per active skill (see `skills/
 node scripts/link-skills.mjs --global
 ```
 
-Installs to `~/.fabrica-skills/.skills/` using `os.homedir()` for cross-platform resolution (`C:\Users\<name>` on Windows, `/home/<name>` or `/Users/<name>` on Unix). The agent must be pointed at this path to discover skills.
+Installs to `~/.fabrica-skills/.skills/` using `os.homedir()` for cross-platform resolution (`C:\sushildusejas\<name>` on Windows, `/home/<name>` or `/sushildusejas/<name>` on Unix). The command refuses to write through a symlinked or junctioned global install directory. The agent must be pointed at this path to discover skills.
 
 ### Agent Discovery
 
@@ -194,18 +194,22 @@ Each skill is designed to be readable on its own, but the full workflow works be
 
 ## Workflow
 
+Visual state machine and pathway reference: [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md).
+
 ```text
-Phase 0: Spec-only demo
+Phase 0: Spec and blueprint
   /fab-intake -> /fab-blueprint
   Output: docs/spec.md, docs/blueprint.md, fabrica.run.json
 
-Phase 1: Tiny vertical slice
-  /fab-frame -> /fab-forge <stage> -> /fab-check <stage> -> /fab-pulse
-  Output: scaffolded app, tests, quality score, next action
+Phase 1: One or more vertical slices
+  /fab-frame -> /fab-forge <stage> -> /fab-check <stage>
+  Repeat forge/check until required stages are done.
+  Output: scaffolded app, tests, quality scores, next_action
 
-Phase 2: Thin full-pipeline prototype
-  /fab-trace -> /fab-weave -> /fab-launch -> /fab-signal -> /fab-passport -> /fab-retro
-  Output: local end-to-end verification, cost review, decisions, handoff, retrospective
+Phase 2: Integrated local prototype
+  /fab-weave -> /fab-launch -> /fab-passport -> /fab-retro
+  Recovery and decision commands as needed: /fab-trace <stage|integration>, /fab-signal, /fab-pulse
+  Output: local end-to-end verification, launch evidence, decisions, handoff, retrospective
 ```
 
 ## Skill Inventory
@@ -222,9 +226,25 @@ Phase 2: Thin full-pipeline prototype
 | `/fab-trace` | 2 | auto | Diagnose a failing stage and apply the smallest viable fix. |
 | `/fab-weave` | 2 | checkpoint | Connect completed stages into an end-to-end flow. |
 | `/fab-launch` | 2 | review | Run a pre-launch checklist and verify the app locally. |
-| ~~`/fab-ledger`~~ (folded into `/fab-pulse --mode=details`) | - | - | Cost breakdown now in `fab-pulse` cost detail mode. |
 | `/fab-signal` | 2 | full | Capture a human decision. |
 | `/fab-retro` | 2 | auto | Score the run and identify process improvements. |
+
+Plain-language aliases:
+
+| Skill | Means |
+|---|---|
+| `/fab-intake` | collect requirements and write the spec |
+| `/fab-blueprint` | design the architecture and build stages |
+| `/fab-frame` | scaffold the project skeleton |
+| `/fab-forge` | implement one stage |
+| `/fab-check` | evaluate one stage |
+| `/fab-pulse` | show status |
+| `/fab-passport` | write handoff notes |
+| `/fab-trace` | debug a failure |
+| `/fab-weave` | integrate stages |
+| `/fab-launch` | verify local launch |
+| `/fab-signal` | record a human decision |
+| `/fab-retro` | write the retrospective |
 
 Gate meanings:
 
@@ -241,7 +261,7 @@ Every run is tracked in `fabrica.run.json`.
 
 Important fields:
 
-- `status`: current lifecycle state.
+- `status`: current lifecycle state; see [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md).
 - `current_step`: current `fab-*` skill.
 - `current_app_stage`: active app stage.
 - `next_action`: exact command to run next.
@@ -251,7 +271,7 @@ Important fields:
 - `verifications`: test and launch results.
 - `human_decisions`: decisions recorded by `/fab-signal`.
 
-The schema is in `schemas/run-object.schema.json`. Skills validate state before writing.
+The schema is in `schemas/run-object.schema.json`. Post-schema semantic checks live in `scripts/validate-run.mjs`. Skills validate state before writing.
 
 ## Repository Layout
 
@@ -261,6 +281,7 @@ fabrica-skills/
   CONTEXT.md             Domain vocabulary + ADRs
   CONTRIBUTING.md        Contributor workflow
   AGENTS.md              Agent discovery config
+  docs/STATE_MACHINE.md  Visual state machine + common command pathways
   skills/manifest.json   Canonical inventory
   skills/core/*/         Core MVP skills (+ errors.json each)
   skills/prototype/*/    Full-pipeline skills (+ errors.json each)
@@ -273,13 +294,13 @@ fabrica-skills/
 
 The checked-in `docs/spec.md` and `docs/blueprint.md` are generated examples from the invoice-note-parser sample run. They show what `/fab-intake` and `/fab-blueprint` should produce.
 
-`docs/VALIDATION.md` records the current validation evidence: schema checks, skill file checks, a Phase 0 sample run, a Phase 1 sample run, `fab-pulse`, handoff, and launch safety.
+`docs/VALIDATION.md` records the current validation evidence: schema checks, script hardening checks, manifest/frontmatter drift checks, install safety checks, and container/full-stack guidance coverage.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `node` is not found | Install Node.js 16.7+ and rerun `node scripts/link-skills.mjs`. |
+| `node` is not found | Install Node.js 16.7+ and rerun `npm run setup`. |
 | Slash command is not found | Point your agent at `.skills/<skill-name>/SKILL.md` or use the `.claude-plugin/plugin.json` manifest if supported. |
 | `fabrica.run.json` is missing | Start with `/fab-intake`. It is the only entry-point skill. |
 | A stage is blocked | Run `/fab-trace <stage-name>` with the failure output. |
@@ -294,3 +315,6 @@ The checked-in `docs/spec.md` and `docs/blueprint.md` are generated examples fro
 - No multi-agent scheduler.
 - No production deploy provider matrix.
 - No exact token metering unless the agent/provider exposes it cleanly.
+
+
+

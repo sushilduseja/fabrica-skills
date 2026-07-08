@@ -73,3 +73,5 @@ A local CLI tool that accepts pasted invoice text and returns normalized JSON. N
 - Payment processing
 - Batch processing (one invoice at a time)
 - Cloud deployment (local-first, self-hosted)
+
+
