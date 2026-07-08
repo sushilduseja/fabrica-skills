@@ -10,6 +10,16 @@ Invoke skills as `/fab-<name>`. The frontmatter name excludes the slash.
 
 `fabrica.run.json` is the durable state file for one run. It lives at the app project root (e.g., `../<app-name>/fabrica.run.json`). Skills read it on entry and update only the fields they own.
 
+## Field Ownership
+
+Each skill declares which run object fields it writes (`writes_fields` in `skills/manifest.json`). Read-only skills (`fab-pulse`, `fab-passport`) must not write any fields. The canonical ownership table is in `skills/shared/run-object-schema.md`.
+
+## State Machine
+
+Run-level `status` transitions follow: `designing → framing → forging (→ verifying → complete)`. Any state may transition to `blocked` or `abandoned`. The `experiment_phase` progresses: `phase_0_spec → phase_1_slice → phase_2_pipeline`.
+
+The `--stdin` validator in `scripts/validate-run.mjs` checks status × phase compatibility after schema validation.
+
 ## Validation
 
 ### Candidate-write protocol
@@ -48,8 +58,14 @@ All skills use the `fab-` prefix to avoid collision with generic skill names. Th
 
 ## Error Handling
 
-Skills use a standardized error taxonomy in `last_error`. The value is:
+Skills use a standardized error taxonomy in `last_error`:
 - `null` (no error)
 - An object: `{ "type": "<error_type>", "message": "<human-readable detail>" }`
 
-Error types: `missing_input`, `invalid_state`, `gate_blocked`, `validation_failed`, `prerequisite_missing`, `external_failure`.
+Error types (canonical source: `schemas/run-object.schema.json`):
+- `missing_input` — Required input not provided
+- `invalid_state` — Run object in unexpected state
+- `gate_blocked` — Operator did not approve gate
+- `validation_failed` — Run object write failed schema validation
+- `prerequisite_missing` — Skill prerequisite not satisfied
+- `external_failure` — External service or command failed

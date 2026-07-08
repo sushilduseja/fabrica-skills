@@ -104,23 +104,24 @@ The canonical inventory lives at `skills/manifest.json` — it is the single sou
 
 Each skill declares its prerequisites. A skill must not run until all prerequisites are satisfied. `fab-trace` uses this graph to diagnose `prerequisite_missing` errors.
 
-| Skill | Prerequisites | Blocks |
-|-------|---------------|--------|
-| `/fab-intake` | None (entry point) | All skills |
-| `/fab-blueprint` | `fab-intake` complete, `docs/spec.md` exists | `fab-frame`, `fab-weave` |
-| `/fab-frame` | `fab-blueprint` complete, `docs/blueprint.md` exists | `fab-forge` |
-| `/fab-forge` | `fab-frame` complete, named app stage in blueprint | `fab-check` |
-| `/fab-check` | `fab-forge` complete, implementation files exist | `fab-weave`, `fab-trace` (if blocked) |
-| `/fab-trace` | Failing stage with error output | `fab-forge` (retry), `fab-check` (re-evaluate) |
-| `/fab-weave` | All required app stages done and checked | `fab-launch` |
-| `/fab-launch` | `fab-weave` complete, `docs/integration.md` exists | None (terminal) |
-| `/fab-pulse` | `fabrica.run.json` exists | None (read-only) |
-| ~~`/fab-ledger`~~ (folded into `/fab-pulse`) | `fabrica.run.json` exists | None (read-only) |
-| `/fab-signal` | Decision context available | Depends on decision outcome |
-| `/fab-passport` | `fabrica.run.json` exists | None (handoff) |
-| `/fab-retro` | Run complete, abandoned, or stopped | None (terminal) |
+**Canonical source:** `skills/manifest.json` — the table below is derived from the manifest at commit time.
 
-**Parallel execution:** `fab-pulse` and `fab-signal` may run at any point after `fab-intake` creates the run object. They do not block or block other skills. Cost detail is available via `fab-pulse --mode=details`.
+| Skill | Prerequisites | Blocks | Field ownership (`writes_fields`) |
+|-------|---------------|--------|-----------------------------------|
+| `/fab-intake` | None (entry point) | `fab-blueprint` | all run object fields (creation) |
+| `/fab-blueprint` | `fab-intake` | `fab-frame` | `updated_at`, `current_step`, `status`, `next_action`, `blueprint_path`, `app_stages` |
+| `/fab-frame` | `fab-blueprint` | `fab-forge` | `updated_at`, `current_step`, `current_app_stage`, `status`, `next_action` |
+| `/fab-forge` | `fab-frame` | `fab-check`, `fab-trace` | `updated_at`, `current_step`, `next_action`, `last_error`, `app_stages`, `verifications` |
+| `/fab-check` | `fab-forge` | `fab-weave`, `fab-trace` | `updated_at`, `current_step`, `next_action`, `last_error`, `app_stages` |
+| `/fab-trace` | `fab-forge`, `fab-check` | `fab-signal` | `updated_at`, `current_step`, `next_action`, `last_error`, `app_stages`, `verifications` |
+| `/fab-weave` | `fab-check` | `fab-launch` | `updated_at`, `current_step`, `experiment_phase`, `status`, `next_action`, `last_error`, `verifications` |
+| `/fab-launch` | `fab-weave` | None (terminal) | `updated_at`, `current_step`, `status`, `next_action`, `last_error`, `verifications` |
+| `/fab-pulse` | None (read-only) | None (read-only) | None (read-only) |
+| `/fab-signal` | `fab-trace` | None (terminal) | `updated_at`, `current_step`, `next_action`, `human_decisions` |
+| `/fab-passport` | None (read-only) | None (read-only) | None (read-only) |
+| `/fab-retro` | None (terminal) | None (terminal) | None (writes `docs/retro.md` only) |
+
+**Parallel execution:** `fab-pulse` and `fab-passport` may run at any point after `fab-intake` creates the run object. They do not block or modify state. `fab-signal` may run after `fab-trace` provides decision context.
 
 ---
 
@@ -224,6 +225,21 @@ Skills validate their writes to `fabrica.run.json` against a JSON Schema file at
 - `app_stages[].status` must be one of `pending`, `active`, `done`, `blocked`, `failed`
 
 **Enforcement:** Skills reference the schema in their spec. Before writing, the skill (or operator) validates the updated run object against the schema. If validation fails, the skill stops with a `validation_failed` error and does not write the corrupted state.
+
+**Post-schema check (state machine validation):** After schema validation, the validator also checks `status × experiment_phase` compatibility:
+
+| status | valid experiment_phase values |
+|---|---|
+| `designing` | `phase_0_spec` |
+| `framing` | `phase_0_spec` |
+| `forging` | `phase_1_slice`, `phase_2_pipeline` |
+| `checking` | `phase_1_slice`, `phase_2_pipeline` |
+| `weaving` | `phase_2_pipeline` |
+| `verifying` | `phase_2_pipeline` |
+| `complete` | `phase_2_pipeline` |
+| `blocked`, `abandoned` | any phase |
+
+An incompatible pair (e.g., `status=verifying` + `experiment_phase=phase_0_spec`) is rejected with a clear error message.
 
 **Schema file:** `schemas/run-object.schema.json` — ships with the repo. Skills validate via the candidate-write protocol (tight): build candidate in memory, pipe through `node scripts/validate-run.mjs --stdin`, write only if it passes.
 
@@ -665,35 +681,52 @@ Pruned errors (no longer in skills — guarded by prerequisites or already expre
 
 ```text
 fabrica-skills/
-  README.md
-  CLAUDE.md
-  CONTEXT.md
-  AGENTS.md
-  CONTRIBUTING.md
   .claude-plugin/
     plugin.json
+  .github/workflows/
+    validate.yml
+  CONTEXT.md
+  CLAUDE.md
+  AGENTS.md
+  CONTRIBUTING.md
+  LICENSE
+  README.md
+  package.json
   skills/
-    manifest.json
+    manifest.json                 # canonical: inventory, phases, gates, writes_fields
     shared/
-      run-object-schema.md
+      run-object-schema.md        # human-readable schema + state machine ref
     core/
       fab-intake/SKILL.md
+      fab-intake/errors.json
       fab-blueprint/SKILL.md
+      fab-blueprint/errors.json
       fab-frame/SKILL.md
+      fab-frame/errors.json
       fab-forge/SKILL.md
+      fab-forge/errors.json
       fab-check/SKILL.md
+      fab-check/errors.json
       fab-pulse/SKILL.md
+      fab-pulse/errors.json
       fab-passport/SKILL.md
+      fab-passport/errors.json
     prototype/
       fab-trace/SKILL.md
+      fab-trace/errors.json
       fab-weave/SKILL.md
+      fab-weave/errors.json
       fab-launch/SKILL.md
+      fab-launch/errors.json
       fab-signal/SKILL.md
+      fab-signal/errors.json
       fab-retro/SKILL.md
+      fab-retro/errors.json
   scripts/
     link-skills.mjs
     sync-manifest.mjs
     validate-run.mjs
+    _assert-invalid.mjs
   schemas/
     run-object.schema.json
   test/
@@ -702,27 +735,37 @@ fabrica-skills/
       invalid-run.json
       invalid-gate-keys.json
   docs/
+    fabrica-skills-PRD.md
+    VALIDATION.md
+    factory-plan.md
     agents/
       issue-tracker.md
       triage-labels.md
       domain.md
-    fabrica-skills-PRD.md
-    VALIDATION.md
-    factory-plan.md
 ```
 
 **File roles:**
 
 | File | Purpose |
-|---|---|
+|---|---|---|
 | `README.md` | Public description, install command, skill table, and phase diagram |
 | `CLAUDE.md` | Agent-facing rules: skill discovery, run object, gate model, naming convention |
 | `CONTEXT.md` | Domain vocabulary, architectural decisions, and review metadata |
+| `CONTRIBUTING.md` | Contributor workflow for adding/modifying skills |
+| `AGENTS.md` | Agent discovery configuration (OpenCode, Codex CLI) |
+| `package.json` | Workspace scripts (validate, setup) and dev dependencies |
+| `skills/manifest.json` | Canonical skill inventory: ids, paths, phases, dependencies, gates, writes_fields, error metadata paths |
 | `.claude-plugin/plugin.json` | Plugin manifest for agents that support plugin discovery |
 | `skills/core/*/SKILL.md` | Core MVP skill docs |
 | `skills/prototype/*/SKILL.md` | Thin full-pipeline skill docs |
+| `skills/core/*/errors.json` | Error conditions and rescue actions for each core skill |
+| `skills/prototype/*/errors.json` | Error conditions and rescue actions for each prototype skill |
+| `skills/shared/run-object-schema.md` | Human-readable schema reference, field ownership table, state machine |
 | `scripts/link-skills.mjs` | Cross-platform script that creates or refreshes a flat `.skills/` directory |
-| `schemas/run-object.schema.json` | JSON Schema for validating `fabrica.run.json` writes |
+| `scripts/sync-manifest.mjs` | Generates plugin.json and schema gate_levels from manifest; --check validates integrity |
+| `scripts/validate-run.mjs` | Validates a run object against the schema and state machine compatibility |
+| `scripts/_assert-invalid.mjs` | Negative test: asserts invalid-run fixture fails at expected paths |
+| `schemas/run-object.schema.json` | JSON Schema for validating `fabrica.run.json` writes (gate_levels auto-generated) |
 
 ---
 

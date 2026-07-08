@@ -257,15 +257,16 @@ The schema is in `schemas/run-object.schema.json`. Skills validate state before 
 
 ```text
 fabrica-skills/
-  .claude-plugin/plugin.json
-  skills/core/*/SKILL.md
-  skills/prototype/*/SKILL.md
-  scripts/link-skills.mjs
-  schemas/run-object.schema.json
-  docs/spec.md
-  docs/blueprint.md
-  docs/VALIDATION.md
-  CONTEXT.md
+  CLAUDE.md              Agent rules
+  CONTEXT.md             Domain vocabulary + ADRs
+  CONTRIBUTING.md        Contributor workflow
+  AGENTS.md              Agent discovery config
+  skills/manifest.json   Canonical inventory
+  skills/core/*/         Core MVP skills (+ errors.json each)
+  skills/prototype/*/    Full-pipeline skills (+ errors.json each)
+  scripts/               link-skills, sync-manifest, validate-run
+  schemas/               run-object.schema.json
+  test/fixtures/         valid + invalid run objects for CI
 ```
 
 ## Example Docs

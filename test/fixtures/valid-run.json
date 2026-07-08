@@ -2,7 +2,7 @@
   "schema_version": "0.2",
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "name": "invoice-note-parser",
-  "experiment_phase": "phase_2_pipeline",
+  "experiment_phase": "phase_0_spec",
   "created_at": "2026-06-19T10:00:00Z",
   "updated_at": "2026-06-19T12:00:00Z",
   "status": "designing",

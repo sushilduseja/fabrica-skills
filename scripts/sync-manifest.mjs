@@ -38,9 +38,19 @@ if (!manifest.repo_version) error('manifest missing repo_version');
 if (!Array.isArray(manifest.skills)) error('manifest.skills must be an array');
 if (manifest.skills.length === 0) error('manifest.skills is empty');
 
+// Collect field ownership
+const fieldOwners = {};
+
 // Load schema for valid error types
 const schema = loadJSON(SCHEMA_PATH);
 const validErrorTypes = schema.properties.last_error.oneOf[1].properties.type.enum;
+
+const RUN_OBJECT_FIELDS = [
+  "schema_version", "id", "name", "experiment_phase", "created_at", "updated_at",
+  "status", "current_step", "current_app_stage", "next_action", "last_error",
+  "spec_path", "blueprint_path", "app_stages", "costs", "verifications",
+  "human_decisions", "gate_levels",
+];
 
 // Track for uniqueness validation
 const seenIds = new Set();
@@ -72,9 +82,18 @@ for (const skill of manifest.skills) {
   const skillContent = readFileSync(skillFile, 'utf-8');
   const fmMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
   if (fmMatch) {
-    const fmName = fmMatch[1].match(/^name:\s*(.*)$/m);
+    const fm = fmMatch[1];
+    const fmName = fm.match(/^name:\s*(.*)$/m);
     if (fmName && fmName[1] !== skill.id) {
       error(`skill "${skill.id}" frontmatter name "${fmName[1]}" does not match manifest id`);
+    }
+    const fmGate = fm.match(/^default_gate:\s*(.*)$/m);
+    if (fmGate && fmGate[1] !== skill.default_gate) {
+      error(`skill "${skill.id}" frontmatter default_gate "${fmGate[1]}" does not match manifest default_gate "${skill.default_gate}"`);
+    }
+    const fmOverridable = fm.match(/^overridable:\s*(.*)$/m);
+    if (fmOverridable && fmOverridable[1] !== String(skill.overridable)) {
+      error(`skill "${skill.id}" frontmatter overridable "${fmOverridable[1]}" does not match manifest overridable "${skill.overridable}"`);
     }
   }
 
@@ -125,6 +144,28 @@ for (const skill of manifest.skills) {
     if (!e.diagnosis) error(`skill "${skill.id}" errors.json error "${e.type}" missing diagnosis`);
     if (!e.rescue_action) error(`skill "${skill.id}" errors.json error "${e.type}" missing rescue_action`);
     if (!e.user_message) error(`skill "${skill.id}" errors.json error "${e.type}" missing user_message`);
+  }
+
+  // Validate writes_fields
+  if (skill.read_only) {
+    if (skill.writes_fields && skill.writes_fields.length > 0) {
+      error(`skill "${skill.id}" is read_only but writes_fields is non-empty`);
+    }
+  } else {
+    if (!Array.isArray(skill.writes_fields)) {
+      error(`skill "${skill.id}" missing writes_fields array`);
+    }
+  }
+  for (const f of (skill.writes_fields || [])) {
+    if (!fieldOwners[f]) fieldOwners[f] = [];
+    fieldOwners[f].push(skill.id);
+  }
+}
+
+// Validate all run object fields have at least one owner
+for (const field of RUN_OBJECT_FIELDS) {
+  if (!fieldOwners[field] || fieldOwners[field].length === 0) {
+    error(`run object field "${field}" has no owning skill`);
   }
 }
 

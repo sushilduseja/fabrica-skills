@@ -14,6 +14,7 @@
       "prerequisites": [],
       "blocks": ["fab-blueprint"],
       "read_only": false,
+      "writes_fields": ["schema_version", "id", "name", "experiment_phase", "created_at", "updated_at", "status", "current_step", "current_app_stage", "next_action", "last_error", "spec_path", "blueprint_path", "app_stages", "costs", "verifications", "human_decisions", "gate_levels"],
       "error_metadata_path": "skills/core/fab-intake/errors.json"
     },
     {
@@ -27,6 +28,7 @@
       "prerequisites": ["fab-intake"],
       "blocks": ["fab-frame"],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "status", "next_action", "blueprint_path", "app_stages"],
       "error_metadata_path": "skills/core/fab-blueprint/errors.json"
     },
     {
@@ -40,6 +42,7 @@
       "prerequisites": ["fab-blueprint"],
       "blocks": ["fab-forge"],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "current_app_stage", "status", "next_action"],
       "error_metadata_path": "skills/core/fab-frame/errors.json"
     },
     {
@@ -53,6 +56,7 @@
       "prerequisites": ["fab-frame"],
       "blocks": ["fab-check", "fab-trace"],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "next_action", "last_error", "app_stages", "verifications"],
       "error_metadata_path": "skills/core/fab-forge/errors.json"
     },
     {
@@ -66,6 +70,7 @@
       "prerequisites": ["fab-forge"],
       "blocks": ["fab-weave", "fab-trace"],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "next_action", "last_error", "app_stages"],
       "error_metadata_path": "skills/core/fab-check/errors.json"
     },
     {
@@ -79,6 +84,7 @@
       "prerequisites": [],
       "blocks": [],
       "read_only": true,
+      "writes_fields": [],
       "error_metadata_path": "skills/core/fab-pulse/errors.json"
     },
     {
@@ -92,6 +98,7 @@
       "prerequisites": [],
       "blocks": [],
       "read_only": true,
+      "writes_fields": [],
       "error_metadata_path": "skills/core/fab-passport/errors.json"
     },
     {
@@ -105,6 +112,7 @@
       "prerequisites": ["fab-forge", "fab-check"],
       "blocks": ["fab-signal"],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "next_action", "last_error", "app_stages", "verifications"],
       "error_metadata_path": "skills/prototype/fab-trace/errors.json"
     },
     {
@@ -118,6 +126,7 @@
       "prerequisites": ["fab-check"],
       "blocks": ["fab-launch"],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "experiment_phase", "status", "next_action", "last_error", "verifications"],
       "error_metadata_path": "skills/prototype/fab-weave/errors.json"
     },
     {
@@ -131,6 +140,7 @@
       "prerequisites": ["fab-weave"],
       "blocks": [],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "status", "next_action", "last_error", "verifications"],
       "error_metadata_path": "skills/prototype/fab-launch/errors.json"
     },
     {
@@ -144,6 +154,7 @@
       "prerequisites": ["fab-trace"],
       "blocks": [],
       "read_only": false,
+      "writes_fields": ["updated_at", "current_step", "next_action", "human_decisions"],
       "error_metadata_path": "skills/prototype/fab-signal/errors.json"
     },
     {
@@ -157,6 +168,7 @@
       "prerequisites": [],
       "blocks": [],
       "read_only": false,
+      "writes_fields": [],
       "error_metadata_path": "skills/prototype/fab-retro/errors.json"
     }
   ]

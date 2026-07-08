@@ -40,6 +40,54 @@ Every fab run has one run object. Created by `fab-intake`, updated by every writ
 - `verifications` — appended by `fab-forge`, `fab-weave`, `fab-launch`
 - `human_decisions` — appended by `fab-signal`
 
+## Field Ownership
+
+Canonical source: `skills/manifest.json` (`writes_fields` per skill). Each field is owned by at least one skill. Read-only skills (e.g., `fab-pulse`, `fab-passport`) must not write any fields.
+
+| Field | Owning Skills |
+|---|---|
+| `schema_version`, `id`, `name`, `created_at`, `spec_path`, `costs`, `gate_levels` | `fab-intake` (creation only) |
+| `experiment_phase` | `fab-intake`, `fab-weave` |
+| `updated_at`, `current_step`, `next_action` | All writer skills |
+| `status` | `fab-intake`, `fab-blueprint`, `fab-frame`, `fab-weave`, `fab-launch` |
+| `current_app_stage` | `fab-intake`, `fab-frame`, `fab-forge` |
+| `last_error` | `fab-intake`, `fab-forge`, `fab-check`, `fab-trace`, `fab-weave`, `fab-launch` |
+| `blueprint_path` | `fab-intake`, `fab-blueprint` |
+| `app_stages` | `fab-intake`, `fab-blueprint`, `fab-forge`, `fab-check`, `fab-trace` |
+| `verifications` | `fab-forge`, `fab-weave`, `fab-launch`, `fab-trace` |
+| `human_decisions` | `fab-intake`, `fab-signal` |
+
+## State Machine
+
+### Run-level status transitions
+
+```
+designing → framing → forging (→ verifying → complete)
+  Any state → blocked | abandoned
+```
+
+### experiment_phase transitions
+
+```
+phase_0_spec → phase_1_slice → phase_2_pipeline
+```
+
+### Status × Phase compatibility
+
+| status | valid experiment_phase values |
+|---|---|
+| `designing` | `phase_0_spec` |
+| `framing` | `phase_0_spec` |
+| `forging` | `phase_1_slice`, `phase_2_pipeline` |
+| `checking` | `phase_1_slice`, `phase_2_pipeline` |
+| `weaving` | `phase_2_pipeline` |
+| `verifying` | `phase_2_pipeline` |
+| `complete` | `phase_2_pipeline` |
+| `blocked` | any phase |
+| `abandoned` | any phase |
+
+Validated by `scripts/validate-run.mjs` (post-schema check).
+
 ## Validation
 
 Full JSON Schema: `schemas/run-object.schema.json`

@@ -11,6 +11,20 @@ const root = resolve(__dirname, '..');
 
 const SCHEMA_PATH = resolve(root, 'schemas/run-object.schema.json');
 
+// Status × experiment_phase compatibility matrix.
+// Each phase permits a subset of run-level statuses.
+const STATUS_PHASE_MATRIX = {
+  designing:  ['phase_0_spec'],
+  framing:    ['phase_0_spec'],
+  forging:    ['phase_1_slice', 'phase_2_pipeline'],
+  checking:   ['phase_1_slice', 'phase_2_pipeline'],
+  weaving:    ['phase_2_pipeline'],
+  verifying:  ['phase_2_pipeline'],
+  complete:   ['phase_2_pipeline'],
+  blocked:    ['phase_0_spec', 'phase_1_slice', 'phase_2_pipeline'],
+  abandoned:  ['phase_0_spec', 'phase_1_slice', 'phase_2_pipeline'],
+};
+
 function error(msg) {
   console.error(`[validate-run] ERROR: ${msg}`);
   process.exit(1);
@@ -55,14 +69,20 @@ const cleanSchema = { ...schema, $schema: undefined };
 const validate = ajv.compile(cleanSchema);
 const valid = validate(instance);
 
-if (valid) {
-  console.log(`[validate-run] OK — run object from ${inputLabel} is valid`);
-  process.exit(0);
+if (!valid) {
+  console.error(`[validate-run] FAILED — ${validate.errors.length} schema violation(s):`);
+  for (const err of validate.errors) {
+    const path = err.instancePath || '(root)';
+    console.error(`  ${path}  ${err.message}`);
+  }
+  process.exit(1);
 }
 
-console.error(`[validate-run] FAILED — ${validate.errors.length} schema violation(s):`);
-for (const err of validate.errors) {
-  const path = err.instancePath || '(root)';
-  console.error(`  ${path}  ${err.message}`);
+// Post-schema: status × experiment_phase compatibility
+const allowedPhases = STATUS_PHASE_MATRIX[instance.status];
+if (allowedPhases && !allowedPhases.includes(instance.experiment_phase)) {
+  error(`status "${instance.status}" is not valid with experiment_phase "${instance.experiment_phase}" (expected one of: ${allowedPhases.join(', ')})`);
 }
-process.exit(1);
+
+console.log(`[validate-run] OK — run object from ${inputLabel} is valid`);
+process.exit(0);
