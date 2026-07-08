@@ -71,24 +71,24 @@ The canonical inventory lives at `skills/manifest.json` — it is the single sou
 
 | # | Skill | Job |
 |---|---|---|
-| 1 | `/fab-intake` | Convert a rough idea into a bounded product spec and initialize the run |
-| 2 | `/fab-blueprint` | Convert the spec into app architecture, app stages, and build order |
-| 3 | `/fab-frame` | Create the project skeleton and contracts needed for the first stage |
+| 1 | `/fab-intake` | Convert a rough idea into a spec and initialize the run object |
+| 2 | `/fab-blueprint` | Convert a spec into app architecture and a build order |
+| 3 | `/fab-frame` | Scaffold the app project skeleton and first-stage contracts |
 | 4 | `/fab-forge` | Implement one named app stage against the blueprint |
-| 5 | `/fab-check` | Score one app stage against spec, tests, clarity, and safety |
-| 6 | `/fab-pulse` | Render current pipeline, quality, cost estimate, and next action |
-| 7 | `/fab-passport` | Write a resumable handoff with state, artifacts, and next command |
+| 5 | `/fab-check` | Evaluate one app stage against quality criteria |
+| 6 | `/fab-pulse` | Render the current run state as a terminal dashboard |
+| 7 | `/fab-passport` | Write a resumable handoff document |
 
 ### Thin Prototype Skills
 
 | # | Skill | Job |
 |---|---|---|
-| 8 | `/fab-trace` | Diagnose a failing stage, state root cause, and apply a minimal fix |
-| 9 | `/fab-weave` | Connect completed app stages into one local end-to-end flow |
-| 10 | `/fab-launch` | Verify the integrated app locally; real external deploy is deferred |
+| 8 | `/fab-trace` | Diagnose a failing stage and apply the smallest viable fix |
+| 9 | `/fab-weave` | Connect completed stages into an end-to-end flow |
+| 10 | `/fab-launch` | Run a pre-launch checklist and verify the app locally |
 | 11 | ~~`/fab-ledger`~~ | ~~Summarize estimated token/API cost and cost concentration~~ — folded into `/fab-pulse` (see `skills/manifest.json` for active skills) |
-| 12 | `/fab-signal` | Capture a human decision and record why it was made |
-| 13 | `/fab-retro` | Review the run and identify process improvements |
+| 12 | `/fab-signal` | Capture a human decision |
+| 13 | `/fab-retro` | Score the run and identify process improvements |
 
 ### Deferred Beyond MVP
 
@@ -225,7 +225,7 @@ Skills validate their writes to `fabrica.run.json` against a JSON Schema file at
 
 **Enforcement:** Skills reference the schema in their spec. Before writing, the skill (or operator) validates the updated run object against the schema. If validation fails, the skill stops with a `validation_failed` error and does not write the corrupted state.
 
-**Schema file:** `schemas/run-object.schema.json` — ships with the repo. Validation is executable via `node scripts/validate-run.mjs --stdin` (see CLAUDE.md for the candidate-write protocol).
+**Schema file:** `schemas/run-object.schema.json` — ships with the repo. Skills validate via the candidate-write protocol (tight): build candidate in memory, pipe through `node scripts/validate-run.mjs --stdin`, write only if it passes.
 
 ---
 
@@ -269,10 +269,13 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 2. Refuse vague user or core job answers; push until the app can be tested by a stranger.
 3. If the operator skips or refuses to answer a question, proceed with a partial spec: mark the unanswered section as `INCOMPLETE: <section name>` in the spec, and add a warning note at the top of `docs/spec.md` listing missing areas.
 4. Write `docs/spec.md` with: Overview, Users, Jobs, Inputs, Outputs, AI Role, Success Criteria, Non-Goals. Incomplete sections are marked and warned.
-5. Create `fabrica.run.json` if missing.
-6. Set `experiment_phase = phase_0_spec`, `status = designing`, `spec_path = "docs/spec.md"`, and `next_action = "/fab-blueprint"`.
+5. Create `fabrica.run.json` if missing with all required schema fields (see reference: `skills/shared/run-object-schema.md`).
+6. Validate the candidate (tight — see CLAUDE.md).
+7. Show the spec before writing. Operator approves or requests changes.
 
-**Default gate:** `checkpoint` — show the spec before writing.
+Done.
+
+**Errors:** `invalid_state` — run object already exists (load existing, show status, offer to continue or start fresh).
 
 ---
 
@@ -288,11 +291,15 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 1. Derive minimal app components from first principles: input boundary, transformation core, output boundary, persistence only if necessary.
 2. Pick one stack for the toy app, preferring boring local defaults unless the spec proves another choice is needed.
 3. Define model requirements by capability, context, latency, and cost class; name example providers only as replaceable defaults.
-4. Define app stages in build order. Each stage must have purpose, inputs, outputs, files expected, and test shape.
+4. Define app stages as tracer bullets: small end-to-end vertical slices in build order. Each must fire from raw input to visible output before the next begins.
 5. Write `docs/blueprint.md` with a small ASCII data-flow diagram.
 6. Update `blueprint_path`, `app_stages`, `status = framing`, `next_action = "/fab-frame"`.
+7. Validate the candidate (tight — see CLAUDE.md).
+8. Show architecture summary before writing. Operator approves or requests changes.
 
-**Default gate:** `checkpoint` — show architecture summary before writing.
+Done.
+
+**Errors:** `invalid_state` — blueprint conflicts with spec (show conflict, suggest spec revision).
 
 ---
 
@@ -311,8 +318,11 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 4. Write `.env.example` only for required environment variables.
 5. Add cross-platform commands in `package.json`, `Makefile`, `justfile`, or equivalent; do not require POSIX shell only.
 6. Update `status = forging`, stage statuses, and `next_action = "/fab-forge <first-app-stage>"`.
+7. Validate the candidate (tight — see CLAUDE.md).
 
-**Default gate:** `auto`.
+Done.
+
+**Errors:** `invalid_state` — project skeleton already exists (warn, offer to overwrite or skip).
 
 ---
 
@@ -325,13 +335,17 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 **Output:** Working implementation and focused tests for that app stage.
 
 **Behavior:**
-1. Implement only the named app stage plus shared contracts required by that stage.
+1. Read blueprint.md to understand the current tracer bullet's purpose, expected files, and test shape. Build exactly the end-to-end slice it requires.
 2. Keep behavior aligned with the spec and blueprint; do not add speculative features.
 3. Write tests covering happy path, one realistic failure, and one edge case.
 4. Run the narrowest available test command.
-5. Update the app stage status, artifacts, verification result, and `next_action = "/fab-check <app-stage>"`.
+5. If tests fail, fix until they pass. If cannot fix in 3 attempts, set stage `status = failed`, set `last_error`, and route to `/fab-trace`.
+6. If tests pass, update stage status, artifacts, verification result, and `next_action = "/fab-check <app-stage>"`.
+7. Validate the candidate (tight — see CLAUDE.md).
 
-**Default gate:** `auto`.
+Done.
+
+**Errors:** `missing_input` — invalid stage name (list valid stages from blueprint). `invalid_state` — stubs don't match blueprint (regenerate stubs from blueprint).
 
 ---
 
@@ -345,13 +359,15 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 
 **Behavior:**
 1. Score 0 to 10 on: spec fit, contract fit, tests, code clarity, safety.
-2. Weight spec fit and contract fit double.
+2. Weight spec fit and contract fit double; divide by 7.
 3. Mark the app stage blocked if any axis is below 6.
 4. List blocking fixes separately from optional improvements.
-5. Update `quality_score` using the same 0-10 scale shown in dashboards.
-6. Set `next_action` to either `/fab-trace <app-stage>` or the next build/integration command.
+5. Write `docs/eval/<app-stage>.md` with scores per axis, weighted average, blocking items, optional improvements.
+6. Update `quality_score` using the same 0-10 scale shown in dashboards.
+7. Set `next_action` to either `/fab-trace <app-stage>` or the next build/integration command.
+8. Validate the candidate (tight — see CLAUDE.md).
 
-**Default gate:** `auto`.
+Done.
 
 ---
 
@@ -365,12 +381,17 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 
 **Behavior:**
 1. State root cause in one sentence before proposing changes.
-2. Apply the smallest fix that addresses the root cause.
-3. Add or update a regression test if the failure can be reproduced locally.
-4. Run the narrowest relevant test command.
-5. Update `last_error`, app stage status, verification result, and `next_action`.
+2. Read `last_error.type` from the run object. Load the failing skill's `errors.json`. Find the matching error type and apply its `diagnosis` and `rescue_action`.
+3. Apply the smallest fix that addresses the root cause.
+4. Add or update a regression test if the failure can be reproduced locally.
+5. Run the narrowest relevant test command.
+6. If fix resolves: clear `last_error`, update stage status, set `next_action` to resume.
+7. If fix does not resolve: re-analyze, try once more. If still failing, route to `/fab-signal`.
+8. Validate the candidate (tight — see CLAUDE.md).
 
-**Default gate:** `auto`.
+Done.
+
+**Errors:** `external_failure` — error not reproducible (log context, suggest manual diagnosis). `external_failure` — fix fails (re-analyze, suggest deeper fix).
 
 ---
 
@@ -386,10 +407,15 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 1. Wire only the app stages needed for the canonical happy path.
 2. Add one integration test from raw input to expected output.
 3. Run the integration test and record result.
-4. If integration fails, use `fab-trace` behavior inline.
-5. Update `status = verifying`, `next_action = "/fab-launch"`.
+4. If integration fails, set `last_error`, route to `/fab-trace integration`, and stop. Wiring is done; routing to the diagnostic skill is complete.
+5. Write `docs/integration.md` describing the wired flow and how to run it.
+6. Update `status = verifying`, `next_action = "/fab-launch"`.
+7. Validate the candidate (tight — see CLAUDE.md).
+8. Show wiring plan before mutation. Operator approves or requests changes.
 
-**Default gate:** `checkpoint` — show wiring plan before mutation.
+Done.
+
+**Errors:** `prerequisite_missing` — required stages not done (list missing stages).
 
 ---
 
@@ -404,11 +430,15 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 **Behavior:**
 1. Run a pre-launch checklist: tests pass, env vars documented, no committed secrets, integration verified.
 2. Show checklist and require explicit approval before running any external, destructive, or network deploy action.
-3. For MVP, prefer local Docker or local dev server verification.
-4. Check expected response or UI behavior.
-5. Record verification with `kind = local_launch` and set `status = complete` only if verified.
+3. For MVP, verify locally via `python -m invoice_parser.cli` with a test invoice.
+4. Check expected output: valid JSON, non-zero confidence, no errors.
+5. Verify `.env.example` documents all required vars. Verify `.env` is in `.gitignore`. Scan for committed secrets.
+6. Missing required env vars produce: "Missing required env var: X. See .env.example".
+7. If pre-launch checklist fails, set `last_error` and halt.
+8. Record verification with `kind = local_launch` and set `status = complete` only if verified.
+9. Validate the candidate (tight — see CLAUDE.md).
 
-**Default gate:** `review` — local checks may run, but external launch requires approval.
+Done.
 
 ---
 
@@ -421,12 +451,17 @@ Each skill defines trigger, input, output, behavior, gate, and run object update
 **Output:** Inline terminal-style dashboard. No files written.
 
 **Behavior:**
-1. Render pipeline, quality, and cost panels.
-2. Show `unknown` for missing cost values.
-3. Show the exact `next_action` from the run object.
-4. Do not modify files.
+1. Read `fabrica.run.json`.
+2. Render three panels: PIPELINE, QUALITY, COST.
+3. Show `unknown` for missing cost values.
+4. Show the exact `next_action` from the run object.
+5. If `mode=details` or any cost step exceeds 20% of known spend, render a COST DETAILS section with per-step breakdown.
+6. Highlight blocked or failed items.
+7. Do not modify files.
 
-**Default gate:** `auto`.
+Done.
+
+**Errors:** `missing_input` — run object missing (halt, suggest `/fab-intake`). `invalid_state` — run object corrupted (show last valid state, suggest restore).
 
 **Reference layout:**
 
@@ -472,11 +507,14 @@ next: /fab-forge parse-invoice-text
 
 **Behavior:**
 1. State the decision needed in one sentence.
-2. Present two or three meaningful options.
+2. Present two or three meaningful options with concrete tradeoffs.
 3. Wait for operator input.
-4. Record decision, rationale, timestamp, and resumed next action.
+4. Record decision, rationale, timestamp (triggered_at and resolved_at), and resumed next action.
+5. Update `next_action` to reflect the decision outcome.
+6. If operator does not respond within a reasonable window, keep decision pending.
+7. Validate the candidate (tight — see CLAUDE.md).
 
-**Default gate:** `full`.
+Done.
 
 ---
 
@@ -491,11 +529,11 @@ next: /fab-forge parse-invoice-text
 **Behavior:**
 1. State current run status in one line.
 2. List completed steps, app stages, artifacts, verifications, decisions, and blockers.
-3. Include the exact next command.
+3. Include the exact next command from `next_action`.
 4. Include any important context not captured in the run object.
 5. Overwrite `docs/handoff.md`; do not append.
 
-**Default gate:** `auto`.
+Done.
 
 ---
 
@@ -510,12 +548,14 @@ next: /fab-forge parse-invoice-text
 **Behavior:**
 1. Score the run 0 to 10 with one-sentence rationale.
 2. Compare built output against original spec.
-3. List blockers, root causes, and fixes.
+3. List blockers, root causes, and fixes applied.
 4. Identify the highest known or estimated cost area.
 5. Write three concrete process changes for the next run.
 6. Estimate how long the same toy run would take manually.
+7. Write `docs/retro.md`.
+8. Validate the candidate (tight — see CLAUDE.md).
 
-**Default gate:** `auto`.
+Done.
 
 ---
 
@@ -583,32 +623,21 @@ Every skill defines how it handles failures. This map ensures no silent failures
 
 ### Error & Rescue Registry
 
+The canonical source is per-skill `errors.json` files. This table is historical context; the `errors.json` files are the source of truth for `fab-trace` diagnosis.
+
 ```
 SKILL/CODEPATH          | WHAT CAN GO WRONG              | ERROR TYPE
 ------------------------|--------------------------------|------------------
-fab-intake              | Operator gives vague answers   | missing_input
-                        | Run object already exists      | invalid_state
-fab-blueprint           | Spec missing or malformed      | missing_input
-                        | Blueprint conflicts with spec  | invalid_state
-fab-frame               | Blueprint not confirmed        | prerequisite_missing
-                        | Project skeleton already exists| invalid_state
+fab-intake              | Run object already exists      | invalid_state
+fab-blueprint           | Blueprint conflicts with spec  | invalid_state
+fab-frame               | Project skeleton already exists| invalid_state
 fab-forge               | App stage name invalid         | missing_input
                         | Stubs don't match blueprint    | invalid_state
-                        | Tests fail after implementation| external_failure
-fab-check               | App stage not implemented      | prerequisite_missing
-                        | Quality score below threshold  | gate_blocked
 fab-trace               | Error not reproducible         | external_failure
                         | Fix doesn't resolve root cause | external_failure
 fab-weave               | Required stages not done       | prerequisite_missing
-                        | Integration test fails         | external_failure
-fab-launch              | Pre-launch checklist fails     | gate_blocked
-                        | External deploy without approval| gate_blocked
 fab-pulse               | Run object missing             | missing_input
                         | Run object corrupted           | invalid_state
-~~fab-ledger~~ (folded into `fab-pulse`) | Cost data missing | missing_input
-fab-signal              | Decision timeout               | gate_blocked
-fab-passport            | Handoff context incomplete     | missing_input
-fab-retro               | Run not complete/abandoned     | invalid_state
 ```
 
 ### Rescue Actions
@@ -616,37 +645,19 @@ fab-retro               | Run not complete/abandoned     | invalid_state
 ```
 ERROR TYPE + SCENARIO              | RESCUE ACTION                          | USER SEES
 -----------------------------------|----------------------------------------|------------------
-missing_input (vague answers)      | Re-ask with specific prompts           | "Need more detail on X"
 invalid_state (duplicate run)      | Load existing run, show status         | "Run already exists: <name>"
-missing_input (spec missing)       | Halt, suggest /fab-intake first        | "Run /fab-intake before /fab-blueprint"
 invalid_state (spec conflict)      | Show conflict, suggest spec revision   | "Blueprint conflicts with spec: X vs Y"
-prerequisite_missing (no blueprint)| Halt, suggest /fab-blueprint           | "Run /fab-blueprint before /fab-frame"
 invalid_state (project exists)     | Warn, offer to overwrite or skip       | "Project exists: overwrite?"
 missing_input (invalid stage)      | List valid stages from blueprint       | "Unknown stage. Valid: X, Y, Z"
 invalid_state (stub mismatch)      | Regenerate stubs from blueprint        | "Stubs regenerated to match blueprint"
-external_failure (tests fail)      | Set status=failed, suggest trace       | "Tests failed: run /fab-trace"
-prerequisite_missing (no impl)     | Halt, suggest /fab-forge               | "Run /fab-forge before /fab-check"
-gate_blocked (quality low)         | List blocking fixes, set blocked       | "Stage blocked: fix X, Y, Z"
 external_failure (unreproducible)  | Log context, suggest manual diagnosis  | "Can't reproduce: check X, Y, Z manually"
 external_failure (incomplete fix)  | Re-analyze root cause, suggest deeper  | "Fix incomplete: root cause may be X"
 prerequisite_missing (stages)      | List missing stages                    | "Stages incomplete: X, Y needed"
-external_failure (integration)     | Set status=failed, suggest trace       | "Integration failed: run /fab-trace"
-gate_blocked (pre-launch)          | Show checklist failures                | "Pre-launch failed: X, Y, Z"
-gate_blocked (unauthorized deploy) | Halt, require explicit approval        | "Deploy requires approval"
 missing_input (no run object)      | Halt, suggest /fab-intake              | "No run object: run /fab-intake"
 invalid_state (corrupted run)      | Show last valid state, suggest restore | "Run object corrupted: last valid state was X"
-missing_input (no cost data)       | Show "unknown", state what's missing   | "Cost unknown: missing X"
-gate_blocked (decision timeout)    | Keep decision pending, show next       | "Decision pending: choose A/B/C"
-missing_input (incomplete handoff) | Include available context, note gaps   | "Handoff incomplete: missing X"
-invalid_state (premature retro)    | Halt, show current status              | "Run not complete: status is X"
 ```
 
-**Critical gap resolution:** Five error types previously had no rescue action. All are now covered:
-- `SpecConflictError` → show conflict, suggest spec revision
-- `StubMismatchError` → regenerate stubs from blueprint
-- `UnreproducibleError` → log context, suggest manual diagnosis
-- `IncompleteFixError` → re-analyze root cause, suggest deeper fix
-- `CorruptedRunObjectError` → show last valid state, suggest restore from backup or re-run fab-intake
+Pruned errors (no longer in skills — guarded by prerequisites or already expressed in behavior): `missing_input` (vague answers), `missing_input` (spec missing), `prerequisite_missing` (no blueprint), `external_failure` (tests fail), `prerequisite_missing` (no impl), `gate_blocked` (quality low), `gate_blocked` (unauthorized deploy), `external_failure` (integration), `gate_blocked` (decision timeout), `missing_input` (incomplete handoff), `invalid_state` (premature retro), `missing_input` (pre-launch checklist), `missing_input` (no cost data).
 
 ---
 
@@ -657,9 +668,14 @@ fabrica-skills/
   README.md
   CLAUDE.md
   CONTEXT.md
+  AGENTS.md
+  CONTRIBUTING.md
   .claude-plugin/
     plugin.json
   skills/
+    manifest.json
+    shared/
+      run-object-schema.md
     core/
       fab-intake/SKILL.md
       fab-blueprint/SKILL.md
@@ -672,13 +688,27 @@ fabrica-skills/
       fab-trace/SKILL.md
       fab-weave/SKILL.md
       fab-launch/SKILL.md
-      # fab-ledger/SKILL.md  (deleted — folded into fab-pulse)
       fab-signal/SKILL.md
       fab-retro/SKILL.md
   scripts/
     link-skills.mjs
+    sync-manifest.mjs
+    validate-run.mjs
   schemas/
     run-object.schema.json
+  test/
+    fixtures/
+      valid-run.json
+      invalid-run.json
+      invalid-gate-keys.json
+  docs/
+    agents/
+      issue-tracker.md
+      triage-labels.md
+      domain.md
+    fabrica-skills-PRD.md
+    VALIDATION.md
+    factory-plan.md
 ```
 
 **File roles:**
@@ -706,6 +736,9 @@ name: fab-intake
 description: One sentence written for agent skill discovery.
 category: core | prototype
 phase: 0 | 1 | 2
+disable-model-invocation: true
+default_gate: auto | checkpoint | review | full
+overridable: true | false
 ---
 ```
 
@@ -717,6 +750,10 @@ One sentence describing the skill's responsibility.
 ## Trigger
 
 When to invoke this skill.
+
+## Prerequisites
+
+- Skills or conditions required before invocation
 
 ## Input
 
@@ -731,25 +768,27 @@ When to invoke this skill.
 
 1. Concrete action
 2. Concrete action
-3. Concrete action
+3. Validate candidate (tight — see CLAUDE.md).
 
-## Gate
+Done.
 
-**Default:** auto | checkpoint | review | full
-**Overridable:** yes | no
-What the operator sees before the gate opens.
+## Error Handling
 
-## Run Object Updates
+- Concrete error type and the rescue action (only if it adds behaviour not already in Behavior steps)
 
-- Exact fields this skill may write
+No other sections. Gate metadata lives in frontmatter (`default_gate`, `overridable`).
+Run Object Updates content is expressed in Behavior steps (no separate section).
 ```
 
 Rules:
 
 - Frontmatter `name` must be the unique `fab-*` name without a slash.
 - User-facing invocation may use `/fab-*`.
+- Frontmatter `description` should be one clause — the body holds the detail.
 - No `SKILL.md` should exceed 400 lines.
 - Long rubrics or provider-specific notes belong in sibling `REFERENCE.md`.
+- `disable-model-invocation: true` makes the skill user-invoked only (data-routed by `next_action`, never autonomously fired).
+- `Done.` at the end of Behavior marks the completion criterion — the agent's work for this skill is finished.
 
 ---
 

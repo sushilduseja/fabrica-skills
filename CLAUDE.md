@@ -2,7 +2,7 @@
 
 ## Skill Discovery
 
-Skills live under `skills/core/` (Phase 1) and `skills/prototype/` (Phase 2). Each skill is a `SKILL.md` file with frontmatter name, description, category, and phase.
+Skills live under `skills/core/` (Phase 1) and `skills/prototype/` (Phase 2). Each skill is a `SKILL.md` file with frontmatter: name, description, category, phase, disable-model-invocation, default_gate, overridable.
 
 Invoke skills as `/fab-<name>`. The frontmatter name excludes the slash.
 
@@ -29,7 +29,7 @@ Before replacing `fabrica.run.json`:
 
 - **`current_step`:** After every state change, set `current_step` to the current skill's id (e.g., `"fab-frame"`).
 - **`updated_at`:** After every state change, bump `updated_at` to the current ISO-8601 timestamp.
-- **Gate defaults:** Read from `skills/manifest.json` — do not hardcode individual gate levels.
+- **Gate defaults:** Defined in `skills/manifest.json` (canonical source) and `SKILL.md` frontmatter (`default_gate`, `overridable`) for agent readability. Keep them in sync.
 
 ## Gate Model
 

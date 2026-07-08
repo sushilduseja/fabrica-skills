@@ -212,18 +212,18 @@ Phase 2: Thin full-pipeline prototype
 
 | Skill | Phase | Default gate | Job |
 |---|---:|---|---|
-| `/fab-intake` | 0 | checkpoint | Convert a rough idea into `docs/spec.md` and initialize `fabrica.run.json`. |
-| `/fab-blueprint` | 0 | checkpoint | Convert the spec into architecture, app stages, and build order. |
-| `/fab-frame` | 1 | auto | Create the app skeleton and first-stage contracts. |
-| `/fab-forge` | 1 | auto | Implement one named app stage with focused tests. |
-| `/fab-check` | 1 | auto | Score one stage on spec fit, contract fit, tests, clarity, and safety. |
-| `/fab-pulse` | 1 | auto | Show pipeline, quality, cost, and next action. |
+| `/fab-intake` | 0 | checkpoint | Convert a rough idea into a spec and initialize the run object. |
+| `/fab-blueprint` | 0 | checkpoint | Convert a spec into app architecture and a build order. |
+| `/fab-frame` | 1 | auto | Scaffold the app project skeleton and first-stage contracts. |
+| `/fab-forge` | 1 | auto | Implement one named app stage against the blueprint. |
+| `/fab-check` | 1 | auto | Evaluate one app stage against quality criteria. |
+| `/fab-pulse` | 1 | auto | Render the current run state as a terminal dashboard. |
 | `/fab-passport` | 1 | auto | Write a resumable handoff document. |
-| `/fab-trace` | 2 | auto | Diagnose a failed stage, state root cause, and apply the smallest fix. |
-| `/fab-weave` | 2 | checkpoint | Connect completed stages into one local end-to-end flow. |
-| `/fab-launch` | 2 | review | Verify the integrated app locally. External deploy requires approval. |
+| `/fab-trace` | 2 | auto | Diagnose a failing stage and apply the smallest viable fix. |
+| `/fab-weave` | 2 | checkpoint | Connect completed stages into an end-to-end flow. |
+| `/fab-launch` | 2 | review | Run a pre-launch checklist and verify the app locally. |
 | ~~`/fab-ledger`~~ (folded into `/fab-pulse --mode=details`) | - | - | Cost breakdown now in `fab-pulse` cost detail mode. |
-| `/fab-signal` | 2 | full | Capture a human decision with rationale and timestamp. |
+| `/fab-signal` | 2 | full | Capture a human decision. |
 | `/fab-retro` | 2 | auto | Score the run and identify process improvements. |
 
 Gate meanings:

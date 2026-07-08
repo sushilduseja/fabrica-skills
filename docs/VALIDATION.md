@@ -15,9 +15,10 @@ npm run validate
 ```
 
 This runs:
-- `scripts/validate-run.mjs test/fixtures/valid-run.json` (exit 0 expected)
-- `scripts/validate-run.mjs test/fixtures/invalid-run.json` (exit 1 expected)
-- `scripts/sync-manifest.mjs --check` (exit 0 expected)
+- `npm run validate:run-pass` — validates `test/fixtures/valid-run.json` (exit 0 expected)
+- `npm run validate:run-fail` — asserts `_assert-invalid.mjs` catches `/status` and `/app_stages/0/quality_score` violations
+- `npm run validate:run-gate-fail` — asserts `test/fixtures/invalid-gate-keys.json` is rejected (unknown skill key)
+- `npm run validate:manifest` — `sync-manifest.mjs --check` (exit 0 expected)
 
 ---
 
@@ -87,7 +88,7 @@ The run object (`fabrica.run.json`) validates against `schemas/run-object.schema
 - `quality_score` within 0-10 range
 - `costs.precision` is `unknown`
 - `app_stages[].status` is `done`
-- `gate_levels` contains all active skill keys (from `skills/manifest.json`)
+- `gate_levels` contains all active skill keys (from `skills/manifest.json`) — unknown keys rejected via `propertyNames.enum`
 
 ---
 
@@ -98,10 +99,11 @@ The run object (`fabrica.run.json`) validates against `schemas/run-object.schema
 ## Skill File Validation
 
 All active `SKILL.md` files (see `skills/manifest.json`):
-- Have valid frontmatter (name, description, category, phase)
+- Have valid frontmatter (name, description, category, phase, disable-model-invocation, default_gate, overridable)
 - Include prerequisites, error handling, and validation steps
 - Are under 400 lines
 - Use unique `fab-*` names
+- End Behavior with `Done.` (completion criterion)
 
 ## link-skills.mjs Validation
 
