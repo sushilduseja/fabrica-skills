@@ -1,8 +1,11 @@
 ---
 name: fab-passport
-description: Write a resumable handoff document with state, artifacts, and next command.
+description: Write a resumable handoff document.
 category: core
 phase: 1
+disable-model-invocation: true
+default_gate: auto
+overridable: true
 ---
 
 ## Job
@@ -35,15 +38,4 @@ End of session or transfer to another agent/session.
 5. Overwrite `docs/handoff.md`; do not append.
 6. If handoff context is incomplete (e.g., missing artifacts), note gaps in the document rather than blocking.
 
-## Error Handling
-
-- `missing_input`: Handoff context incomplete → include available context, note gaps.
-
-## Gate
-
-**Default:** auto
-**Overridable:** yes
-
-## Run Object Updates
-
-None (no state change — handoff is a snapshot).
+Done.

@@ -1,8 +1,11 @@
 ---
 name: fab-check
-description: Score one app stage 0-10 on spec fit, contract fit, tests, code clarity, and safety.
+description: Evaluate one app stage against quality criteria.
 category: core
 phase: 1
+disable-model-invocation: true
+default_gate: auto
+overridable: true
 ---
 
 ## Job
@@ -46,21 +49,6 @@ One app stage has implementation and tests (`status = done` in run object).
 5. Write `docs/eval/<app-stage>.md` with: scores per axis, weighted average, blocking items, optional improvements.
 6. Update `quality_score` in app_stages entry (the weighted average, 0-10).
 7. Set `next_action`: if blocked, `/fab-trace <stage>`; if passed, next forge or weave command.
-8. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
+8. Validate the candidate (tight — see CLAUDE.md).
 
-## Error Handling
-
-- `prerequisite_missing`: App stage not implemented → halt, suggest `/fab-forge` first.
-- `gate_blocked`: Quality score below threshold → list blocking fixes, set `status = blocked`.
-
-## Gate
-
-**Default:** auto
-**Overridable:** yes
-
-## Run Object Updates
-
-- `app_stages[].quality_score`, `app_stages[].status`
-- `current_step = "fab-check"`
-- `next_action`, `last_error` (on blocked)
-- `updated_at`
+Done.

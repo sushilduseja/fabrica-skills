@@ -1,8 +1,11 @@
 ---
 name: fab-pulse
-description: Render current pipeline, quality, cost, and next action as an inline terminal dashboard.
+description: Render the current run state as a terminal dashboard.
 category: core
 phase: 1
+disable-model-invocation: true
+default_gate: auto
+overridable: false
 ---
 
 ## Job
@@ -58,11 +61,4 @@ fab-check:parse   pending   blocked    0
 next: /fab-forge parse-invoice-text
 ```
 
-## Gate
-
-**Default:** auto
-**Overridable:** no
-
-## Run Object Updates
-
-None (read-only).
+Done.

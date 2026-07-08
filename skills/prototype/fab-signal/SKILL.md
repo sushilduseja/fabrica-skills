@@ -1,8 +1,11 @@
 ---
 name: fab-signal
-description: Capture a human decision with options, rationale, and timestamp.
+description: Capture a human decision.
 category: prototype
 phase: 2
+disable-model-invocation: true
+default_gate: full
+overridable: false
 ---
 
 ## Job
@@ -36,20 +39,6 @@ A human decision is needed.
 4. Record decision, rationale, timestamp (both triggered_at and resolved_at), and resumed next action.
 5. Update `next_action` to reflect the decision outcome.
 6. If operator does not respond within a reasonable window, keep decision pending (do not auto-decide).
-7. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
+7. Validate the candidate (tight — see CLAUDE.md).
 
-## Error Handling
-
-- `gate_blocked`: Decision timeout → keep decision pending, show next action.
-
-## Gate
-
-**Default:** full
-**Overridable:** no
-
-## Run Object Updates
-
-- `human_decisions[]`
-- `next_action` (updated to reflect decision outcome)
-- `current_step = "fab-signal"`
-- `updated_at`
+Done.

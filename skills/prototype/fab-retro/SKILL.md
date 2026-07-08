@@ -1,8 +1,11 @@
 ---
 name: fab-retro
-description: Score the run 0-10, compare output against spec, and identify process improvements for the next run.
+description: Score the run and identify process improvements.
 category: prototype
 phase: 2
+disable-model-invocation: true
+default_gate: auto
+overridable: true
 ---
 
 ## Job
@@ -37,18 +40,6 @@ Run is complete, abandoned, or intentionally stopped.
 5. Write three concrete process changes for the next run.
 6. Estimate how long the same toy run would take manually.
 7. Write `docs/retro.md`.
-8. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
+8. Validate the candidate (tight — see CLAUDE.md).
 
-## Error Handling
-
-- `invalid_state`: Run not complete/abandoned → halt, show current status.
-
-## Gate
-
-**Default:** auto
-**Overridable:** yes
-
-## Run Object Updates
-
-- `current_step = "fab-retro"`
-- `updated_at`
+Done.

@@ -1,8 +1,11 @@
 ---
 name: fab-weave
-description: Connect completed app stages into one local end-to-end flow with integration test.
+description: Connect completed stages into an end-to-end flow.
 category: prototype
 phase: 2
+disable-model-invocation: true
+default_gate: checkpoint
+overridable: true
 ---
 
 ## Job
@@ -36,27 +39,15 @@ Required app stages are done and checked (`status = done` for all required stage
 1. Wire only the app stages needed for the canonical happy path.
 2. Add one integration test from raw input to expected output.
 3. Run the integration test and record result.
-4. If integration fails, set `last_error = { "type": "external_failure", "message": "Integration test failed" }`, set `next_action = "/fab-trace integration"`, and stop. Do not inline `fab-trace` behavior.
+4. If integration fails, set `last_error = { "type": "external_failure", "message": "Integration test failed" }`, set `next_action = "/fab-trace integration"`, and stop. Wiring is done; routing to the diagnostic skill is complete.
 5. Write `docs/integration.md` describing the wired flow and how to run it.
 6. Update `status = verifying`, `next_action = "/fab-launch"`.
 7. Advance `experiment_phase = "phase_2_pipeline"` if currently `phase_1_slice`.
-8. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
+8. Validate the candidate (tight — see CLAUDE.md).
+9. Show wiring plan before mutation. Operator approves or requests changes.
+
+Done.
 
 ## Error Handling
 
 - `prerequisite_missing`: Required stages not done → list missing stages.
-- `external_failure`: Integration test fails → set `status = failed`, set `last_error`, suggest `/fab-trace integration`.
-
-## Gate
-
-**Default:** checkpoint
-**Overridable:** yes
-Show wiring plan before mutation.
-
-## Run Object Updates
-
-- `status`, `verifications[]`, `next_action`
-- `experiment_phase` (advance to `phase_2_pipeline`)
-- `last_error` (on failure)
-- `current_step = "fab-weave"`
-- `updated_at`

@@ -1,8 +1,11 @@
 ---
 name: fab-frame
-description: Create project skeleton and first-stage contracts for a named app.
+description: Scaffold the app project skeleton and first-stage contracts.
 category: core
 phase: 1
+disable-model-invocation: true
+default_gate: auto
+overridable: true
 ---
 
 ## Job
@@ -47,21 +50,10 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
    - `"run": "python -m invoice_parser.cli"`
    - `"lint": "python -m flake8 invoice_parser/"`
 9. Update `status = forging`, set first stage `status = active`, set `current_app_stage` to the stage name, set `next_action = "/fab-forge <first-stage-name>"`.
-10. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
+10. Validate the candidate (tight — see CLAUDE.md).
+
+Done.
 
 ## Error Handling
 
-- `prerequisite_missing`: Blueprint not confirmed → halt, suggest `/fab-blueprint` first.
 - `invalid_state`: Project skeleton already exists → warn, offer to overwrite or skip.
-
-## Gate
-
-**Default:** auto
-**Overridable:** yes
-
-## Run Object Updates
-
-- `status`, `current_app_stage`, `app_stages[].status`, `next_action`
-- `current_step = "fab-frame"`
-- `updated_at`
-- Run object location moved to app project root (see Behavior step 8)

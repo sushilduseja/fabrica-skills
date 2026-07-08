@@ -1,8 +1,11 @@
 ---
 name: fab-launch
-description: Verify the integrated app locally with a pre-launch checklist. External deploy is deferred.
+description: Run a pre-launch checklist and verify the app locally.
 category: prototype
 phase: 2
+disable-model-invocation: true
+default_gate: review
+overridable: false
 ---
 
 ## Job
@@ -45,22 +48,6 @@ Integrated app ready for MVP verification (`status = verifying`, `docs/integrati
 6. Verify `.env.example` documents all required vars. Verify `.env` is in `.gitignore`. Scan for committed secrets.
 7. Missing required env vars produce: "Missing required env var: X. See .env.example".
 8. If pre-launch checklist fails, set `last_error = { type: "gate_blocked", message: "Pre-launch checklist failed: <details>" }` and halt.
-9. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
+9. Validate the candidate (tight — see CLAUDE.md).
 
-## Error Handling
-
-- `gate_blocked`: Pre-launch checklist fails → show checklist failures.
-- `gate_blocked`: External deploy without approval → halt, require explicit approval.
-
-## Gate
-
-**Default:** review
-**Overridable:** no for external deploy approval
-Local checks may run automatically; external launch requires explicit approval.
-
-## Run Object Updates
-
-- `status`, `verifications[]`, `next_action`
-- `last_error` (on failure)
-- `current_step = "fab-launch"`
-- `updated_at`
+Done.

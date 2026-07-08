@@ -1,8 +1,11 @@
 ---
 name: fab-trace
-description: Diagnose a failing app stage, state root cause, apply minimal fix, and add regression test.
+description: Diagnose a failing stage and apply the smallest viable fix.
 category: prototype
 phase: 2
+disable-model-invocation: true
+default_gate: auto
+overridable: true
 ---
 
 ## Job
@@ -41,21 +44,11 @@ A stage is blocked, failing, or has a supplied error.
 5. Run the narrowest relevant test command.
 6. If fix resolves: update stage `status = done`, clear `last_error`, set `next_action` to resume.
 7. If fix does not resolve: re-analyze root cause, try once more. If still failing, set `next_action = "/fab-signal"` to request operator help.
-8. Validate the candidate: pipe the in-memory run object through `node <fabrica-skills>/scripts/validate-run.mjs --stdin` (see CLAUDE.md for the write protocol). Write only after validation passes.
+8. Validate the candidate (tight — see CLAUDE.md).
+
+Done.
 
 ## Error Handling
 
 - `external_failure`: Error not reproducible → log context, suggest manual diagnosis.
 - `external_failure`: Fix doesn't resolve root cause → re-analyze, suggest deeper fix.
-
-## Gate
-
-**Default:** auto
-**Overridable:** yes
-
-## Run Object Updates
-
-- `app_stages[].status`, `last_error`, `verifications[]`
-- `next_action`
-- `current_step = "fab-trace"`
-- `updated_at`
