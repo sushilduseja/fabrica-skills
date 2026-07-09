@@ -272,6 +272,13 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
         error(`skill "${skill.id}" Error Handling section mentions "${mentioned}" but it is not defined in errors.json`);
       }
     }
+    // Reverse direction: every error type in errors.json must be mentioned in the Error Handling section.
+    for (const errorType of errorTypesInMeta) {
+      const quoted = '`' + errorType + '`';
+      if (!errorSection.includes(quoted)) {
+        error(`skill "${skill.id}" errors.json defines "${errorType}" but it is not mentioned in the SKILL.md Error Handling section`);
+      }
+    }
   }
 
   if (skill.read_only) {

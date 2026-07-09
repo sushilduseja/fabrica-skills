@@ -45,4 +45,26 @@ function gitinclude(entry, gitignore) {
   return gitignore.split('\n').some((line) => line.trim() === entry || line.trim().startsWith(entry));
 }
 
+test('all generated-file patterns are covered by .gitignore', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const gitignore = readFileSync(resolve(root, '.gitignore'), 'utf-8');
+
+  const generatedPaths = [
+    'fabrica.run.json',
+    'docs/spec.md',
+    'docs/blueprint.md',
+    'docs/eval/',
+    'docs/handoff.md',
+    'docs/integration.md',
+    'docs/retro.md',
+    'docs/retune/',
+    '.skills/',
+  ];
+
+  for (const p of generatedPaths) {
+    assert(gitinclude(p, gitignore), `.gitignore must include ${p}`);
+  }
+
+});
+
 runAll();

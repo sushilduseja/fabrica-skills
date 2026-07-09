@@ -14,6 +14,9 @@ import {
   validateFabSignalGate,
   validateFabCheckGate,
   validateFabPulseGate,
+  validatePrerequisiteGate,
+  validateTimestampOrderGate,
+  validateCostPrecisionGate,
 } from '../scripts/_skill-gates.mjs';
 
 /* ================================================================
@@ -156,6 +159,137 @@ test('validate-run rejects unknown precision with numeric cost (fab-pulse gate)'
   assertFail(result);
   assert(combined(result).includes('tokens_in'), combined(result));
   assert(combined(result).includes('gate contract'), combined(result));
+  assertNoStackTrace(result);
+});
+
+/* ================================================================
+ *  Test 4 — next_action prerequisite-graph enforcement
+ * ================================================================ */
+
+test('prerequisite gate: fab-weave next_action with pending stage is rejected', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.status = 'weaving';
+  run.experiment_phase = 'phase_2_pipeline';
+  run.next_action = '/fab-weave';
+  run.app_stages = [
+    { name: 'api', purpose: 'Build API', status: 'pending', quality_score: null, artifacts: [], notes: null },
+  ];
+  const errors = validatePrerequisiteGate(run);
+  assert(errors.length > 0, 'expected gate to reject fab-weave with pending stage');
+  assert(errors[0].includes('fab-weave'), errors[0]);
+  assert(errors[0].includes('pending'), errors[0]);
+});
+
+test('prerequisite gate: fab-weave next_action with all stages done is accepted', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.status = 'weaving';
+  run.experiment_phase = 'phase_2_pipeline';
+  run.next_action = '/fab-weave';
+  run.app_stages = [
+    { name: 'api', purpose: 'Build API', status: 'done', quality_score: 8, artifacts: ['src/api.js'], notes: null },
+  ];
+  const errors = validatePrerequisiteGate(run);
+  assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
+});
+
+test('prerequisite gate: fab-launch next_action without verifying status is rejected', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.next_action = '/fab-launch';
+  run.status = 'weaving';
+  const errors = validatePrerequisiteGate(run);
+  assert(errors.length > 0, 'expected gate to reject fab-launch without verifying status');
+  assert(errors[0].includes('fab-launch'), errors[0]);
+  assert(errors[0].includes('verifying'), errors[0]);
+});
+
+test('prerequisite gate: fab-launch next_action with verifying status is accepted', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.next_action = '/fab-launch';
+  run.status = 'verifying';
+  const errors = validatePrerequisiteGate(run);
+  assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
+});
+
+/* ================================================================
+ *  Test 9 — human_decisions timestamp ordering
+ * ================================================================ */
+
+test('timestamp gate: resolved_at before triggered_at is rejected', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [{ step: 'fab-signal', decision_needed: 'Continue?', options: ['continue', 'abandon'], decision: 'continue', rationale: 'ok', triggered_at: '2026-06-19T12:05:00Z', resolved_at: '2026-06-19T12:00:00Z' }];
+  const errors = validateTimestampOrderGate(run);
+  assert(errors.length > 0, 'expected gate to reject resolved_at before triggered_at');
+  assert(errors[0].includes('earlier than'), errors[0]);
+});
+
+test('timestamp gate: resolved_at after triggered_at is accepted', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [{ step: 'fab-signal', decision_needed: 'Continue?', options: ['continue', 'abandon'], decision: 'continue', rationale: 'ok', triggered_at: '2026-06-19T12:00:00Z', resolved_at: '2026-06-19T12:05:00Z' }];
+  const errors = validateTimestampOrderGate(run);
+  assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
+});
+
+test('timestamp gate: null resolved_at is accepted (pending decision)', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [{ step: 'fab-signal', decision_needed: 'Continue?', options: ['continue', 'abandon'], decision: null, rationale: null, triggered_at: '2026-06-19T12:00:00Z', resolved_at: null }];
+  const errors = validateTimestampOrderGate(run);
+  assert.strictEqual(errors.length, 0, `pending decision should be accepted: ${JSON.stringify(errors)}`);
+});
+
+/* ================================================================
+ *  Test 7 — cost-precision state integrity
+ * ================================================================ */
+
+test('cost precision gate: invalid precision value is rejected', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.costs.precision = 'approximate';
+  const errors = validateCostPrecisionGate(run);
+  assert(errors.length > 0, 'expected gate to reject invalid precision');
+  assert(errors[0].includes('not valid'), errors[0]);
+});
+
+test('cost precision gate: valid precision values are accepted', () => {
+  for (const precision of ['unknown', 'estimated', 'measured']) {
+    const run = readJson('test/fixtures/valid-run.json');
+    run.costs = { precision, tokens_in: precision === 'unknown' ? 'unknown' : 10, tokens_out: 'unknown', api_calls: 'unknown', estimated_usd: 'unknown', budget_usd: null, by_step: {} };
+    const errors = validateCostPrecisionGate(run);
+    assert.strictEqual(errors.length, 0, `precision "${precision}" should be accepted: ${JSON.stringify(errors)}`);
+  }
+});
+
+/* ================================================================
+ *  Integration-level: prerequisite, timestamp, cost through validate-run --stdin
+ * ================================================================ */
+
+test('validate-run rejects fab-weave with pending stage (prerequisite gate)', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  valid.status = 'weaving';
+  valid.experiment_phase = 'phase_2_pipeline';
+  valid.next_action = '/fab-weave';
+  valid.app_stages = [{ name: 'api', purpose: 'Build API', status: 'pending', quality_score: null, artifacts: [], notes: null }];
+  const result = validateStdin(valid);
+  assertFail(result);
+  assert(combined(result).includes('fab-weave'), combined(result));
+  assert(combined(result).includes('gate contract'), combined(result));
+  assertNoStackTrace(result);
+});
+
+test('validate-run rejects timestamp ordering violation', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  valid.human_decisions = [{ step: 'fab-signal', decision_needed: 'Continue?', options: ['continue', 'abandon'], decision: 'continue', rationale: 'ok', triggered_at: '2026-06-19T12:05:00Z', resolved_at: '2026-06-19T12:00:00Z' }];
+  const result = validateStdin(valid);
+  assertFail(result);
+  assert(combined(result).includes('earlier than'), combined(result));
+  assert(combined(result).includes('gate contract'), combined(result));
+  assertNoStackTrace(result);
+});
+
+test('validate-run rejects invalid cost precision', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  valid.costs.precision = 'approximate';
+  const result = validateStdin(valid);
+  assertFail(result);
+  assert(combined(result).includes('must be equal to one of the allowed values'), combined(result));
   assertNoStackTrace(result);
 });
 

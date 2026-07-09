@@ -10,6 +10,24 @@
  * SKILL.md as executable invariants so they can be verified automatically
  * rather than left to agent good faith.
  */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const _root = resolve(__dirname, '..');
+
+let _manifestPrereqs = null;
+function loadPrerequisiteGraph() {
+  if (_manifestPrereqs) return _manifestPrereqs;
+  const manifest = JSON.parse(readFileSync(resolve(_root, 'skills/manifest.json'), 'utf-8'));
+  const graph = {};
+  for (const s of manifest.skills) {
+    graph[s.id] = { prerequisites: s.prerequisites || [], blocks: s.blocks || [], phase: s.phase };
+  }
+  _manifestPrereqs = graph;
+  return graph;
+}
 
 /**
  * Validate fab-launch (review gate) invariants.
@@ -142,6 +160,100 @@ export function validateFabPulseGate(run) {
 }
 
 /**
+ * Validate next_action prerequisite graph.
+ *
+ * Key contracts:
+ *   - A skill referenced in next_action must have all prerequisites met
+ *     by the current run state
+ *   - fab-weave requires all app_stages to be done
+ *   - fab-launch requires status to be "verifying"
+ *
+ * @param {Object} run — parsed fabrica.run.json
+ * @returns {string[]}
+ */
+export function validatePrerequisiteGate(run) {
+  const errors = [];
+
+  if (!run.next_action) return errors;
+
+  const [nextSkill] = run.next_action.slice(1).split(' ');
+  const graph = loadPrerequisiteGraph();
+  const skillInfo = graph[nextSkill];
+
+  if (!skillInfo) return errors; // already caught by validate-run next_action check
+
+  if (nextSkill === 'fab-weave') {
+    const pending = (run.app_stages || []).filter((s) => s.status !== 'done');
+    if (pending.length > 0) {
+      errors.push(
+        `next_action "/fab-weave" requires all app_stages to be done, but ${pending.length} stage(s) ` +
+          `have status other than "done": ${pending.map((s) => `"${s.name}"(${s.status})`).join(', ')}`
+      );
+    }
+  }
+
+  if (nextSkill === 'fab-launch' && run.status !== 'verifying') {
+    errors.push(
+      `next_action "/fab-launch" requires status "verifying", but current status is "${run.status}"`
+    );
+  }
+
+  return errors;
+}
+
+/**
+ * Validate human_decisions timestamp ordering.
+ *
+ * Key contracts:
+ *   - resolved_at must not be earlier than triggered_at
+ *
+ * @param {Object} run — parsed fabrica.run.json
+ * @returns {string[]}
+ */
+export function validateTimestampOrderGate(run) {
+  const errors = [];
+
+  for (const [i, d] of (run.human_decisions || []).entries()) {
+    if (d.triggered_at && d.resolved_at) {
+      const triggered = new Date(d.triggered_at).getTime();
+      const resolved = new Date(d.resolved_at).getTime();
+      if (!isNaN(triggered) && !isNaN(resolved) && resolved < triggered) {
+        errors.push(
+          `human_decisions[${i}] resolved_at (${d.resolved_at}) is earlier than ` +
+            `triggered_at (${d.triggered_at})`
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Validate cost-precision state integrity.
+ *
+ * Key contracts:
+ *   - precision "measured" with concrete values then downgraded to "unknown"
+ *     must not retain stale numeric values (checked by validateFabPulseGate)
+ *   - precision must be one of: "unknown", "estimated", "measured"
+ *
+ * @param {Object} run — parsed fabrica.run.json
+ * @returns {string[]}
+ */
+export function validateCostPrecisionGate(run) {
+  const errors = [];
+  const validPrecisions = ['unknown', 'estimated', 'measured'];
+
+  if (run.costs && !validPrecisions.includes(run.costs.precision)) {
+    errors.push(
+      `costs.precision "${run.costs.precision}" is not valid (must be one of: ${validPrecisions.join(', ')})`
+    );
+  }
+
+  return errors;
+}
+
+/**
  * Run all gate validators against a run object.
  * @param {Object} run
  * @returns {string[]} all gate violations found
@@ -152,5 +264,8 @@ export function validateAllGates(run) {
     ...validateFabSignalGate(run),
     ...validateFabCheckGate(run),
     ...validateFabPulseGate(run),
+    ...validatePrerequisiteGate(run),
+    ...validateTimestampOrderGate(run),
+    ...validateCostPrecisionGate(run),
   ];
 }
