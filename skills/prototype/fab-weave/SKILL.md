@@ -25,8 +25,8 @@ Required app stages are done and checked (`status = done` for all required stage
 ## Input
 
 - App artifacts
-- `docs/blueprint.md`
-- `fabrica.run.json`
+- `docs/blueprint.md` (app-directory copy after `/fab-frame`)
+- `fabrica.run.json` (app-directory copy after `/fab-frame`)
 
 ## Output
 

@@ -763,7 +763,7 @@ test('fab-frame documents stack-agnostic run-state relocation and service scaffo
   const frame = readFileSync(resolve(root, 'skills/core/fab-frame/SKILL.md'), 'utf-8');
 
   assert(frame.includes('Copy `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md`'));
-  assert(frame.includes('app-directory `fabrica.run.json` is canonical'));
+  assert(frame.includes('all three app-directory copies are canonical'));
   assert(frame.includes('Do not assume any technology stack'));
   assert(frame.includes('one directory per declared service'));
   assert(frame.includes('Do not assume service names such as `backend` or `frontend`'));

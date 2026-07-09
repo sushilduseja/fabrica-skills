@@ -21,7 +21,7 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 - `fab-frame` complete
 - Named app stage exists in `app_stages`
 - `docs/blueprint.md` exists
-- `fabrica.run.json` exists and validates
+- `fabrica.run.json` exists and validates (read the app-directory copy after `/fab-frame` completes)
 
 ## Input
 

@@ -77,7 +77,7 @@ Confirmed spec exists (`docs/spec.md` present, `status = designing` in run objec
     - expected artifacts
     - test shape
     - verification plan
-12. Update `blueprint_path = "docs/blueprint.md"`, replace `app_stages` with validated stage objects, set `current_step = "fab-blueprint"`, `status = "framing"`, and `next_action = "/fab-frame"`.
+12. Update `blueprint_path = "docs/blueprint.md"`, replace `app_stages` with validated stage objects, set `current_step = "fab-blueprint"`, `status = "framing"`, `next_action = "/fab-frame"`, and bump `updated_at`.
 13. Validate the candidate run object before writing.
 
 Done.

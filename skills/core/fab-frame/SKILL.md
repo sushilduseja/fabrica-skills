@@ -56,7 +56,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
 2. Derive the app slug from the validated run object `name`.
 3. Create the app project root at `../<run-name>/` only after path safety checks pass.
 4. Create `../<run-name>/docs/`.
-5. Copy `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the app project root. After this copy, the app-directory `fabrica.run.json` is canonical. Later skills must read and write the app-directory copy, not the source-repo copy.
+5. Copy `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the app project root. After this copy, all three app-directory copies are canonical. Later skills must read and write the app-directory copies, not the source-repo copies.
 6. Read the blueprint service plan. If no explicit service plan exists, infer the minimum service layout from the blueprint and record the inference in the scaffold notes.
 7. For a single-runtime app, scaffold either a flat project or one service directory according to the blueprint.
 8. For a multi-service app, create one directory per declared service. Do not assume service names such as `backend` or `frontend`; use the names from the blueprint.
@@ -91,6 +91,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
     - first stage `status = "active"`
     - `current_app_stage = "<first-stage-name>"`
     - `next_action = "/fab-forge <first-stage-name>"`
+    - bump `updated_at`
 20. Validate the candidate run object before writing it to `../<run-name>/fabrica.run.json`.
 
 Done.

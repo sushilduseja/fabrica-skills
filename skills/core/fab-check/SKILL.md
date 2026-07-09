@@ -28,8 +28,8 @@ One app stage has implementation and tests (`status = done` in run object).
 - App stage name (required)
 - Implementation files
 - Test files
-- `docs/spec.md`, `docs/blueprint.md`
-- `fabrica.run.json` (required)
+- `docs/spec.md`, `docs/blueprint.md` (app-directory copies after `/fab-frame`)
+- `fabrica.run.json` (required; app-directory copy after `/fab-frame`)
 
 ## Output
 
