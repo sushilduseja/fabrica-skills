@@ -163,6 +163,10 @@ test('validate-run exhaustively enforces status × phase matrix', () => {
         candidate.current_app_stage = 'api';
         candidate.next_action = status === 'complete' ? '/fab-retro' : '/fab-forge api';
       }
+      if (status === 'complete') {
+        candidate.current_step = 'fab-launch';
+        candidate.verifications = [{ kind: 'local_launch', command: 'npm start', passed: true, summary: 'app launched', timestamp: '2026-06-19T12:30:00Z' }];
+      }
       const result = validateStdin(candidate);
       if (allowed.includes(phase)) {
         assertPass(result, `${status}/${phase} should pass: ${combined(result)}`);
@@ -241,6 +245,7 @@ test('validate-run accepts valid trace integration and terminal complete states'
   complete.current_app_stage = 'api';
   complete.next_action = '/fab-retro';
   complete.app_stages = [{ name: 'api', purpose: 'Build API', status: 'done', quality_score: 9.5, artifacts: ['src/api.js'], notes: 'done' }];
+  complete.verifications = [{ kind: 'local_launch', command: 'npm start', passed: true, summary: 'app launched', timestamp: '2026-06-19T12:30:00Z' }];
   assertPass(validateStdin(complete));
 });
 
@@ -262,6 +267,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
     ['forge next_action unknown stage', (o) => { o.status = 'forging'; o.experiment_phase = 'phase_1_slice'; o.app_stages = [baseStage]; o.next_action = '/fab-forge web'; }, 'references unknown app stage "web"'],
     ['trace next_action unknown target', (o) => { o.status = 'blocked'; o.app_stages = [baseStage]; o.next_action = '/fab-trace web'; }, 'unknown trace target "web"'],
     ['complete with unfinished stages', (o) => { o.status = 'complete'; o.experiment_phase = 'phase_2_pipeline'; o.app_stages = [{ ...baseStage, status: 'blocked' }]; o.next_action = '/fab-retro'; }, 'requires all app stages to be done'],
+    ['complete with early current_step', (o) => { o.status = 'complete'; o.experiment_phase = 'phase_2_pipeline'; o.app_stages = [baseStage]; o.current_step = 'fab-intake'; o.next_action = '/fab-retro'; }, 'not compatible with current_step'],
     ['forging with no app stages', (o) => { o.status = 'forging'; o.experiment_phase = 'phase_1_slice'; o.app_stages = []; o.next_action = '/fab-frame'; }, 'requires at least one app_stages entry'],
   ];
 
@@ -306,6 +312,22 @@ test('validate-run accepts container verification kinds used by Docker-capable p
       timestamp: '2026-06-19T12:30:00Z',
     }];
     assertPass(validateStdin(candidate), `${kind} should validate`);
+  }
+});
+
+test('validate-run rejects verification kind / command inconsistencies', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  const cases = [
+    ['container_build with non-Docker command', { kind: 'container_build', command: 'node scripts/check-docker-files.mjs', passed: true, summary: 'static check', timestamp: '2026-06-19T12:30:00Z' }, 'does not appear to invoke Docker'],
+    ['static_analysis with Docker build command', { kind: 'static_analysis', command: 'docker compose build', passed: true, summary: 'container build', timestamp: '2026-06-19T12:30:00Z' }, 'appears to build a container'],
+  ];
+  for (const [label, verification, expected] of cases) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    candidate.verifications = [verification];
+    const result = validateStdin(candidate);
+    assertFail(result, `${label} unexpectedly passed`);
+    assert(combined(result).includes(expected), `${label}: ${combined(result)}`);
+    assertNoStackTrace(result);
   }
 });
 

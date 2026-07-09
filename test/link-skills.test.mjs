@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { copyRepoFixture, mutateJson, run, test, assertPass, assertFail, combined, assertNoStackTrace, runAll } from './_harness.mjs';
@@ -188,6 +188,120 @@ test('link-skills rejects duplicate ids and source symlinks', () => {
     assertFail(result);
     assert(combined(result).includes('must be a real directory'));
     assertNoStackTrace(result);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('link-skills --global refuses symlinked .skills directory', () => {
+  const temp = copyRepoFixture();
+  const home = mkdtempSync(join(tmpdir(), 'fabrica-skills-global-sym-'));
+  const outside = mkdtempSync(join(tmpdir(), 'fabrica-skills-outside-global-'));
+  try {
+    mkdirSync(join(home, '.fabrica-skills'), { recursive: true });
+    try {
+      symlinkSync(outside, join(home, '.fabrica-skills', '.skills'), 'dir');
+    } catch {
+      return;
+    }
+    const result = run(['scripts/link-skills.mjs', '--global'], {
+      cwd: temp,
+      env: { HOME: home, USERPROFILE: home },
+    });
+    assertFail(result);
+    assert(combined(result).includes('must not be a symlink or junction'));
+    assert(!existsSync(join(outside, 'fab-intake')));
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('link-skills preserves non-manifest skills through repeated setup', () => {
+  const temp = copyRepoFixture();
+  try {
+    mkdirSync(join(temp, '.skills'), { recursive: true });
+    mkdirSync(join(temp, '.skills/fab-mytool'), { recursive: true });
+    writeFileSync(join(temp, '.skills/fab-mytool/KEEP'), 'keep', 'utf-8');
+    mkdirSync(join(temp, '.skills/other-tool'), { recursive: true });
+    writeFileSync(join(temp, '.skills/other-tool/KEEP'), 'keep', 'utf-8');
+
+    let result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+    assert(existsSync(join(temp, '.skills/fab-mytool/KEEP')), 'fab-mytool should survive first run');
+    assert(existsSync(join(temp, '.skills/other-tool/KEEP')), 'other-tool should survive first run');
+
+    result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+    assert(existsSync(join(temp, '.skills/fab-mytool/KEEP')), 'fab-mytool should survive second run');
+    assert(existsSync(join(temp, '.skills/other-tool/KEEP')), 'other-tool should survive second run');
+
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+/**
+ * Patch link-skills.mjs so every symlink/junction call throws EPERM.
+ * This forces the copy-fallback path regardless of host platform.
+ */
+function patchForEPermFallback(scriptsDir) {
+  const mjsPath = join(scriptsDir, 'link-skills.mjs');
+  const orig = readFileSync(mjsPath, 'utf-8');
+  const patched = orig
+    .replace(
+      "const isWindows = process.platform === 'win32';",
+      "const isWindows = true;"
+    )
+    .replace(
+      "symlinkSync(skillPath, linkDest, 'junction');",
+      "const __e = new Error('simulated EPERM'); __e.code = 'EPERM'; throw __e;"
+    )
+    .replace(
+      "symlinkSync(rel, linkDest, 'dir');",
+      "const __e = new Error('simulated EPERM'); __e.code = 'EPERM'; throw __e;"
+    );
+  writeFileSync(mjsPath, patched, 'utf-8');
+}
+
+test('link-skills falls back to copy when junction/symlink fails with EPERM', () => {
+  const temp = copyRepoFixture();
+  try {
+    patchForEPermFallback(join(temp, 'scripts'));
+    const result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+    const out = combined(result);
+    assert(out.includes('COPY'), `expected COPY output but got:\n${out}`);
+    assert(existsSync(join(temp, '.skills/fab-intake/SKILL.md')));
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('link-skills EPERM copy-fallback refreshes stale copies on rerun', () => {
+  const temp = copyRepoFixture();
+  try {
+    patchForEPermFallback(join(temp, 'scripts'));
+
+    // First run — creates copies.
+    let result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+
+    // Modify a source SKILL.md after the first install.
+    const sourceMd = join(temp, 'skills/core/fab-intake/SKILL.md');
+    const marker = '\n<!-- STALENESS_MARKER_REFRESHED -->\n';
+    writeFileSync(sourceMd, readFileSync(sourceMd, 'utf-8') + marker, 'utf-8');
+
+    // Second run — copies should be refreshed (remove + re-copy).
+    result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+
+    // Assert the copy in .skills/ has the marker (proving refresh).
+    const copyMd = readFileSync(join(temp, '.skills/fab-intake/SKILL.md'), 'utf-8');
+    assert(copyMd.endsWith(marker), 'expected copy to be refreshed with source change');
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }

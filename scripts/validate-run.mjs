@@ -12,6 +12,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { validateAllGates } from './_skill-gates.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -195,6 +196,9 @@ async function main() {
     if (incomplete.length > 0) {
       fail(`status "complete" requires all app stages to be done (not done: ${incomplete.join(', ')})`);
     }
+    if (['fab-intake', 'fab-blueprint'].includes(instance.current_step)) {
+      fail(`status "complete" is not compatible with current_step "${instance.current_step}"`);
+    }
   }
 
   if (instance.current_app_stage !== null && !stageNames.has(instance.current_app_stage)) {
@@ -215,6 +219,25 @@ async function main() {
     if (nextSkill === 'fab-trace' && nextArg && nextArg !== 'integration' && !stageNames.has(nextArg)) {
       fail(`next_action "${instance.next_action}" references unknown trace target "${nextArg}"`);
     }
+  }
+
+  for (const [index, v] of instance.verifications.entries()) {
+    const invokesDocker = /(?:^|[^-\w])docker\b/.test(v.command);
+    if (v.kind === 'container_build' && !invokesDocker) {
+      fail(`verifications[${index}] has kind "container_build" but command "${v.command}" does not appear to invoke Docker. For static Docker checks, use kind "static_analysis".`);
+    }
+    if (v.kind === 'static_analysis' && invokesDocker && /\b(build|compose)\b/.test(v.command)) {
+      fail(`verifications[${index}] has kind "static_analysis" but command "${v.command}" appears to build a container. For container builds, use kind "container_build".`);
+    }
+  }
+
+  const gateErrors = validateAllGates(instance);
+  if (gateErrors.length > 0) {
+    console.error(`[validate-run] ERROR — ${gateErrors.length} gate contract violation(s):`);
+    for (const err of gateErrors) {
+      console.error(`  ${err}`);
+    }
+    process.exit(1);
   }
 
   console.log(`[validate-run] OK — run object from ${inputLabel} is valid`);
