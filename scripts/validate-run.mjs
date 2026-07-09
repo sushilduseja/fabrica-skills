@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 
+/**
+ * Validate a fabrica.run.json file against the JSON Schema and post-schema
+ * semantic invariants (status × phase, app-stage consistency, next_action
+ * validity).
+ *
+ * Usage:
+ *   node scripts/validate-run.mjs <path-to-fabrica.run.json>
+ *   node scripts/validate-run.mjs --stdin < candidate.json
+ */
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -9,8 +18,11 @@ const root = resolve(__dirname, '..');
 
 const SCHEMA_PATH = resolve(root, 'schemas/run-object.schema.json');
 
-// Status × experiment_phase compatibility matrix.
-// Each phase permits a subset of run-level statuses.
+/**
+ * Status × experiment_phase compatibility matrix.
+ * Each phase permits a subset of run-level statuses.
+ * @type {Object<string, string[]>}
+ */
 const STATUS_PHASE_MATRIX = {
   designing: ['phase_0_spec'],
   framing: ['phase_0_spec'],
@@ -23,11 +35,21 @@ const STATUS_PHASE_MATRIX = {
   abandoned: ['phase_0_spec', 'phase_1_slice', 'phase_2_pipeline'],
 };
 
+/**
+ * Log a validation error and exit.
+ * @param {string} msg
+ */
 function fail(msg) {
   console.error(`[validate-run] ERROR: ${msg}`);
   process.exit(1);
 }
 
+/**
+ * Read and parse a JSON file. Calls fail() on error.
+ * @param {string} path
+ * @param {string} label
+ * @returns {any}
+ */
 function readJsonFile(path, label) {
   let raw;
   try {
@@ -43,6 +65,10 @@ function readJsonFile(path, label) {
   }
 }
 
+/**
+ * Read a complete JSON object from stdin.
+ * @returns {Promise<any>}
+ */
 async function readStdinJson() {
   const chunks = [];
   try {
@@ -65,6 +91,11 @@ async function readStdinJson() {
   }
 }
 
+/**
+ * Dynamically import ajv and ajv-formats. Provides a clear error if
+ * dependencies are missing.
+ * @returns {Promise<{Ajv: Function, addFormats: Function}>}
+ */
 async function loadAjv() {
   try {
     const [{ default: Ajv }, { default: addFormats }] = await Promise.all([
@@ -77,6 +108,10 @@ async function loadAjv() {
   }
 }
 
+/**
+ * Entry point. Reads run object from file or stdin, validates against schema
+ * and semantic invariants, then exits 0 on success or 1 on failure.
+ */
 async function main() {
   const args = process.argv.slice(2);
   const stdinMode = args.includes('--stdin');
@@ -128,6 +163,12 @@ async function main() {
       console.error(`  ${path}  ${err.message}`);
     }
     process.exit(1);
+  }
+
+  // Post-schema: schema version tolerance.
+  const supportedVersions = ['0.2', '0.3'];
+  if (!supportedVersions.includes(instance.schema_version)) {
+    console.warn(`[validate-run] WARN: schema_version "${instance.schema_version}" is not in the known range ${JSON.stringify(supportedVersions)}. Proceeding but validation expectations may be incorrect.`);
   }
 
   // Post-schema: status × experiment_phase compatibility.

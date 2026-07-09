@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "repo_version": "0.2.0",
-  "description": "Canonical skill inventory for fabrica-skills. Every structural fact about the factory lives here.",
+      "description": "Canonical skill inventory for fabrica-skills. Every structural fact about the factory lives here. Note: `read_only` means read-only with respect to run-object fields. Some read-only skills (fab-retro, fab-passport) write filesystem artifacts outside the run object.",
   "skills": [
     {
       "id": "fab-intake",
@@ -42,7 +42,7 @@
       "prerequisites": ["fab-blueprint"],
       "blocks": ["fab-forge"],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "current_app_stage", "status", "next_action"],
+      "writes_fields": ["updated_at", "current_step", "current_app_stage", "status", "next_action", "app_stages"],
       "error_metadata_path": "skills/core/fab-frame/errors.json"
     },
     {

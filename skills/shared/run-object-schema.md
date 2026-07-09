@@ -72,7 +72,7 @@ Canonical source: `skills/manifest.json` (`writes_fields` per skill). Each field
 | `current_app_stage` | `fab-intake`, `fab-frame`, `fab-forge` |
 | `last_error` | `fab-intake`, `fab-forge`, `fab-check`, `fab-trace`, `fab-weave`, `fab-launch` |
 | `blueprint_path` | `fab-intake`, `fab-blueprint` |
-| `app_stages` | `fab-intake`, `fab-blueprint`, `fab-forge`, `fab-check`, `fab-trace` |
+| `app_stages` | `fab-intake`, `fab-blueprint`, `fab-frame`, `fab-forge`, `fab-check`, `fab-trace` |
 | `verifications` | `fab-forge`, `fab-weave`, `fab-launch`, `fab-trace` |
 | `human_decisions` | `fab-intake`, `fab-signal` |
 

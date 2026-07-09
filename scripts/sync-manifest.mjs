@@ -1,15 +1,37 @@
 #!/usr/bin/env node
 
+/**
+ * Sync (check or write) generated artifacts from skills/manifest.json:
+ * - .claude-plugin/plugin.json
+ * - schemas/run-object.schema.json (current_step enum + gate_levels)
+ *
+ * Validates manifest integrity, frontmatter consistency, error metadata,
+ * field ownership, and cross-references between SKILL.md Error Handling
+ * sections and errors.json.
+ *
+ * Usage:
+ *   node scripts/sync-manifest.mjs --check   # verify only (exit 1 on drift)
+ *   node scripts/sync-manifest.mjs           # write generated files
+ */
 import {
   existsSync,
-  lstatSync,
   readFileSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from 'fs';
-import { dirname, relative, resolve, sep } from 'path';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import {
+  assertInsideRoot,
+  assertSafeRelPath,
+  assertDirectoryNotSymlink,
+  errorExit,
+  lstatIfPresent,
+  readJsonFile,
+  stringifyJson,
+  toRepoRelative,
+} from './_path-utils.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -25,95 +47,33 @@ const ERRORS_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+\/errors\.json$
 const SKILL_ID_RE = /^fab-[a-z0-9-]+$/;
 
 const args = process.argv.slice(2);
-if (args.some((arg) => arg !== '--check')) {
-  console.error('[sync-manifest] ERROR: Usage: node scripts/sync-manifest.mjs [--check]');
+if (args.some((arg) => arg !== '--check' && arg !== '--write')) {
+  console.error('[sync-manifest] ERROR: Usage: node scripts/sync-manifest.mjs [--check|--write]');
   process.exit(1);
 }
 const checkOnly = args.includes('--check');
+const writeMode = args.includes('--write');
 
+/**
+ * Log a sync-manifest error and exit.
+ * @param {string} msg
+ */
 function error(msg) {
   console.error(`[sync-manifest] ERROR: ${msg}`);
   process.exit(1);
 }
 
-function toRepoRelative(absPath) {
-  return relative(root, absPath).split(sep).join('/');
-}
-
-function assertInsideRoot(label, absPath) {
-  const rel = relative(root, absPath);
-  if (rel === '..' || rel.startsWith(`..${sep}`) || resolve(absPath) === resolve(root, '..')) {
-    error(`${label} resolves outside repository root: ${absPath}`);
-  }
-}
-
-function assertRepoRelativePath(label, relPath, pattern) {
-  if (typeof relPath !== 'string' || relPath.trim() === '') {
-    error(`${label} must be a non-empty repository-relative path`);
-  }
-  if (relPath.includes('\\')) {
-    error(`${label} must use forward slashes, not backslashes: ${relPath}`);
-  }
-  if (relPath.startsWith('/') || /^[A-Za-z]:\//.test(relPath)) {
-    error(`${label} must not be absolute: ${relPath}`);
-  }
-  if (relPath.split('/').includes('..')) {
-    error(`${label} must not contain path traversal (..): ${relPath}`);
-  }
-  if (!pattern.test(relPath)) {
-    error(`${label} has invalid layout: ${relPath}`);
-  }
-
-  const absPath = resolve(root, relPath);
-  assertInsideRoot(label, absPath);
-  return absPath;
-}
-
-function lstatIfPresent(path) {
-  try {
-    return lstatSync(path);
-  } catch (err) {
-    if (err && err.code === 'ENOENT') return null;
-    error(`Cannot inspect ${path}: ${err.message}`);
-  }
-}
-
-function assertDirectoryNotSymlink(label, absPath) {
-  const stat = lstatIfPresent(absPath);
-  if (!stat) {
-    error(`${label} not found: ${toRepoRelative(absPath)}`);
-  }
-  if (stat.isSymbolicLink()) {
-    error(`${label} must not be a symlink or junction: ${toRepoRelative(absPath)}`);
-  }
-  if (!stat.isDirectory()) {
-    error(`${label} is not a directory: ${toRepoRelative(absPath)}`);
-  }
-}
-
-function loadJSON(path, label) {
-  let raw;
-  try {
-    raw = readFileSync(path, 'utf-8');
-  } catch (err) {
-    error(`Cannot read ${label}: ${err.message}`);
-  }
-
-  try {
-    return JSON.parse(raw);
-  } catch (err) {
-    error(`Invalid JSON in ${label}: ${err.message}`);
-  }
-}
-
-function stringifyJSON(data) {
-  return JSON.stringify(data, null, 2) + '\n';
-}
-
+/**
+ * Write a JSON file atomically by writing to a temp file then renaming.
+ * On failure, cleans up the temp file best-effort and exits.
+ * @param {string} path Absolute target path.
+ * @param {any} data Data to serialize as JSON.
+ * @param {string} label Human-readable label for error messages.
+ */
 function writeJSONAtomic(path, data, label) {
-  const tmpPath = resolve(dirname(path), `.${toRepoRelative(path).replaceAll('/', '-')}.${process.pid}.tmp`);
+  const tmpPath = resolve(dirname(path), `.${toRepoRelative(root, path).replaceAll('/', '-')}.${process.pid}.tmp`);
   try {
-    writeFileSync(tmpPath, stringifyJSON(data), { encoding: 'utf-8', flag: 'wx' });
+    writeFileSync(tmpPath, stringifyJson(data), { encoding: 'utf-8', flag: 'wx' });
     renameSync(tmpPath, path);
   } catch (err) {
     try {
@@ -129,14 +89,14 @@ if (!existsSync(MANIFEST_PATH)) {
   error(`Manifest not found at ${MANIFEST_PATH}`);
 }
 
-const manifest = loadJSON(MANIFEST_PATH, 'skills/manifest.json');
+const manifest = readJsonFile(MANIFEST_PATH, 'skills/manifest.json');
 
 if (typeof manifest.schema_version !== 'string') error('manifest missing schema_version');
 if (typeof manifest.repo_version !== 'string') error('manifest missing repo_version');
 if (!Array.isArray(manifest.skills)) error('manifest.skills must be an array');
 if (manifest.skills.length === 0) error('manifest.skills is empty');
 
-const schema = loadJSON(SCHEMA_PATH, 'schemas/run-object.schema.json');
+const schema = readJsonFile(SCHEMA_PATH, 'schemas/run-object.schema.json');
 const lastErrorSchema = schema?.properties?.last_error?.oneOf?.[1]?.properties?.type?.enum;
 if (!Array.isArray(lastErrorSchema)) {
   error('schemas/run-object.schema.json does not expose last_error.type enum');
@@ -184,7 +144,7 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
     error(`skill "${skill.id}" read_only must be boolean`);
   }
 
-  const skillDir = assertRepoRelativePath(`skill "${skill.id}" path`, skill.path, SKILL_PATH_RE);
+  const skillDir = assertSafeRelPath(root, `skill "${skill.id}" path`, skill.path, SKILL_PATH_RE);
   const pathCategory = skill.path.split('/')[1];
   if (pathCategory !== skill.category) {
     error(`skill "${skill.id}" path category "${pathCategory}" does not match manifest category "${skill.category}"`);
@@ -206,7 +166,7 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
     error(`skill "${skill.id}" missing SKILL.md at ${skill.path}/SKILL.md`);
   }
 
-  const errPath = assertRepoRelativePath(`skill "${skill.id}" error_metadata_path`, skill.error_metadata_path, ERRORS_PATH_RE);
+  const errPath = assertSafeRelPath(root, `skill "${skill.id}" error_metadata_path`, skill.error_metadata_path, ERRORS_PATH_RE);
   if (skill.error_metadata_path !== `${skill.path}/errors.json`) {
     error(`skill "${skill.id}" error_metadata_path must be ${skill.path}/errors.json`);
   }
@@ -278,13 +238,14 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
     }
   }
 
-  const errMeta = loadJSON(errPath, skill.error_metadata_path);
+  const errMeta = readJsonFile(errPath, skill.error_metadata_path);
   if (errMeta.skill_id !== skill.id) {
     error(`skill "${skill.id}" errors.json skill_id mismatch: "${errMeta.skill_id}"`);
   }
   if (!Array.isArray(errMeta.errors) || errMeta.errors.length === 0) {
     error(`skill "${skill.id}" errors.json.errors must be a non-empty array`);
   }
+  const errorTypesInMeta = new Set();
   for (const e of errMeta.errors) {
     if (!e || typeof e !== 'object' || Array.isArray(e)) {
       error(`skill "${skill.id}" errors.json contains a non-object error entry`);
@@ -296,6 +257,21 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
     if (!e.diagnosis) error(`skill "${skill.id}" errors.json error "${e.type}" missing diagnosis`);
     if (!e.rescue_action) error(`skill "${skill.id}" errors.json error "${e.type}" missing rescue_action`);
     if (!e.user_message) error(`skill "${skill.id}" errors.json error "${e.type}" missing user_message`);
+    errorTypesInMeta.add(e.type);
+  }
+
+  // Cross-reference: every backtick error type mentioned in the Error Handling section must exist in errors.json.
+  const errorSectionMatch = skillContent.match(/## Error Handling\n([\s\S]*?)(?=\n## |\n---|$)/);
+  if (errorSectionMatch) {
+    const errorSection = errorSectionMatch[1];
+    const mentionedTypes = new Set(
+      [...errorSection.matchAll(/`([a-z_]+)`/g)].map((m) => m[1])
+    );
+    for (const mentioned of mentionedTypes) {
+      if (validErrorTypes.includes(mentioned) && !errorTypesInMeta.has(mentioned)) {
+        error(`skill "${skill.id}" Error Handling section mentions "${mentioned}" but it is not defined in errors.json`);
+      }
+    }
   }
 
   if (skill.read_only) {
@@ -328,7 +304,7 @@ const pluginSkills = manifest.skills.map((s) => ({
   path: `${s.path}/SKILL.md`,
 }));
 
-const currentPlugin = loadJSON(PLUGIN_PATH, '.claude-plugin/plugin.json');
+const currentPlugin = readJsonFile(PLUGIN_PATH, '.claude-plugin/plugin.json');
 const generatedPlugin = {
   name: currentPlugin.name,
   description: currentPlugin.description,
@@ -361,28 +337,50 @@ generatedSchema.properties.gate_levels = {
   },
 };
 
+const pluginOnDisk = readFileSync(PLUGIN_PATH, 'utf-8');
+const pluginGenerated = stringifyJson(generatedPlugin);
+const pluginDiffers = pluginOnDisk !== pluginGenerated;
+
+const schemaOnDisk = readFileSync(SCHEMA_PATH, 'utf-8');
+const schemaGenerated = stringifyJson(generatedSchema);
+const schemaDiffers = schemaOnDisk !== schemaGenerated;
+
 if (checkOnly) {
-  let hasDiff = false;
-
-  if (readFileSync(PLUGIN_PATH, 'utf-8') !== stringifyJSON(generatedPlugin)) {
+  let failed = false;
+  if (pluginDiffers) {
     console.error('[sync-manifest] CHECK FAILED: .claude-plugin/plugin.json differs from manifest');
-    hasDiff = true;
+    failed = true;
   }
-
-  if (readFileSync(SCHEMA_PATH, 'utf-8') !== stringifyJSON(generatedSchema)) {
+  if (schemaDiffers) {
     console.error('[sync-manifest] CHECK FAILED: schemas/run-object.schema.json generated sections differ from manifest');
-    hasDiff = true;
+    failed = true;
   }
-
-  if (hasDiff) process.exit(1);
+  if (failed) process.exit(1);
   console.log('[sync-manifest] CHECK OK — all generated files match manifest');
   process.exit(0);
 }
 
-writeJSONAtomic(PLUGIN_PATH, generatedPlugin, '.claude-plugin/plugin.json');
+if (writeMode) {
+  if (!pluginDiffers && !schemaDiffers) {
+    console.log('[sync-manifest] CHECK OK — all generated files match manifest, nothing to write');
+    process.exit(0);
+  }
+  if (pluginDiffers) {
+    writeJSONAtomic(PLUGIN_PATH, generatedPlugin, '.claude-plugin/plugin.json');
+    console.log(`[sync-manifest] WROTE ${PLUGIN_PATH} (${pluginSkills.length} skills)`);
+  }
+  if (schemaDiffers) {
+    writeJSONAtomic(SCHEMA_PATH, generatedSchema, 'schemas/run-object.schema.json');
+    console.log(`[sync-manifest] WROTE ${SCHEMA_PATH} generated run-object sections (${skillIds.length} skills)`);
+  }
+  console.log('[sync-manifest] DONE');
+  process.exit(0);
+}
+
+writeJSONAtomic(PLUGIN_PATH, pluginGenerated, '.claude-plugin/plugin.json');
 console.log(`[sync-manifest] WROTE ${PLUGIN_PATH} (${pluginSkills.length} skills)`);
 
-writeJSONAtomic(SCHEMA_PATH, generatedSchema, 'schemas/run-object.schema.json');
+writeJSONAtomic(SCHEMA_PATH, schemaGenerated, 'schemas/run-object.schema.json');
 console.log(`[sync-manifest] WROTE ${SCHEMA_PATH} generated run-object sections (${skillIds.length} skills)`);
 
 console.log('[sync-manifest] DONE');

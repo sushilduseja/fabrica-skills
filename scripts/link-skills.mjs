@@ -1,16 +1,35 @@
 #!/usr/bin/env node
 
+/**
+ * Create or refresh a flat .skills/ directory by linking (junction or symlink)
+ * or copying each skill from skills/manifest.json.
+ *
+ * Local install: creates .skills/ at the repo root.
+ * Global install: creates ~/.fabrica-skills/.skills/.
+ *
+ * Prevents symlink/junction attacks by rejecting symlinked source
+ * directories and symlinked target directories.
+ *
+ * Usage:
+ *   node scripts/link-skills.mjs
+ *   node scripts/link-skills.mjs --global
+ */
 import {
   cpSync,
-  lstatSync,
   mkdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
 } from 'fs';
-import { join, relative, resolve, sep } from 'path';
+import { join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
+import {
+  assertInsideRoot,
+  errorExit,
+  lstatIfPresent,
+  toRepoRelative,
+} from './_path-utils.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -21,35 +40,37 @@ const targetDir = globalInstall ? join(targetBase, '.skills') : resolve(root, '.
 const isWindows = process.platform === 'win32';
 const SKILL_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+$/;
 
+/**
+ * Log a link error and exit.
+ * @param {string} msg
+ */
 function fail(msg) {
   console.error(`[link-skills] ERROR: ${msg}`);
   process.exit(1);
 }
 
+/**
+ * Log a warning without exiting.
+ * @param {string} msg
+ */
 function warn(msg) {
   console.warn(`[link-skills] WARN: ${msg}`);
 }
 
-function toRepoRelative(absPath) {
-  return relative(root, absPath).split(sep).join('/');
-}
-
-function lstatIfPresent(path) {
+function statIfPresent(path) {
   try {
-    return lstatSync(path);
+    return lstatIfPresent(path);
   } catch (err) {
-    if (err && err.code === 'ENOENT') return null;
     fail(`Cannot inspect ${path}: ${err.message}`);
   }
 }
 
-function assertInsideRoot(label, absPath) {
-  const rel = relative(root, absPath);
-  if (rel === '..' || rel.startsWith(`..${sep}`) || resolve(absPath) === resolve(root, '..')) {
-    fail(`${label} resolves outside repository root: ${absPath}`);
-  }
-}
-
+/**
+ * Validate a manifest skill entry's path for safety and layout.
+ * Returns the resolved absolute path on success; calls fail() on error.
+ * @param {{ id: string, path: string }} skill
+ * @returns {string} Resolved absolute path to the skill directory.
+ */
 function assertSafeSkillPath(skill) {
   if (!skill || typeof skill !== 'object' || Array.isArray(skill)) {
     fail('Manifest contains a non-object skill entry');
@@ -71,10 +92,14 @@ function assertSafeSkillPath(skill) {
   }
 
   const skillPath = resolve(root, skill.path);
-  assertInsideRoot(`skill "${skill.id}" path`, skillPath);
+  assertInsideRoot(root, `skill "${skill.id}" path`, skillPath);
   return skillPath;
 }
 
+/**
+ * Read and parse skills/manifest.json. Calls fail() on error.
+ * @returns {{ skills: Array<{ id: string, path: string }> }}
+ */
 function loadManifest() {
   const manifestPath = resolve(root, 'skills/manifest.json');
   let raw;
@@ -95,8 +120,14 @@ function loadManifest() {
   }
 }
 
+/**
+ * Check that a path either does not exist or is a real (non-symlink) directory.
+ * Calls fail() if it exists and is a symlink or non-directory.
+ * @param {string} path
+ * @param {string} label
+ */
 function assertExistingDirectoryIsSafe(path, label) {
-  const stat = lstatIfPresent(path);
+  const stat = statIfPresent(path);
   if (!stat) return;
   if (stat.isSymbolicLink()) {
     fail(`${label} must not be a symlink or junction: ${path}`);
@@ -106,6 +137,12 @@ function assertExistingDirectoryIsSafe(path, label) {
   }
 }
 
+/**
+ * Create a directory if it does not exist, verifying the result is a
+ * real (non-symlink) directory. Calls fail() on creation failure.
+ * @param {string} path
+ * @param {string} label
+ */
 function ensureSafeDirectory(path, label) {
   assertExistingDirectoryIsSafe(path, label);
   try {
@@ -116,26 +153,32 @@ function ensureSafeDirectory(path, label) {
   assertExistingDirectoryIsSafe(path, label);
 }
 
+/**
+ * Validate that a manifest skill's source exists and is a real directory
+ * with a SKILL.md inside.
+ * @param {{ id: string, path: string }} skill
+ * @returns {{ skillName: string, skillPath: string }}
+ */
 function preflightSkill(skill) {
   const skillPath = assertSafeSkillPath(skill);
   const skillName = skill.id;
 
-  const stat = lstatIfPresent(skillPath);
+  const stat = statIfPresent(skillPath);
   if (!stat) {
-    fail(`Source directory not found for ${skillName}: ${toRepoRelative(skillPath)}`);
+    fail(`Source directory not found for ${skillName}: ${toRepoRelative(root, skillPath)}`);
   }
   if (!stat.isDirectory() || stat.isSymbolicLink()) {
     fail(`Source for ${skillName} must be a real directory, not a file, symlink, or junction`);
   }
-  if (!lstatIfPresent(join(skillPath, 'SKILL.md'))) {
-    fail(`SKILL.md missing for ${skillName}: ${toRepoRelative(join(skillPath, 'SKILL.md'))}`);
+  if (!statIfPresent(join(skillPath, 'SKILL.md'))) {
+    fail(`SKILL.md missing for ${skillName}: ${toRepoRelative(root, join(skillPath, 'SKILL.md'))}`);
   }
 
   return { skillName, skillPath };
 }
 
 function removeExistingManagedSkill(linkDest, skillName) {
-  const stat = lstatIfPresent(linkDest);
+  const stat = statIfPresent(linkDest);
   if (!stat) return;
   try {
     rmSync(linkDest, { recursive: true, force: true });
