@@ -11,9 +11,9 @@
 
 ## Project Context
 
-fabrica-skills is a skills-only repository (13 fab-* markdown files) for guiding an AI agent from product idea to prototype. All 13 skills are implemented and validated through Phases 0-2. The MVP is complete.
+fabrica-skills is a skills-only repository (12 fab-* markdown files) for guiding an AI agent from product idea to prototype. All 12 skills are implemented and validated through Phases 0-2. The MVP is complete.
 
-**Git history (14 commits):**
+**Git history (24+ commits):**
 - Initial commit → docs → CEO scope additions (v0.1) → Phase 0/1/2 → PRD review fixes → README polish → `--global` flag
 
 **Current state:** Post-MVP seasoning. No active TODOs or FIXMEs. All skills present. The project is clean but has repetition-as-compensation for lack of a machine-readable manifest.
@@ -25,10 +25,10 @@ fabrica-skills is a skills-only repository (13 fab-* markdown files) for guiding
 | Metric | Value |
 |--------|-------|
 | Branch | `main` |
-| Commits | 14 |
+| Commits | 24+ (today: 5 more deepening commits) |
 | Stashes | None |
 | TODOs/FIXMEs | None |
-| Skills | 13 (6 core, 6 prototype + fab-pulse) |
+| Skills | 12 (6 core, 5 prototype + fab-pulse) |
 | Schema | `schemas/run-object.schema.json` |
 | Linking script | `scripts/link-skills.mjs` |
 
@@ -287,7 +287,7 @@ The validation plan (PRD §14) defines 6 manual tests. ADR-006 explicitly defers
 
 ### Phase 0: Architecture Mental Model
 
-fabrica-skills is a skills-only repository: 13 markdown files, 1 JSON schema, 1 JavaScript discovery script. No runtime server, no database, no SaaS, no network services, no user data, no authentication, no stored credentials. The only executable code is `scripts/link-skills.mjs` (file-system read/write within the repo). All 13 skills are agent prompt instructions — they define behavior but do not execute autonomously.
+fabrica-skills is a skills-only repository: 12 markdown files, 1 JSON schema, 1 JavaScript discovery script. No runtime server, no database, no SaaS, no network services, no user data, no authentication, no stored credentials. The only executable code is `scripts/link-skills.mjs` (file-system read/write within the repo). All 12 skills are agent prompt instructions — they define behavior but do not execute autonomously.
 
 **Architecture summary:** Skill files read by an AI coding agent. Agent interprets `Behavior` sections as instructions. State is stored in `fabrica.run.json`. No code from the skills is ever executed by a web server, background job, or network service.
 
@@ -370,12 +370,12 @@ INFRASTRUCTURE SURFACE
 
 ### Phase 8: Skill Supply Chain
 
-All 13 SKILL.md files scanned for:
+All 12 SKILL.md files scanned for:
 - Network exfiltration (`curl`, `wget`, `fetch`, `exfiltrat`) → **Zero matches**
 - Credential access (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `process.env`) → **Zero matches**
 - Prompt injection (`IGNORE PREVIOUS`, `system override`, `disregard`, `forget your instructions`) → **Zero matches**
 
-**Finding:** All 13 skills are clean of suspicious patterns.
+**Finding:** All 12 skills are clean of suspicious patterns.
 
 ### Phase 9: OWASP Top 10
 

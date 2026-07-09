@@ -22,7 +22,7 @@ npm run setup
 Expected current result:
 
 ```text
-32/32 tests passed
+38/38 tests passed
 [sync-manifest] CHECK OK — all generated files match manifest
 [link-skills] DONE — 12 skills installed
 ```
