@@ -1,6 +1,6 @@
 # Validation evidence
 
-This document records the current validation surface for the repository. It is intentionally concise; the executable source of truth is `test/run-tests.mjs` plus the npm scripts in `package.json`.
+This document records the current validation surface for the repository. It is intentionally concise; the executable source of truth is `test/*.test.mjs` plus the npm scripts in `package.json`.
 
 ## Commands
 
@@ -8,36 +8,57 @@ Run from the repository root:
 
 ```bash
 npm ci
-npm test
-npm run validate
-npm run setup
+npm run check
+```
+
+`npm run check` runs both validation (`npm run validate`) and all tests (`npm test`). Individual commands are also available:
+
+```bash
+npm test                        # full test suite
+npm run validate                # run-object and manifest validation
+npm run lint                    # format and lint check
+npm run setup                   # validate then local skill linking
 ```
 
 Expected current result:
 
 ```text
-38/38 tests passed
+[validate-run] OK — run object from test/fixtures/valid-run.json is valid
+[assert-invalid] OK — test/fixtures/invalid-run.json fails as expected (/status, /app_stages/0/quality_score)
+[assert-invalid] OK — test/fixtures/invalid-gate-keys.json fails as expected (/gate_levels)
 [sync-manifest] CHECK OK — all generated files match manifest
-[link-skills] DONE — 12 skills installed
+31/31 tests passed
 ```
 
-`npm run setup` creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
+`npm run setup` additionally creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
 
 ## Npm scripts
 
 | Script | Purpose |
 |---|---|
+| `npm run check` | Runs validation and all tests (CI entry point). |
 | `npm test` | Full positive, negative, edge, install-safety, and security regression suite. |
 | `npm run validate:run-pass` | Validates `test/fixtures/valid-run.json`. |
 | `npm run validate:run-fail` | Asserts `test/fixtures/invalid-run.json` fails at expected paths. |
 | `npm run validate:run-gate-fail` | Asserts invalid gate keys fail validation. |
 | `npm run validate:manifest` | Checks manifest, frontmatter, error metadata, generated plugin, and generated schema sections. |
 | `npm run validate` | Runs run fixture checks plus manifest check. |
+| `npm run lint` | Runs eslint + prettier --check on scripts/ and test/. |
+| `npm run lint:fix` | Applies eslint --fix and prettier --write to scripts/ and test/. |
 | `npm run setup` | Runs validation and then local skill linking. |
 
 ## Current test coverage
 
-`test/run-tests.mjs` currently covers 31 cases:
+Tests are split by module under `test/`:
+
+| File | Tests | Focus |
+|---|---|---|
+| `test/validate-run.test.mjs` | 15 | Schema validation, semantic invariants, status×phase matrix |
+| `test/sync-manifest.test.mjs` | 5 | Manifest check and --write mode, generated-file drift |
+| `test/link-skills.test.mjs` | 9 | Local and global install, symlink safety, path traversal |
+| `test/docs.test.mjs` | 2 | Skill guardrails, error metadata, example doc layout |
+
+All 31 tests:
 
 - valid fixture acceptance;
 - malformed JSON error handling without stack traces;
@@ -47,7 +68,7 @@ Expected current result:
 - status × phase compatibility;
 - committed manifest/plugin/schema sync;
 - manifest path traversal rejection;
-- unsafe error metadata path rejection;
+- extra manifest entry detection;
 - local link success and idempotence;
 - preflight failure with no partial install;
 - link path traversal rejection;
@@ -58,8 +79,8 @@ Expected current result:
 - exhaustive status × phase matrix;
 - empty stdin, mixed validator args, and malformed file input;
 - quiet negative assertion script behavior;
-- duplicate manifest ids, category drift, write-field drift, and generated-file drift;
-- malformed errors metadata and unsafe sync invocation args;
+- --write mode and idempotency;
+- global install happy path;
 - unrelated `fab-*` and non-`fab-*` skill preservation during linking;
 - regular-file `.skills`, malformed manifest, and bad link args;
 - container verification kinds (`container_build`, `static_analysis`);
@@ -96,7 +117,7 @@ Expected current result:
 
 ## Manifest validation
 
-`scripts/sync-manifest.mjs --check` validates:
+`scripts/sync-manifest.mjs` validates:
 
 - manifest shape, ids, categories, phases, gates, read-only flags, paths, and uniqueness;
 - path traversal, absolute paths, backslashes, and unsafe layout variants;
@@ -107,6 +128,7 @@ Expected current result:
 - field ownership coverage;
 - generated `.claude-plugin/plugin.json` drift;
 - generated schema section drift.
+- `--write` mode repairs drift by regenerating plugin.json and schema, then exits clean.
 
 ## Install validation
 

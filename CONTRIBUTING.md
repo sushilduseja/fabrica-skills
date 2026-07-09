@@ -18,12 +18,12 @@
 
    ```bash
    npm ci
-   npm test
-   npm run validate
+   npm run check
+   npm run lint
    npm run setup
    ```
 
-7. Confirm `npm test` includes the relevant positive, negative, security, and edge-case coverage.
+7. Confirm `npm test` (run via `npm run check`) includes the relevant positive, negative, security, and edge-case coverage.
 8. Open a PR with the behavior change, validation output, and any migration notes.
 
 ## Skill file rules
@@ -67,19 +67,19 @@ Required before merge:
 
 ```bash
 npm ci
-npm test
-npm run validate
+npm run check
+npm run lint
 npm run setup
 ```
 
-Current `npm test` coverage includes:
+Current `npm test` coverage (31 tests across 4 test files):
 
 - valid and invalid run-object fixtures;
 - every required top-level field;
 - invalid values for every run-object field family;
 - post-schema semantic invariants;
 - status × phase matrix;
-- manifest/frontmatter drift;
+- manifest/frontmatter drift and --write mode;
 - path traversal and symlink/junction protections;
 - local and global install safety;
 - Docker/container verification semantics.
