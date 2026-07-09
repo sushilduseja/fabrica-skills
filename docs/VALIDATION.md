@@ -16,7 +16,7 @@ npm run setup
 Expected current result:
 
 ```text
-32/32 tests passed
+38/38 tests passed
 [sync-manifest] CHECK OK — all generated files match manifest
 [link-skills] DONE — 12 skills installed
 ```
@@ -127,5 +127,13 @@ The test suite asserts that:
 - every manifest skill has `## Execution Guardrails` and `## Error Handling`;
 - every `errors.json` entry uses a canonical error type and has actionable metadata;
 - full-stack container requirements are documented in the relevant skill files.
+
+Additional validations:
+- checked-in examples live under `docs/examples/` and live run paths are ignored;
+- `fab-frame` documents run-state relocation into the generated app directory;
+- `fab-frame` documents stack-agnostic single-service and multi-service scaffolding;
+- `fab-frame` documents service-local config boundaries to prevent parent-project config bleed;
+- `fab-launch` distinguishes actual container runtime verification from static container analysis;
+- README, state-machine docs, and shared schema docs stay linked and synchronized.
 
 The workflow diagrams and command pathways are maintained in `docs/STATE_MACHINE.md` and linked from `README.md`.

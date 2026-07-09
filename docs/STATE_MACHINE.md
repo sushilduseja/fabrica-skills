@@ -30,7 +30,7 @@ flowchart TD
   Spec --> Blueprint["/fab-blueprint"]
   Blueprint --> Framing["docs/blueprint.md + app_stages\nstatus: framing\nphase: phase_0_spec"]
   Framing --> Frame["/fab-frame"]
-  Frame --> Forging["project scaffold\nstatus: forging\nphase: phase_1_slice"]
+  Frame --> Forging["project scaffold + relocated run state\nstatus: forging\nphase: phase_1_slice"]
   Forging --> Forge["/fab-forge <stage>"]
   Forge --> Check["/fab-check <stage>"]
   Check --> MoreStages{"more pending stages?"}
@@ -108,6 +108,22 @@ flowchart LR
 /fab-retro
 ```
 
+### Generic multi-service pathway
+
+```text
+/fab-intake
+/fab-blueprint   # must define service plan
+/fab-frame       # creates one directory per service and relocates run state
+/fab-forge <stage>
+/fab-check <stage>
+...
+/fab-weave
+/fab-launch
+/fab-retro
+```
+
+The service plan, not the skill name, determines whether the generated app uses React, FastAPI, SQLite, Docker, Go, Rust, Java, Rails, Svelte, Postgres, Redis, or any other stack.
+
 ### New project, multi-stage app
 
 ```text
@@ -154,20 +170,27 @@ If trace cannot resolve the issue:
 /fab-passport
 ```
 
-### Docker/container-capable prototype
+### Containerized or multi-service prototype
 
-When a blueprint requires Docker or Compose:
+When a blueprint declares multiple services, containers, or Docker Compose:
 
 ```text
-/fab-blueprint   # defines local commands and container commands
-/fab-frame       # scaffolds Dockerfiles/compose/static checks as first-class artifacts
+/fab-blueprint   # defines service plan, local commands, container commands, ports, env vars, data paths
+/fab-frame       # scaffolds per-service directories, manifests, config boundaries, Dockerfiles/Compose if required
 /fab-forge <stage>
 /fab-check <stage>
 /fab-weave
-/fab-launch      # records container_build if Docker runs, static_analysis if Docker is unavailable
+/fab-launch      # records container_build only if Docker actually runs; otherwise static_analysis plus explicit caveat
 ```
 
-If Docker is unavailable, `/fab-launch` must not claim runtime Docker verification. It must either keep the run non-complete with `last_error.type = "external_failure"`, or record an explicit `/fab-signal` human decision accepting static-only validation for the environment.
+Rules:
+
+- Do not assume a specific stack. React, FastAPI, SQLite, Docker, Go, Rust, Java, Rails, Svelte, Postgres, Redis, and CLI-only apps must all be blueprint-derived cases.
+- `container_build` means an actual container build or runtime check ran.
+- `static_analysis` means files were checked without running the container runtime.
+- If Docker is unavailable, `/fab-launch` must not claim Docker runtime verification. It must either keep the run non-complete with `external_failure`, or record an explicit `/fab-signal` decision accepting static-only validation in that environment.
+
+The state machine is stack-agnostic. It does not know whether a stage is Python, Node, Go, Rust, Java, a CLI, a web app, or a containerized multi-service system. Technology-specific evidence belongs in `verifications[]`, not in status names.
 
 ## Semantic validation enforced by `validate-run.mjs`
 

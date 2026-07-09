@@ -51,13 +51,20 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 2. Implement only the named app stage plus shared contracts required by that stage.
 3. Keep behavior aligned with the spec and blueprint; do not add speculative features.
 4. Write tests covering: happy path, one realistic failure, one edge case.
-5. For generated dependency manifests, pin versions or version ranges that are compatible with the generated config. Avoid `latest` unless the explicit stage goal is dependency-upgrade testing.
-6. For generated containerized apps, make local development work without root-owned absolute paths. Use environment variables so Docker paths like `/data/app.db` do not break non-container imports or tests.
+5. For generated dependency manifests, pin versions or version ranges compatible with the generated config. Avoid `latest` unless the explicit stage goal is dependency-upgrade testing.
+6. For generated containerized apps, make local development work without root-owned or container-only absolute paths. Use environment variables so Docker paths like `/data/app.db` do not break non-container imports or tests.
 7. Run the narrowest approved test command for the stage.
-8. If tests fail, fix until they pass. If unable to fix in 3 attempts, set the stage `status = "failed"`, set `last_error = { "type": "external_failure", "message": "Tests failed after 3 attempts" }`, and set `next_action = "/fab-trace <stage>"`.
-7. If tests pass, update stage `status = "done"`, add relative artifact paths to the stage record, append a verification result, clear `last_error`, and set `next_action = "/fab-check <stage>"`.
-8. Set `current_step = "fab-forge"`, `current_app_stage` to the stage name, and bump `updated_at`.
-9. Validate the candidate run object before writing.
+8. Map the test command to `verifications[].kind`:
+   - language-level unit tests such as `pytest`, `vitest`, `jest`, `go test`, `cargo test`, `mvn test`, `gradle test`, or equivalent → `unit`
+   - multi-endpoint, multi-service, persistence, or round-trip tests → `integration`
+   - booting the app and hitting live local endpoints → `local_launch`
+   - actual container build or container runtime verification → `container_build`
+   - static checks without running the target runtime, including Dockerfile/Compose checks when Docker is unavailable → `static_analysis`
+   - explicitly approved external deployment probe → `external_deploy`
+9. If tests fail, fix until they pass. If unable to fix in 3 attempts, set the stage `status = "failed"`, append a failed verification when a command produced evidence, set `last_error = { "type": "external_failure", "message": "Tests failed after 3 attempts" }`, and set `next_action = "/fab-trace <stage>"`.
+10. If tests pass, update stage `status = "done"`, add relative artifact paths to the stage record, append a verification result, clear `last_error`, and set `next_action = "/fab-check <stage>"`.
+11. Set `current_step = "fab-forge"`, `current_app_stage` to the stage name, and bump `updated_at`.
+12. Validate the candidate run object before writing.
 
 Done.
 

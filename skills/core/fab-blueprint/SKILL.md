@@ -44,13 +44,41 @@ Confirmed spec exists (`docs/spec.md` present, `status = designing` in run objec
 ## Behavior
 
 1. Derive minimal app components from first principles: input boundary, transformation core, output boundary, persistence only if necessary.
-2. Pick one stack for the toy app, preferring boring local defaults unless the spec proves another choice is needed. If the operator explicitly requests a stack (for example React, FastAPI, SQLite, Docker), either preserve that stack or state the exact constraint that makes it unsafe.
-3. Define model requirements by capability, context, latency, and cost class; name example providers only as replaceable defaults.
-4. Define app stages as tracer bullets: small end-to-end vertical slices in build order. Each must fire from raw input to visible output before the next begins.
-5. When the stack includes containers, define both local non-container commands and container commands. Container-only absolute paths such as `/data/app.db` must have safe local defaults or environment overrides.
-6. Write `docs/blueprint.md` with a small ASCII data-flow diagram, chosen stack, commands, dependency/version strategy, app stages, expected artifacts, test shape, and any Docker/Compose verification plan.
-7. Update `blueprint_path = "docs/blueprint.md"`, replace `app_stages` with validated stage objects, set `current_step = "fab-blueprint"`, `status = "framing"`, and `next_action = "/fab-frame"`.
-7. Validate the candidate run object before writing.
+2. Preserve the operator's explicitly requested stack unless it is unsafe, unavailable, or contradicts the spec. If changing the requested stack, state the reason.
+3. Define a stack-agnostic service plan:
+   - service name
+   - runtime/language/framework
+   - responsibility
+   - ports, if any
+   - persistence/data store, if any
+   - required environment variables
+   - install command
+   - test command
+   - run command
+   - build command, if any
+   - container command, if any
+4. For single-service apps, define whether the project should be flat or service-directory based.
+5. For multi-service apps, define one service entry per runtime or deployable unit. Do not assume `backend`/`frontend`; use those names only if they match the product.
+6. For browser frontend + API stacks, explicitly choose one networking strategy:
+   - direct browser fetch to the published backend port plus CORS; or
+   - environment-configured proxy target for host vs. Compose network.
+   Do not hardcode a container-internal `localhost` proxy.
+7. For containerized apps, define both local non-container commands and container commands. Container-only absolute paths such as `/data/app.db` must have safe local defaults or environment overrides.
+8. Pin dependency versions or version ranges when generating manifests. Do not use `latest` unless the blueprint explicitly says this is an upgrade-compatibility experiment.
+9. Define model requirements by capability, context, latency, and cost class; name example providers only as replaceable defaults.
+10. Define app stages as tracer bullets: small end-to-end vertical slices in build order. Each must fire from raw input to visible output before the next begins.
+11. Write `docs/blueprint.md` with:
+    - ASCII data-flow diagram
+    - service plan
+    - chosen stack and rationale
+    - local commands
+    - container commands when applicable
+    - app stages
+    - expected artifacts
+    - test shape
+    - verification plan
+12. Update `blueprint_path = "docs/blueprint.md"`, replace `app_stages` with validated stage objects, set `current_step = "fab-blueprint"`, `status = "framing"`, and `next_action = "/fab-frame"`.
+13. Validate the candidate run object before writing.
 
 Done.
 

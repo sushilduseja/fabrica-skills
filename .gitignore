@@ -1,8 +1,27 @@
+# Environment
 .env
-node_modules/
-fabrica.run.json
-.skills/
 .gstack/
+
+# Local fabrica run outputs
+fabrica.run.json
+docs/spec.md
+docs/blueprint.md
+docs/eval/
+docs/handoff.md
+docs/integration.md
+docs/retro.md
+docs/retune.md
+docs/retune/
+
+# Local skill install output
+.skills/
+
+# Dependency/install artifacts
+node_modules/
+.npm/
+.cache/
+
+# Python
 __pycache__/
 .venv/
 *.pyc

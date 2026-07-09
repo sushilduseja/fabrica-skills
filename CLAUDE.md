@@ -10,6 +10,8 @@ Invoke skills as `/fab-<name>`. The frontmatter name excludes the slash.
 
 `fabrica.run.json` is the durable state file for one run. It lives at the app project root (e.g., `../<app-name>/fabrica.run.json`). Skills read it on entry and update only the fields they own.
 
+Before `/fab-frame`, the run object and generated spec/blueprint may exist in the skills repo because the app directory does not exist yet. `/fab-frame` must copy `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the generated app directory. After that point, the app-directory copy is canonical and later skills must read/write that copy.
+
 ## Field Ownership
 
 Each skill declares which run object fields it writes (`writes_fields` in `skills/manifest.json`). Read-only skills (`fab-pulse`, `fab-passport`) must not write any fields. The canonical ownership table is in `skills/shared/run-object-schema.md`.
@@ -43,6 +45,10 @@ Before replacing `fabrica.run.json`:
 - Do not interpolate untrusted text into shell commands. Run only literal commands approved in the blueprint or package scripts.
 - Run names and app stage names must be lowercase slugs accepted by `schemas/run-object.schema.json`: no path separators, no `..`, no trailing punctuation, and no Windows-reserved names such as `con`, `aux`, `nul`, `com1`, or `lpt1`.
 - Generated paths must be relative to the current project/app root, must not be absolute, and must not contain `..`.
+- Skills must be technology-agnostic. Do not hardcode Python, Node, React, FastAPI, Docker, or any sample app unless the blueprint explicitly chose that stack.
+- For multi-service apps, derive service names, ports, runtimes, commands, dependency manifests, and container files from the blueprint's service plan.
+- For browser frontend + API stacks, do not hardcode container-internal `localhost` assumptions. Either use direct browser fetch to published backend ports with CORS, or use an environment-configured proxy target appropriate for host vs. Compose network.
+- Generated services must be hermetic: add service-local config boundaries where the toolchain would otherwise walk up to parent project config.
 
 ## Conventions
 

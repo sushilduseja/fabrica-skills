@@ -539,16 +539,15 @@ test('core skills document full-stack container hardening requirements', () => {
   const forge = readFileSync(resolve(root, 'skills/core/fab-forge/SKILL.md'), 'utf-8');
   const launch = readFileSync(resolve(root, 'skills/prototype/fab-launch/SKILL.md'), 'utf-8');
 
-  assert(blueprint.includes('React, FastAPI, SQLite, Docker'));
+  assert(blueprint.includes('container commands') || blueprint.includes('container_files'));
   assert(blueprint.includes('Container-only absolute paths'));
-  assert(frame.includes('Do not use `latest`'));
-  assert(frame.includes('vite-env.d.ts'));
+  assert(frame.includes('Do not use `latest`') || frame.includes('Pin dependency versions'));
   assert(frame.includes('Dockerfile'));
-  assert(forge.includes('Avoid `latest`'));
+  assert(forge.includes('Avoid `latest`') || forge.includes('pin versions'));
   assert(forge.includes('/data/app.db'));
   assert(launch.includes('container_build'));
   assert(launch.includes('static_analysis'));
-  assert(launch.includes('do not claim Docker runtime verification passed'));
+  assert(launch.includes('do not claim container runtime verification passed'));
 });
 
 
@@ -738,6 +737,69 @@ test('link-skills rejects duplicate ids, source symlinks, global file targets, a
 });
 
 
+test('example docs are separated from live run write paths', () => {
+  assert(existsSync(resolve(root, 'docs/examples/spec.md')), 'docs/examples/spec.md must exist');
+  assert(existsSync(resolve(root, 'docs/examples/blueprint.md')), 'docs/examples/blueprint.md must exist');
+  assert(!existsSync(resolve(root, 'docs/spec.md')), 'docs/spec.md must not be a checked-in source file');
+  assert(!existsSync(resolve(root, 'docs/blueprint.md')), 'docs/blueprint.md must not be a checked-in source file');
+
+  const gitignore = readFileSync(resolve(root, '.gitignore'), 'utf-8');
+  for (const ignored of ['fabrica.run.json', 'docs/spec.md', 'docs/blueprint.md', '.skills/', 'node_modules/']) {
+    assert(gitignore.includes(ignored), `.gitignore must include ${ignored}`);
+  }
+});
+
+test('README documents examples, canonical app-dir state, and the visual state machine', () => {
+  const readme = readFileSync(resolve(root, 'README.md'), 'utf-8');
+
+  assert(readme.includes('docs/examples/spec.md'));
+  assert(readme.includes('docs/examples/blueprint.md'));
+  assert(readme.includes('app-directory copy is canonical'));
+  assert(readme.includes('[`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md)'));
+  assert(!readme.includes('| ~~`/fab-ledger`~~'));
+});
+
+test('fab-frame documents stack-agnostic run-state relocation and service scaffolding', () => {
+  const frame = readFileSync(resolve(root, 'skills/core/fab-frame/SKILL.md'), 'utf-8');
+
+  assert(frame.includes('Copy `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md`'));
+  assert(frame.includes('app-directory `fabrica.run.json` is canonical'));
+  assert(frame.includes('Do not assume any technology stack'));
+  assert(frame.includes('one directory per declared service'));
+  assert(frame.includes('Do not assume service names such as `backend` or `frontend`'));
+  assert(frame.includes('Container-only absolute defaults'));
+  assert(frame.includes('toolchain-local config boundaries'));
+  assert(frame.includes('Do not hardcode a container-internal `localhost` proxy'));
+});
+
+test('fab-blueprint requires a stack-agnostic service plan', () => {
+  const blueprint = readFileSync(resolve(root, 'skills/core/fab-blueprint/SKILL.md'), 'utf-8');
+
+  assert(blueprint.includes('service plan'));
+  assert(blueprint.includes('runtime/language/framework'));
+  assert(blueprint.includes('ports'));
+  assert(blueprint.includes('persistence/data store'));
+  assert(blueprint.includes('container commands'));
+  assert(blueprint.includes('Do not hardcode a container-internal `localhost` proxy'));
+});
+
+test('fab-forge maps verification kinds without assuming a stack', () => {
+  const forge = readFileSync(resolve(root, 'skills/core/fab-forge/SKILL.md'), 'utf-8');
+
+  for (const expected of ['pytest', 'vitest', 'jest', 'go test', 'cargo test', 'unit', 'integration', 'local_launch', 'container_build', 'static_analysis']) {
+    assert(forge.includes(expected), `fab-forge must mention ${expected}`);
+  }
+});
+
+test('fab-launch distinguishes actual container runtime from static container analysis', () => {
+  const launch = readFileSync(resolve(root, 'skills/prototype/fab-launch/SKILL.md'), 'utf-8');
+
+  assert(launch.includes('container_build'));
+  assert(launch.includes('static_analysis'));
+  assert(launch.includes('do not claim container runtime verification passed'));
+  assert(launch.includes('Set `status = "complete"` only when the required launch verification'));
+});
+
 test('documentation is synchronized with state machine and validation implementation', () => {
   const read = (file) => readFileSync(resolve(root, file), 'utf-8');
   const readme = read('README.md');
@@ -753,7 +815,7 @@ test('documentation is synchronized with state machine and validation implementa
   assert(stateMachine.includes('/fab-launch'));
   assert(stateMachine.includes('container_build'));
   assert(stateMachine.includes('static_analysis'));
-  assert(validation.includes('32/32 tests passed'));
+  assert(validation.includes('38/38 tests passed'));
   assert(validation.includes('Post-schema semantic validation'));
   assert(shared.includes('docs/STATE_MACHINE.md'));
   assert(shared.includes('container_build'));
