@@ -45,31 +45,27 @@ export function validateFabLaunchGate(run) {
 
   for (const [i, v] of (run.verifications || []).entries()) {
     if (v.kind === 'external_deploy') {
-      const approved = (run.human_decisions || []).some(
-        (d) => d.step === 'fab-launch' && d.decision === 'continue'
-      );
+      const approved = (run.human_decisions || []).some((d) => d.step === 'fab-launch' && d.decision === 'continue');
       if (!approved) {
         errors.push(
           `verifications[${i}].kind "external_deploy" requires a prior human_decisions` +
-            ` entry with step "fab-launch" and decision "continue"`
+            ` entry with step "fab-launch" and decision "continue"`,
         );
       }
     }
     if (v.kind === 'container_build' && !/(?:^|[^-\w])docker\b/.test(v.command)) {
-      errors.push(
-        `verifications[${i}].kind "container_build" command "${v.command}" does not invoke Docker`
-      );
+      errors.push(`verifications[${i}].kind "container_build" command "${v.command}" does not invoke Docker`);
     }
   }
 
   if (run.status === 'complete') {
     const hasLaunchVerification = (run.verifications || []).some((v) =>
-      ['local_launch', 'container_build'].includes(v.kind)
+      ['local_launch', 'container_build'].includes(v.kind),
     );
     if (!hasLaunchVerification) {
       errors.push(
         'status "complete" with no local_launch or container_build verification — ' +
-          'launch must verify the app before completing'
+          'launch must verify the app before completing',
       );
     }
   }
@@ -95,7 +91,7 @@ export function validateFabSignalGate(run) {
     if (d.decision !== null && (d.resolved_at === null || d.resolved_at === undefined)) {
       errors.push(
         `human_decisions[${i}] has decision "${d.decision}" but no resolved_at — ` +
-          'decisions must not be auto-populated without operator confirmation'
+          'decisions must not be auto-populated without operator confirmation',
       );
     }
   }
@@ -121,7 +117,7 @@ export function validateFabCheckGate(run) {
     if (stage.quality_score !== null && stage.quality_score < 6 && stage.status === 'done') {
       errors.push(
         `app_stages[${i}] "${stage.name}" has quality_score ${stage.quality_score} (< 6) ` +
-          'but status is "done" — a sub-threshold axis must block the stage'
+          'but status is "done" — a sub-threshold axis must block the stage',
       );
     }
   }
@@ -150,7 +146,7 @@ export function validateFabPulseGate(run) {
       if (run.costs[field] !== 'unknown') {
         errors.push(
           `costs.precision is "unknown" but costs.${field} is ${JSON.stringify(run.costs[field])} — ` +
-            'must also be "unknown" to prevent invented display values'
+            'must also be "unknown" to prevent invented display values',
         );
       }
     }
@@ -187,15 +183,13 @@ export function validatePrerequisiteGate(run) {
     if (pending.length > 0) {
       errors.push(
         `next_action "/fab-weave" requires all app_stages to be done, but ${pending.length} stage(s) ` +
-          `have status other than "done": ${pending.map((s) => `"${s.name}"(${s.status})`).join(', ')}`
+          `have status other than "done": ${pending.map((s) => `"${s.name}"(${s.status})`).join(', ')}`,
       );
     }
   }
 
   if (nextSkill === 'fab-launch' && run.status !== 'verifying') {
-    errors.push(
-      `next_action "/fab-launch" requires status "verifying", but current status is "${run.status}"`
-    );
+    errors.push(`next_action "/fab-launch" requires status "verifying", but current status is "${run.status}"`);
   }
 
   return errors;
@@ -219,8 +213,7 @@ export function validateTimestampOrderGate(run) {
       const resolved = new Date(d.resolved_at).getTime();
       if (!isNaN(triggered) && !isNaN(resolved) && resolved < triggered) {
         errors.push(
-          `human_decisions[${i}] resolved_at (${d.resolved_at}) is earlier than ` +
-            `triggered_at (${d.triggered_at})`
+          `human_decisions[${i}] resolved_at (${d.resolved_at}) is earlier than ` + `triggered_at (${d.triggered_at})`,
         );
       }
     }
@@ -246,7 +239,7 @@ export function validateCostPrecisionGate(run) {
 
   if (run.costs && !validPrecisions.includes(run.costs.precision)) {
     errors.push(
-      `costs.precision "${run.costs.precision}" is not valid (must be one of: ${validPrecisions.join(', ')})`
+      `costs.precision "${run.costs.precision}" is not valid (must be one of: ${validPrecisions.join(', ')})`,
     );
   }
 

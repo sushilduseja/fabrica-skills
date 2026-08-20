@@ -1,7 +1,17 @@
 import assert from 'assert';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { copyRepoFixture, mutateJson, run, test, assertPass, assertFail, combined, assertNoStackTrace, runAll } from './_harness.mjs';
+import {
+  copyRepoFixture,
+  mutateJson,
+  run,
+  test,
+  assertPass,
+  assertFail,
+  combined,
+  assertNoStackTrace,
+  runAll,
+} from './_harness.mjs';
 
 test('sync-manifest succeeds in --check mode on repo-clean fixture', () => {
   const temp = copyRepoFixture();

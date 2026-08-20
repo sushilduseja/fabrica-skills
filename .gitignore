@@ -1,5 +1,6 @@
 # Environment
 .env
+.env.local
 .gstack/
 
 # Local fabrica run outputs
@@ -10,8 +11,6 @@ docs/eval/
 docs/handoff.md
 docs/integration.md
 docs/retro.md
-docs/retune.md
-docs/retune/
 
 # Local skill install output
 .skills/

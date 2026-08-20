@@ -13,13 +13,7 @@
  *   node scripts/sync-manifest.mjs --check   # verify only (exit 1 on drift)
  *   node scripts/sync-manifest.mjs           # write generated files
  */
-import {
-  existsSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'fs';
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -104,10 +98,24 @@ if (!Array.isArray(lastErrorSchema)) {
 const validErrorTypes = lastErrorSchema;
 
 const RUN_OBJECT_FIELDS = [
-  'schema_version', 'id', 'name', 'experiment_phase', 'created_at', 'updated_at',
-  'status', 'current_step', 'current_app_stage', 'next_action', 'last_error',
-  'spec_path', 'blueprint_path', 'app_stages', 'costs', 'verifications',
-  'human_decisions', 'gate_levels',
+  'schema_version',
+  'id',
+  'name',
+  'experiment_phase',
+  'created_at',
+  'updated_at',
+  'status',
+  'current_step',
+  'current_app_stage',
+  'next_action',
+  'last_error',
+  'spec_path',
+  'blueprint_path',
+  'app_stages',
+  'costs',
+  'verifications',
+  'human_decisions',
+  'gate_levels',
 ];
 
 const fieldOwners = {};
@@ -166,7 +174,12 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
     error(`skill "${skill.id}" missing SKILL.md at ${skill.path}/SKILL.md`);
   }
 
-  const errPath = assertSafeRelPath(root, `skill "${skill.id}" error_metadata_path`, skill.error_metadata_path, ERRORS_PATH_RE);
+  const errPath = assertSafeRelPath(
+    root,
+    `skill "${skill.id}" error_metadata_path`,
+    skill.error_metadata_path,
+    ERRORS_PATH_RE,
+  );
   if (skill.error_metadata_path !== `${skill.path}/errors.json`) {
     error(`skill "${skill.id}" error_metadata_path must be ${skill.path}/errors.json`);
   }
@@ -264,19 +277,21 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
   const errorSectionMatch = skillContent.match(/## Error Handling\n([\s\S]*?)(?=\n## |\n---|$)/);
   if (errorSectionMatch) {
     const errorSection = errorSectionMatch[1];
-    const mentionedTypes = new Set(
-      [...errorSection.matchAll(/`([a-z_]+)`/g)].map((m) => m[1])
-    );
+    const mentionedTypes = new Set([...errorSection.matchAll(/`([a-z_]+)`/g)].map((m) => m[1]));
     for (const mentioned of mentionedTypes) {
       if (validErrorTypes.includes(mentioned) && !errorTypesInMeta.has(mentioned)) {
-        error(`skill "${skill.id}" Error Handling section mentions "${mentioned}" but it is not defined in errors.json`);
+        error(
+          `skill "${skill.id}" Error Handling section mentions "${mentioned}" but it is not defined in errors.json`,
+        );
       }
     }
     // Reverse direction: every error type in errors.json must be mentioned in the Error Handling section.
     for (const errorType of errorTypesInMeta) {
       const quoted = '`' + errorType + '`';
       if (!errorSection.includes(quoted)) {
-        error(`skill "${skill.id}" errors.json defines "${errorType}" but it is not mentioned in the SKILL.md Error Handling section`);
+        error(
+          `skill "${skill.id}" errors.json defines "${errorType}" but it is not mentioned in the SKILL.md Error Handling section`,
+        );
       }
     }
   }
@@ -291,7 +306,7 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
     error(`skill "${skill.id}" is not read_only but writes_fields is empty`);
   }
 
-  for (const f of (skill.writes_fields || [])) {
+  for (const f of skill.writes_fields || []) {
     if (!RUN_OBJECT_FIELDS.includes(f)) {
       error(`skill "${skill.id}" writes unknown run object field "${f}"`);
     }
@@ -328,10 +343,7 @@ for (const s of manifest.skills) {
 
 const generatedSchema = JSON.parse(JSON.stringify(schema));
 generatedSchema.properties.current_step = {
-  oneOf: [
-    { type: 'null' },
-    { type: 'string', enum: skillIds },
-  ],
+  oneOf: [{ type: 'null' }, { type: 'string', enum: skillIds }],
 };
 generatedSchema.properties.gate_levels = {
   type: 'object',
@@ -359,7 +371,9 @@ if (checkOnly) {
     failed = true;
   }
   if (schemaDiffers) {
-    console.error('[sync-manifest] CHECK FAILED: schemas/run-object.schema.json generated sections differ from manifest');
+    console.error(
+      '[sync-manifest] CHECK FAILED: schemas/run-object.schema.json generated sections differ from manifest',
+    );
     failed = true;
   }
   if (failed) process.exit(1);

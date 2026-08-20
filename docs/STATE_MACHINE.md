@@ -7,6 +7,7 @@ Canonical implementation sources:
 - Skill inventory, default gates, and dependencies: `skills/manifest.json`
 - Run-state schema: `schemas/run-object.schema.json`
 - Post-schema semantic checks: `scripts/validate-run.mjs`
+- Gate-contract validators (executable skill guardrails): `scripts/_skill-gates.mjs`
 - Human-readable field ownership: `skills/shared/run-object-schema.md`
 
 ## Core rule
@@ -192,7 +193,9 @@ Rules:
 
 The state machine is stack-agnostic. It does not know whether a stage is Python, Node, Go, Rust, Java, a CLI, a web app, or a containerized multi-service system. Technology-specific evidence belongs in `verifications[]`, not in status names.
 
-## Semantic validation enforced by `validate-run.mjs`
+## Semantic validation
+
+### Post-schema checks in `validate-run.mjs`
 
 Beyond JSON Schema, the validator rejects:
 
@@ -204,6 +207,20 @@ Beyond JSON Schema, the validator rejects:
 - `next_action` commands for unknown skills;
 - `/fab-forge <stage>` or `/fab-check <stage>` references to unknown stages;
 - `/fab-trace <target>` references to unknown targets, except the special target `integration`.
+
+### Gate-contract validators in `_skill-gates.mjs`
+
+`scripts/_skill-gates.mjs` implements executable gate contracts derived from each `SKILL.md`'s **Execution Guardrails** and **Behavior** sections. It is imported and called by `validate-run.mjs` via `validateAllGates()`:
+
+| Validator | What it enforces |
+|---|---|
+| `validateFabLaunchGate` | `external_deploy` kind requires prior human approval; `container_build` must invoke Docker; `complete` status requires a launch verification entry |
+| `validateFabSignalGate` | Every non-null decision must have a `resolved_at` timestamp — no auto-populated decisions |
+| `validateFabCheckGate` | Stage with `quality_score < 6` must not be `done` |
+| `validateFabPulseGate` | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` |
+| `validatePrerequisiteGate` | `fab-weave` requires all `app_stages` done; `fab-launch` requires `status === "verifying"` |
+| `validateTimestampOrderGate` | `human_decisions[].resolved_at` must not be earlier than `triggered_at` |
+| `validateCostPrecisionGate` | `costs.precision` must be one of: `unknown`, `estimated`, `measured` |
 
 ## Gate summary
 

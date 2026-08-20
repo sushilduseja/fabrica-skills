@@ -172,7 +172,7 @@ Creates `.skills/` inside the repo with one entry per active skill (see `skills/
 node scripts/link-skills.mjs --global
 ```
 
-Installs to `~/.fabrica-skills/.skills/` using `os.homedir()` for cross-platform resolution (`C:\sushildusejas\<name>` on Windows, `/home/<name>` or `/sushildusejas/<name>` on Unix). The command refuses to write through a symlinked or junctioned global install directory. The agent must be pointed at this path to discover skills.
+Installs to `~/.fabrica-skills/.skills/` using `os.homedir()` for cross-platform resolution (`C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS). The command refuses to write through a symlinked or junctioned global install directory. The agent must be pointed at this path to discover skills.
 
 ### Agent Discovery
 

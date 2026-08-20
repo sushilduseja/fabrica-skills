@@ -99,10 +99,7 @@ async function readStdinJson() {
  */
 async function loadAjv() {
   try {
-    const [{ default: Ajv }, { default: addFormats }] = await Promise.all([
-      import('ajv'),
-      import('ajv-formats'),
-    ]);
+    const [{ default: Ajv }, { default: addFormats }] = await Promise.all([import('ajv'), import('ajv-formats')]);
     return { Ajv, addFormats };
   } catch (err) {
     fail(`Validator dependencies are unavailable. Run "npm ci" before validating. Detail: ${err.message}`);
@@ -169,13 +166,17 @@ async function main() {
   // Post-schema: schema version tolerance.
   const supportedVersions = ['0.2', '0.3'];
   if (!supportedVersions.includes(instance.schema_version)) {
-    console.warn(`[validate-run] WARN: schema_version "${instance.schema_version}" is not in the known range ${JSON.stringify(supportedVersions)}. Proceeding but validation expectations may be incorrect.`);
+    console.warn(
+      `[validate-run] WARN: schema_version "${instance.schema_version}" is not in the known range ${JSON.stringify(supportedVersions)}. Proceeding but validation expectations may be incorrect.`,
+    );
   }
 
   // Post-schema: status × experiment_phase compatibility.
   const allowedPhases = STATUS_PHASE_MATRIX[instance.status];
   if (allowedPhases && !allowedPhases.includes(instance.experiment_phase)) {
-    fail(`status "${instance.status}" is not valid with experiment_phase "${instance.experiment_phase}" (expected one of: ${allowedPhases.join(', ')})`);
+    fail(
+      `status "${instance.status}" is not valid with experiment_phase "${instance.experiment_phase}" (expected one of: ${allowedPhases.join(', ')})`,
+    );
   }
 
   const skillIds = schema.properties.current_step.oneOf.find((entry) => Array.isArray(entry.enum))?.enum || [];
@@ -187,7 +188,10 @@ async function main() {
     stageNames.add(stage.name);
   }
 
-  if (['forging', 'checking', 'weaving', 'verifying', 'complete'].includes(instance.status) && instance.app_stages.length === 0) {
+  if (
+    ['forging', 'checking', 'weaving', 'verifying', 'complete'].includes(instance.status) &&
+    instance.app_stages.length === 0
+  ) {
     fail(`status "${instance.status}" requires at least one app_stages entry`);
   }
 
@@ -224,10 +228,14 @@ async function main() {
   for (const [index, v] of instance.verifications.entries()) {
     const invokesDocker = /(?:^|[^-\w])docker\b/.test(v.command);
     if (v.kind === 'container_build' && !invokesDocker) {
-      fail(`verifications[${index}] has kind "container_build" but command "${v.command}" does not appear to invoke Docker. For static Docker checks, use kind "static_analysis".`);
+      fail(
+        `verifications[${index}] has kind "container_build" but command "${v.command}" does not appear to invoke Docker. For static Docker checks, use kind "static_analysis".`,
+      );
     }
     if (v.kind === 'static_analysis' && invokesDocker && /\b(build|compose)\b/.test(v.command)) {
-      fail(`verifications[${index}] has kind "static_analysis" but command "${v.command}" appears to build a container. For container builds, use kind "container_build".`);
+      fail(
+        `verifications[${index}] has kind "static_analysis" but command "${v.command}" appears to build a container. For container builds, use kind "container_build".`,
+      );
     }
   }
 

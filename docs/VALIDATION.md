@@ -27,7 +27,7 @@ Expected current result:
 [assert-invalid] OK — test/fixtures/invalid-run.json fails as expected (/status, /app_stages/0/quality_score)
 [assert-invalid] OK — test/fixtures/invalid-gate-keys.json fails as expected (/gate_levels)
 [sync-manifest] CHECK OK — all generated files match manifest
-31/31 tests passed
+68/68 tests passed
 ```
 
 `npm run setup` additionally creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
@@ -52,13 +52,14 @@ Expected current result:
 Tests are split by module under `test/`:
 
 | File | Tests | Focus |
-|---|---|---|
-| `test/validate-run.test.mjs` | 15 | Schema validation, semantic invariants, status×phase matrix |
-| `test/sync-manifest.test.mjs` | 5 | Manifest check and --write mode, generated-file drift |
-| `test/link-skills.test.mjs` | 9 | Local and global install, symlink safety, path traversal |
-| `test/docs.test.mjs` | 2 | Skill guardrails, error metadata, example doc layout |
+|---|---|---|---|
+| `test/validate-run.test.mjs` | 16 | Schema validation, semantic invariants, status×phase matrix |
+| `test/sync-manifest.test.mjs` | 8 | Manifest check and --write mode, generated-file drift, errors.json cross-reference |
+| `test/link-skills.test.mjs` | 13 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh |
+| `test/skill-gates.test.mjs` | 28 | Gate-contract validators for all 7 gate checks |
+| `test/docs.test.mjs` | 3 | Skill guardrails, error metadata, example doc layout, .gitignore coverage |
 
-All 31 tests:
+All 68 tests:
 
 - valid fixture acceptance;
 - malformed JSON error handling without stack traces;
@@ -90,7 +91,16 @@ All 31 tests:
 - nested additional-property rejection;
 - valid `/fab-trace integration` and terminal `complete` states;
 - symlinked skill directory rejection;
-- duplicate link ids, source symlinks, global file targets, and custom skill preservation.
+- duplicate link ids, source symlinks, global file targets, and custom skill preservation;
+- frontmatter drift detection (name, description, category, phase, default_gate, overridability);
+- prerequisite graph enforcement (fab-weave requires all stages done, fab-launch requires verifying status);
+- errors.json-to-SKILL.md reverse cross-reference (every error type documented in the skill);
+- cost precision integrity (valid enum values: unknown/estimated/measured);
+- human_decisions timestamp ordering (resolved_at after triggered_at);
+- .gitignore coverage for all generated and transient paths;
+- EPERM copy-fallback on Windows when junctions are blocked;
+- staleness refresh for copied skills after source update;
+- gate-contract validators (fab-launch, fab-signal, fab-check, fab-pulse, prerequisite, timestamp, cost-precision).
 
 ## Schema validation
 
@@ -114,6 +124,20 @@ All 31 tests:
 - `next_action` skill ids not present in the manifest-derived schema;
 - `/fab-forge <stage>` or `/fab-check <stage>` references to unknown stages;
 - `/fab-trace <target>` references to unknown targets except `integration`.
+
+## Gate-contract validation
+
+`scripts/_skill-gates.mjs` implements executable gate contracts derived from each `SKILL.md`'s **Execution Guardrails** and **Behavior** sections. Wired into `validate-run.mjs` via `validateAllGates()`:
+
+| Validator | Gate | What it enforces |
+|---|---|---|
+| `validateFabLaunchGate` | review | `external_deploy` kind requires prior human approval; `container_build` must invoke Docker; `complete` status requires a launch verification entry |
+| `validateFabSignalGate` | full | Every non-null decision must have a `resolved_at` timestamp — no auto-populated decisions |
+| `validateFabCheckGate` | auto | A stage with `quality_score < 6` must not be `done` (any sub-threshold axis blocks) |
+| `validateFabPulseGate` | auto | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` (no invented display values) |
+| `validatePrerequisiteGate` | (manifest) | `fab-weave` requires all `app_stages` done; `fab-launch` requires `status === "verifying"` |
+| `validateTimestampOrderGate` | (integrity) | `human_decisions[i].resolved_at` must not be earlier than `triggered_at` |
+| `validateCostPrecisionGate` | (integrity) | `costs.precision` must be one of: `unknown`, `estimated`, `measured` |
 
 ## Manifest validation
 
@@ -140,7 +164,10 @@ All 31 tests:
 - local and global install targets are real directories, not symlinks/junctions;
 - duplicate ids are rejected;
 - only manifest-managed skill entries are refreshed;
-- unrelated skills are preserved.
+- unrelated skills are preserved;
+- global symlink installation and verification-kind consistency testing;
+- EPERM copy-fallback on Windows when junctions are blocked (copies instead, warns);
+- staleness refresh: after source updates, copied skills are re-copied on re-link.
 
 ## Documentation validation
 
@@ -148,7 +175,9 @@ The test suite asserts that:
 
 - every manifest skill has `## Execution Guardrails` and `## Error Handling`;
 - every `errors.json` entry uses a canonical error type and has actionable metadata;
-- full-stack container requirements are documented in the relevant skill files.
+- every error type in `errors.json` is cross-referenced in the skill's Error Handling section (reverse check);
+- full-stack container requirements are documented in the relevant skill files;
+- `.gitignore` covers all generated and transient paths (`.skills/`, `docs/spec.md`, `docs/blueprint.md`, `docs/handoff.md`, `docs/retro.md`, `fabrica.run.json`).
 
 Additional validations:
 - checked-in examples live under `docs/examples/` and live run paths are ignored;

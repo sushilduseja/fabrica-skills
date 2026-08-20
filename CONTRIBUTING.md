@@ -5,6 +5,7 @@
 - Skill inventory, paths, categories, prerequisites, gates, and run-object field ownership live in `skills/manifest.json`.
 - Generated plugin entries and schema sections must remain in sync with the manifest through `scripts/sync-manifest.mjs`.
 - Run-object shape lives in `schemas/run-object.schema.json`; post-schema semantic checks live in `scripts/validate-run.mjs`.
+- Gate-contract validators (executable skill guardrails) live in `scripts/_skill-gates.mjs`, imported by `validate-run.mjs`.
 - The visual workflow reference is `docs/STATE_MACHINE.md`.
 
 ## Skill author workflow
@@ -72,7 +73,7 @@ npm run lint
 npm run setup
 ```
 
-Current `npm test` coverage (31 tests across 4 test files):
+Current `npm test` coverage (68 tests across 5 test files):
 
 - valid and invalid run-object fixtures;
 - every required top-level field;
@@ -82,4 +83,8 @@ Current `npm test` coverage (31 tests across 4 test files):
 - manifest/frontmatter drift and --write mode;
 - path traversal and symlink/junction protections;
 - local and global install safety;
-- Docker/container verification semantics.
+- Docker/container verification semantics;
+- gate-contract validation (fab-launch, fab-signal, fab-check, fab-pulse, prerequisite, timestamp, cost-precision);
+- EPERM copy-fallback and staleness refresh on Windows;
+- errors.json-to-SKILL.md reverse cross-reference;
+- .gitignore coverage.

@@ -7,7 +7,7 @@ test('all skills have execution guardrails and error handling', () => {
   const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'skills', 'manifest.json'), 'utf-8'));
   const allowedErrors = new Set(
     JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'schemas', 'run-object.schema.json'), 'utf-8'))
-      .properties.last_error.oneOf[1].properties.type.enum
+      .properties.last_error.oneOf[1].properties.type.enum,
   );
 
   for (const skill of manifest.skills) {
@@ -15,15 +15,20 @@ test('all skills have execution guardrails and error handling', () => {
     assert(skillText.includes('## Execution Guardrails'), `${skill.id} missing execution guardrails`);
     assert(skillText.includes('## Error Handling'), `${skill.id} missing error handling`);
 
-    const errorMatch = skillText.match(/## Error Handling\n+([\s\S]*?)(?=\n## |$)/);
-    if (errorMatch) {
-      for (const errorType of allowedErrors) {
-        const escaped = errorType.replace(/-/g, '\\-');
-        const regex = new RegExp(`['"\`]${escaped}['"\`]`, 'i');
-        if (regex.test(errorMatch[1])) continue;
-        const simplified = skillText.replace(/\r\n/g, '\n');
-        if (simplified.includes(`\`${errorType}\``)) continue;
-      }
+    const errMeta = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '..', skill.error_metadata_path || skill.path + '/errors.json'),
+        'utf-8',
+      ),
+    );
+    const skillErrorTypes = new Set((errMeta.errors || []).map((e) => e.type));
+    for (const errorType of skillErrorTypes) {
+      assert(allowedErrors.has(errorType), `${skill.id} errors.json uses unknown type ${errorType}`);
+      const mentioned =
+        skillText.includes('`' + errorType + '`') ||
+        skillText.includes('"' + errorType + '"') ||
+        skillText.includes("'" + errorType + "'");
+      assert(mentioned, `${skill.id} SKILL.md Error Handling omits errors.json type ${errorType}`);
     }
   }
 });
@@ -57,14 +62,12 @@ test('all generated-file patterns are covered by .gitignore', () => {
     'docs/handoff.md',
     'docs/integration.md',
     'docs/retro.md',
-    'docs/retune/',
     '.skills/',
   ];
 
   for (const p of generatedPaths) {
     assert(gitinclude(p, gitignore), `.gitignore must include ${p}`);
   }
-
 });
 
 runAll();

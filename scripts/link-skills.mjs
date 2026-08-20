@@ -14,22 +14,11 @@
  *   node scripts/link-skills.mjs
  *   node scripts/link-skills.mjs --global
  */
-import {
-  cpSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-} from 'fs';
+import { cpSync, mkdirSync, readFileSync, rmSync, rmdirSync, symlinkSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
-import {
-  assertInsideRoot,
-  errorExit,
-  lstatIfPresent,
-  toRepoRelative,
-} from './_path-utils.mjs';
+import { assertInsideRoot, errorExit, lstatIfPresent, toRepoRelative } from './_path-utils.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -184,7 +173,20 @@ function removeExistingManagedSkill(linkDest, skillName) {
     rmSync(linkDest, { recursive: true, force: true });
     console.log(`[link-skills] CLEAN  ${skillName}`);
   } catch (err) {
-    fail(`Cannot remove existing managed entry ${skillName}: ${err.message}`);
+    if (err.code === 'ENOTEMPTY') {
+      try {
+        rmdirSync(linkDest);
+        console.log(`[link-skills] CLEAN  ${skillName}`);
+      } catch (retryErr) {
+        fail(
+          `Cannot remove existing managed entry ${skillName} (${retryErr.code || retryErr.message}). Manually clear .skills/${skillName} before rerunning setup.`,
+        );
+      }
+    } else {
+      fail(
+        `Cannot remove existing managed entry ${skillName}: ${err.message}. Manually clear .skills/${skillName} before rerunning setup.`,
+      );
+    }
   }
 }
 
@@ -242,8 +244,10 @@ for (const { skillName, skillPath } of skills) {
       console.log(`[link-skills] LINK   ${skillName} → .skills/ (symlink)`);
     }
   } catch (err) {
-    if (isWindows && err.code === 'EPERM') {
-      warn(`Junction blocked for ${skillName}; falling back to recursive copy. Rerun setup after source updates to refresh copied skills.`);
+    if (err.code === 'EPERM' || err.code === 'EACCES' || err.code === 'ENOTSUP') {
+      warn(
+        `Link blocked for ${skillName} (${err.code}); falling back to recursive copy. Rerun setup after source updates to refresh copied skills.`,
+      );
       copySkill(skillPath, linkDest, skillName);
     } else {
       fail(`Cannot link ${skillName}: ${err.message}`);

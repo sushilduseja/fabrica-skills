@@ -2,7 +2,17 @@ import assert from 'assert';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { copyRepoFixture, mutateJson, run, test, assertPass, assertFail, combined, assertNoStackTrace, runAll } from './_harness.mjs';
+import {
+  copyRepoFixture,
+  mutateJson,
+  run,
+  test,
+  assertPass,
+  assertFail,
+  combined,
+  assertNoStackTrace,
+  runAll,
+} from './_harness.mjs';
 
 test('link-skills succeeds, is idempotent, and installs all manifest-managed skills', () => {
   const temp = copyRepoFixture();
@@ -252,17 +262,14 @@ function patchForEPermFallback(scriptsDir) {
   const mjsPath = join(scriptsDir, 'link-skills.mjs');
   const orig = readFileSync(mjsPath, 'utf-8');
   const patched = orig
-    .replace(
-      "const isWindows = process.platform === 'win32';",
-      "const isWindows = true;"
-    )
+    .replace("const isWindows = process.platform === 'win32';", 'const isWindows = true;')
     .replace(
       "symlinkSync(skillPath, linkDest, 'junction');",
-      "const __e = new Error('simulated EPERM'); __e.code = 'EPERM'; throw __e;"
+      "const __e = new Error('simulated EPERM'); __e.code = 'EPERM'; throw __e;",
     )
     .replace(
       "symlinkSync(rel, linkDest, 'dir');",
-      "const __e = new Error('simulated EPERM'); __e.code = 'EPERM'; throw __e;"
+      "const __e = new Error('simulated EPERM'); __e.code = 'EPERM'; throw __e;",
     );
   writeFileSync(mjsPath, patched, 'utf-8');
 }
