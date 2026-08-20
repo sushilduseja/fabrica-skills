@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import {
   copyRepoFixture,
@@ -25,6 +25,7 @@ test('sync-manifest detects missing entry in --check mode', () => {
   mutateJson(manifestPath, (data) => {
     data.skills = data.skills.filter((s) => s.id !== 'fab-retro');
   });
+  rmSync(join(temp, 'skills/prototype/fab-retro'), { recursive: true, force: true });
   const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
   assertFail(result);
   assert(combined(result).includes('CHECK FAILED'));
@@ -57,6 +58,7 @@ test('sync-manifest --write updates generated files and is idempotent', () => {
   mutateJson(manifestPath, (data) => {
     data.skills = data.skills.filter((s) => s.id !== 'fab-retro');
   });
+  rmSync(join(temp, 'skills/prototype/fab-retro'), { recursive: true, force: true });
 
   const writeResult = run(['scripts/sync-manifest.mjs', '--write'], { cwd: temp });
   assertPass(writeResult, `write failed: ${combined(writeResult)}`);
@@ -106,6 +108,67 @@ test('sync-manifest detects orphaned error type in errors.json not mentioned in 
   const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
   assertFail(result);
   assert(combined(result).includes('but it is not mentioned in the SKILL.md'), combined(result));
+  assertNoStackTrace(result);
+});
+
+test('sync-manifest detects frontmatter category drift from manifest', () => {
+  const temp = copyRepoFixture();
+  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const content = readFileSync(skillMdPath, 'utf-8');
+  const patched = content.replace(/^category:\s*core$/m, 'category: other');
+  writeFileSync(skillMdPath, patched, 'utf-8');
+  const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertFail(result);
+  assert(combined(result).includes('frontmatter category does not match manifest'), combined(result));
+  assertNoStackTrace(result);
+});
+
+test('sync-manifest detects frontmatter default_gate drift from manifest', () => {
+  const temp = copyRepoFixture();
+  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const content = readFileSync(skillMdPath, 'utf-8');
+  const patched = content.replace(/^default_gate:\s*checkpoint$/m, 'default_gate: auto');
+  writeFileSync(skillMdPath, patched, 'utf-8');
+  const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertFail(result);
+  assert(combined(result).includes('frontmatter default_gate does not match manifest'), combined(result));
+  assertNoStackTrace(result);
+});
+
+test('sync-manifest detects frontmatter overridable drift from manifest', () => {
+  const temp = copyRepoFixture();
+  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const content = readFileSync(skillMdPath, 'utf-8');
+  const patched = content.replace(/^overridable:\s*true$/m, 'overridable: false');
+  writeFileSync(skillMdPath, patched, 'utf-8');
+  const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertFail(result);
+  assert(combined(result).includes('frontmatter overridable does not match manifest'), combined(result));
+  assertNoStackTrace(result);
+});
+
+test('sync-manifest detects writes_fields ownership overlap not in the multi-writer whitelist', () => {
+  const temp = copyRepoFixture();
+  mutateJson(join(temp, 'skills/manifest.json'), (data) => {
+    const bp = data.skills.find((s) => s.id === 'fab-blueprint');
+    bp.writes_fields = [...bp.writes_fields, 'spec_path'];
+  });
+  const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertFail(result);
+  assert(combined(result).includes('is written by multiple skills'), combined(result));
+  assert(combined(result).includes('spec_path'), combined(result));
+  assertNoStackTrace(result);
+});
+
+test('sync-manifest detects an orphan skill directory on disk with no manifest entry', () => {
+  const temp = copyRepoFixture();
+  const orphan = join(temp, 'skills/core/fab-ghost');
+  mkdirSync(orphan, { recursive: true });
+  writeFileSync(join(orphan, 'SKILL.md'), '---\nname: fab-ghost\n---\n', 'utf-8');
+  const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertFail(result);
+  assert(combined(result).includes('orphan skill directory'), combined(result));
+  assert(combined(result).includes('skills/core/fab-ghost'), combined(result));
   assertNoStackTrace(result);
 });
 

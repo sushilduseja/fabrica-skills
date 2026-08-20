@@ -314,4 +314,51 @@ test('link-skills EPERM copy-fallback refreshes stale copies on rerun', () => {
   }
 });
 
+test('link-skills removes a managed skill entry that is a symlink to outside without touching its target', () => {
+  const temp = copyRepoFixture();
+  const outside = mkdtempSync(join(tmpdir(), 'fabrica-skills-outside-skill-'));
+  try {
+    mkdirSync(join(temp, '.skills'), { recursive: true });
+    writeFileSync(join(outside, 'MARKER'), 'do-not-delete', 'utf-8');
+    try {
+      symlinkSync(outside, join(temp, '.skills', 'fab-intake'), 'dir');
+    } catch {
+      rmSync(temp, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+      return;
+    }
+
+    const result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+    assert(existsSync(join(outside, 'MARKER')), 'symlink target must remain untouched');
+    assert(!existsSync(join(outside, 'SKILL.md')), 'must not write through the symlink into its target');
+    assert(existsSync(join(temp, '.skills', 'fab-intake', 'SKILL.md')), 'managed entry should be reinstalled');
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('link-skills recovers from ENOTEMPTY when clearing a managed entry (rmdirSync retry)', () => {
+  const temp = copyRepoFixture();
+  try {
+    mkdirSync(join(temp, '.skills', 'fab-intake'), { recursive: true });
+
+    const mjsPath = join(temp, 'scripts', 'link-skills.mjs');
+    const orig = readFileSync(mjsPath, 'utf-8');
+    const patched = orig.replace(
+      'rmSync(linkDest, { recursive: true, force: true });',
+      "const __e = new Error('simulated ENOTEMPTY'); __e.code = 'ENOTEMPTY'; throw __e;",
+    );
+    writeFileSync(mjsPath, patched, 'utf-8');
+
+    const result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('CLEAN'), combined(result));
+    assert(existsSync(join(temp, '.skills', 'fab-intake', 'SKILL.md')));
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 runAll();

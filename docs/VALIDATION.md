@@ -27,7 +27,7 @@ Expected current result:
 [assert-invalid] OK — test/fixtures/invalid-run.json fails as expected (/status, /app_stages/0/quality_score)
 [assert-invalid] OK — test/fixtures/invalid-gate-keys.json fails as expected (/gate_levels)
 [sync-manifest] CHECK OK — all generated files match manifest
-68/68 tests passed
+84/84 tests passed
 ```
 
 `npm run setup` additionally creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
@@ -52,14 +52,14 @@ Expected current result:
 Tests are split by module under `test/`:
 
 | File | Tests | Focus |
-|---|---|---|---|
-| `test/validate-run.test.mjs` | 16 | Schema validation, semantic invariants, status×phase matrix |
-| `test/sync-manifest.test.mjs` | 8 | Manifest check and --write mode, generated-file drift, errors.json cross-reference |
-| `test/link-skills.test.mjs` | 13 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh |
+|---|---|---|
+| `test/validate-run.test.mjs` | 24 | Schema validation, semantic invariants, status×phase matrix, boundary/enum/type/length edges, reserved-name and path-injection sweep, scale |
+| `test/sync-manifest.test.mjs` | 13 | Manifest check and --write mode, generated-file drift, frontmatter drift, errors.json cross-reference, field-ownership overlap, orphan skill directories |
+| `test/link-skills.test.mjs` | 15 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh, nested symlink-entry removal, ENOTEMPTY recovery |
 | `test/skill-gates.test.mjs` | 28 | Gate-contract validators for all 7 gate checks |
-| `test/docs.test.mjs` | 3 | Skill guardrails, error metadata, example doc layout, .gitignore coverage |
+| `test/docs.test.mjs` | 4 | Skill guardrails, error metadata, example doc layout, .gitignore coverage, README cross-platform home paths |
 
-All 68 tests:
+All 84 tests:
 
 - valid fixture acceptance;
 - malformed JSON error handling without stack traces;
@@ -100,7 +100,20 @@ All 68 tests:
 - .gitignore coverage for all generated and transient paths;
 - EPERM copy-fallback on Windows when junctions are blocked;
 - staleness refresh for copied skills after source update;
-- gate-contract validators (fab-launch, fab-signal, fab-check, fab-pulse, prerequisite, timestamp, cost-precision).
+- gate-contract validators (fab-launch, fab-signal, fab-check, fab-pulse, prerequisite, timestamp, cost-precision);
+- numeric and timestamp boundaries (quality_score 0/6/10/10.5, epoch and far-future timestamps);
+- out-of-set enum values in verification kinds, stage status, gate_levels keys, and by-step cost precision;
+- wrong-typed field values (string-for-number, array-for-object, null-for-required);
+- length and character limits (63-char names, 1000-char notes, emoji/space/uppercase/non-ASCII rejection);
+- compound multi-violation reporting;
+- full Windows reserved-name sweep (con, prn, aux, nul, com1-9, lpt1-9) across every name-bearing field;
+- absolute-path and traversal injection rejection;
+- scale: 150 app stages and 200 decisions + 100 verifications validate, injected violations still caught;
+- `writes_fields` ownership-overlap detection against an explicit multi-writer whitelist;
+- orphan skill directory detection (directory on disk with no manifest entry);
+- nested symlink-entry removal without touching the symlink target;
+- ENOTEMPTY recovery when clearing a managed skill entry;
+- README cross-platform global-install home paths.
 
 ## Schema validation
 
@@ -150,6 +163,8 @@ All 68 tests:
 - prerequisite and block references;
 - adjacent `errors.json` metadata and error taxonomy;
 - field ownership coverage;
+- field-ownership overlap rejection for any run-object field not on the explicit multi-writer whitelist;
+- orphan skill directory detection (a `SKILL.md` directory on disk with no manifest entry);
 - generated `.claude-plugin/plugin.json` drift;
 - generated schema section drift.
 - `--write` mode repairs drift by regenerating plugin.json and schema, then exits clean.

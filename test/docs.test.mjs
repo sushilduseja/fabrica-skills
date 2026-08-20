@@ -70,4 +70,14 @@ test('all generated-file patterns are covered by .gitignore', () => {
   }
 });
 
+test('README documents os.homedir() cross-platform global install paths', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const readme = readFileSync(resolve(root, 'README.md'), 'utf-8');
+  assert(readme.includes('os.homedir()'), 'README must document os.homedir()');
+  assert(readme.includes('C:\\Users\\<name>'), 'README must list the Windows home path');
+  assert(readme.includes('/home/<name>'), 'README must list the Linux home path');
+  assert(readme.includes('/Users/<name>'), 'README must list the macOS home path');
+  assert(!readme.includes('sushildusejas'), 'README must not contain a fabricated home path');
+});
+
 runAll();

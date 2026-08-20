@@ -623,6 +623,439 @@ test('validate-run accepts container verification kinds used by Docker-capable p
   }
 });
 
+test('validate-run enforces numeric and timestamp boundaries', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  const baseStage = {
+    name: 'api',
+    purpose: 'Build API',
+    status: 'pending',
+    quality_score: null,
+    artifacts: [],
+    notes: null,
+  };
+
+  const accepted = [
+    ['score 0 pending', { ...baseStage, quality_score: 0 }],
+    ['score 6 done', { ...baseStage, status: 'done', quality_score: 6 }],
+    ['score 10 done', { ...baseStage, status: 'done', quality_score: 10 }],
+    [
+      'epoch created_at',
+      (o) => {
+        o.created_at = '1970-01-01T00:00:00Z';
+      },
+    ],
+    [
+      'far-future created_at',
+      (o) => {
+        o.created_at = '9999-12-31T23:59:59Z';
+      },
+    ],
+  ];
+  for (const [label, mutate] of accepted) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    if (typeof mutate === 'function') {
+      mutate(candidate);
+    } else {
+      candidate.app_stages = [mutate];
+    }
+    assertPass(validateStdin(candidate), label);
+  }
+
+  const rejected = [
+    [
+      'score -1',
+      (o) => {
+        o.app_stages = [{ ...baseStage, quality_score: -1 }];
+      },
+    ],
+    [
+      'score 10.5',
+      (o) => {
+        o.app_stages = [{ ...baseStage, quality_score: 10.5 }];
+      },
+    ],
+    [
+      'date-only created_at',
+      (o) => {
+        o.created_at = '2026-06-19';
+      },
+    ],
+    [
+      'invalid month created_at',
+      (o) => {
+        o.created_at = '2026-13-01T00:00:00Z';
+      },
+    ],
+  ];
+  for (const [label, mutate] of rejected) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    mutate(candidate);
+    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+  }
+});
+
+test('validate-run rejects out-of-set enum values across structured fields', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  const cases = [
+    [
+      'verification kind out of set',
+      (o) => {
+        o.verifications = [
+          { kind: 'deploy', command: 'npm test', passed: true, summary: 'ok', timestamp: '2026-06-19T12:30:00Z' },
+        ];
+      },
+    ],
+    [
+      'app stage status out of set',
+      (o) => {
+        o.app_stages = [
+          { name: 'api', purpose: 'x', status: 'in-progress', quality_score: null, artifacts: [], notes: null },
+        ];
+      },
+    ],
+    [
+      'gate_levels unknown skill key',
+      (o) => {
+        o.gate_levels['fab-ghost'] = 'auto';
+      },
+    ],
+    [
+      'cost by_step precision out of set',
+      (o) => {
+        o.costs.by_step = { 'fab-forge': { precision: 'approximate', tokens_in: 1, tokens_out: 1, usd: 0.01 } };
+      },
+    ],
+  ];
+  for (const [label, mutate] of cases) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    mutate(candidate);
+    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+  }
+});
+
+test('validate-run rejects wrong-typed field values', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  const cases = [
+    [
+      'name as number',
+      (o) => {
+        o.name = 123;
+      },
+    ],
+    [
+      'status as array',
+      (o) => {
+        o.status = ['designing'];
+      },
+    ],
+    [
+      'schema_version as number',
+      (o) => {
+        o.schema_version = 1;
+      },
+    ],
+    [
+      'created_at as number',
+      (o) => {
+        o.created_at = 0;
+      },
+    ],
+    [
+      'app_stages as object',
+      (o) => {
+        o.app_stages = {};
+      },
+    ],
+    [
+      'costs as string',
+      (o) => {
+        o.costs = 'unknown';
+      },
+    ],
+    [
+      'verifications as string',
+      (o) => {
+        o.verifications = 'none';
+      },
+    ],
+    [
+      'human_decisions as null',
+      (o) => {
+        o.human_decisions = null;
+      },
+    ],
+    [
+      'gate_levels as array',
+      (o) => {
+        o.gate_levels = [];
+      },
+    ],
+    [
+      'last_error message as number',
+      (o) => {
+        o.last_error = { type: 'invalid_state', message: 123 };
+      },
+    ],
+    [
+      'artifacts as string',
+      (o) => {
+        o.app_stages = [
+          { name: 'api', purpose: 'x', status: 'pending', quality_score: null, artifacts: 'src/api.js', notes: null },
+        ];
+      },
+    ],
+    [
+      'quality_score as string',
+      (o) => {
+        o.app_stages = [
+          { name: 'api', purpose: 'x', status: 'pending', quality_score: 'high', artifacts: [], notes: null },
+        ];
+      },
+    ],
+  ];
+  for (const [label, mutate] of cases) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    mutate(candidate);
+    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+  }
+});
+
+test('validate-run enforces length and character boundaries', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+
+  const maxName = 'a'.repeat(63);
+  const maxNameRun = JSON.parse(JSON.stringify(valid));
+  maxNameRun.name = maxName;
+  assertPass(validateStdin(maxNameRun), '63-char name should be accepted');
+
+  const maxNotes = 'n'.repeat(1000);
+  const maxNotesRun = JSON.parse(JSON.stringify(valid));
+  maxNotesRun.app_stages = [
+    { name: 'api', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: maxNotes },
+  ];
+  assertPass(validateStdin(maxNotesRun), '1000-char notes should be accepted');
+
+  const cases = [
+    [
+      'overlong name',
+      (o) => {
+        o.name = 'a'.repeat(64);
+      },
+    ],
+    [
+      'name with space',
+      (o) => {
+        o.name = 'my run';
+      },
+    ],
+    [
+      'name with emoji',
+      (o) => {
+        o.name = 'invoice-📊';
+      },
+    ],
+    [
+      'name with uppercase',
+      (o) => {
+        o.name = 'Invoice';
+      },
+    ],
+    [
+      'name with non-ascii',
+      (o) => {
+        o.name = 'café';
+      },
+    ],
+    [
+      'overlong notes',
+      (o) => {
+        o.app_stages = [
+          { name: 'api', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: 'n'.repeat(1001) },
+        ];
+      },
+    ],
+    [
+      'overlong purpose',
+      (o) => {
+        o.app_stages = [
+          { name: 'api', purpose: 'p'.repeat(501), status: 'pending', quality_score: null, artifacts: [], notes: null },
+        ];
+      },
+    ],
+    [
+      'overlong artifact path',
+      (o) => {
+        o.app_stages = [
+          {
+            name: 'api',
+            purpose: 'x',
+            status: 'pending',
+            quality_score: null,
+            artifacts: ['a'.repeat(201)],
+            notes: null,
+          },
+        ];
+      },
+    ],
+    [
+      'overlong last_error message',
+      (o) => {
+        o.last_error = { type: 'invalid_state', message: 'm'.repeat(501) };
+      },
+    ],
+  ];
+  for (const [label, mutate] of cases) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    mutate(candidate);
+    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+  }
+});
+
+test('validate-run reports every schema violation in a compound object', () => {
+  const candidate = JSON.parse(JSON.stringify(readJson('test/fixtures/valid-run.json')));
+  candidate.name = 'con';
+  candidate.costs.precision = 'approximate';
+  const result = validateStdin(candidate);
+  assertFail(result);
+  assert(combined(result).includes('2 schema violation'), combined(result));
+});
+
+test('validate-run rejects every Windows reserved name across name-bearing fields', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  const reserved = [
+    'con',
+    'prn',
+    'aux',
+    'nul',
+    ...Array.from({ length: 9 }, (_, i) => `com${i + 1}`),
+    ...Array.from({ length: 9 }, (_, i) => `lpt${i + 1}`),
+  ];
+
+  for (const name of reserved) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    candidate.name = name;
+    assertFail(validateStdin(candidate), `reserved run name "${name}" unexpectedly passed`);
+  }
+
+  const reservedArg = JSON.parse(JSON.stringify(valid));
+  reservedArg.app_stages = [
+    { name: 'api', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: null },
+  ];
+  reservedArg.next_action = '/fab-forge com3';
+  assertFail(validateStdin(reservedArg), 'reserved next_action argument "com3" unexpectedly passed');
+
+  const reservedStage = JSON.parse(JSON.stringify(valid));
+  reservedStage.app_stages = [
+    { name: 'lpt5', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: null },
+  ];
+  assertFail(validateStdin(reservedStage), 'reserved stage name "lpt5" unexpectedly passed');
+
+  const reservedStageRef = JSON.parse(JSON.stringify(valid));
+  reservedStageRef.current_app_stage = 'com7';
+  assertFail(validateStdin(reservedStageRef), 'reserved current_app_stage "com7" unexpectedly passed');
+
+  for (const safe of ['consent', 'com10', 'lpt10', 'printer']) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    candidate.name = safe;
+    assertPass(validateStdin(candidate), `safe name "${safe}" unexpectedly rejected`);
+  }
+});
+
+test('validate-run rejects absolute and escaped path injection', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+  const cases = [
+    [
+      'absolute spec_path',
+      (o) => {
+        o.spec_path = '/docs/spec.md';
+      },
+    ],
+    [
+      'non-docs spec_path',
+      (o) => {
+        o.spec_path = 'etc/passwd.md';
+      },
+    ],
+    [
+      'traversal spec_path',
+      (o) => {
+        o.spec_path = 'docs/../spec.md';
+      },
+    ],
+    [
+      'absolute blueprint_path',
+      (o) => {
+        o.blueprint_path = '/etc/blueprint.md';
+      },
+    ],
+    [
+      'absolute artifact path',
+      (o) => {
+        o.app_stages = [
+          {
+            name: 'api',
+            purpose: 'x',
+            status: 'pending',
+            quality_score: null,
+            artifacts: ['/etc/passwd'],
+            notes: null,
+          },
+        ];
+      },
+    ],
+  ];
+  for (const [label, mutate] of cases) {
+    const candidate = JSON.parse(JSON.stringify(valid));
+    mutate(candidate);
+    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+  }
+});
+
+test('validate-run handles large app_stages and history arrays without error', () => {
+  const valid = readJson('test/fixtures/valid-run.json');
+
+  const big = JSON.parse(JSON.stringify(valid));
+  big.app_stages = Array.from({ length: 150 }, (_, i) => ({
+    name: `stage-${String(i).padStart(3, '0')}`,
+    purpose: 'p',
+    status: 'pending',
+    quality_score: null,
+    artifacts: [],
+    notes: null,
+  }));
+  assertPass(validateStdin(big));
+
+  const bigInvalid = JSON.parse(JSON.stringify(big));
+  bigInvalid.app_stages[149] = { ...bigInvalid.app_stages[149], name: 'stage-000' };
+  assertFail(validateStdin(bigInvalid), 'duplicate stage among 150 must still be caught');
+
+  const history = JSON.parse(JSON.stringify(valid));
+  history.human_decisions = Array.from({ length: 200 }, (_, i) => ({
+    step: 'fab-signal',
+    decision_needed: 'Pick',
+    options: ['continue', 'abandon'],
+    decision: null,
+    rationale: null,
+    triggered_at: `2026-06-19T${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z`,
+    resolved_at: null,
+  }));
+  history.verifications = Array.from({ length: 100 }, (_, i) => ({
+    kind: 'unit',
+    command: 'npm test',
+    passed: true,
+    summary: 'ok',
+    timestamp: `2026-06-19T12:${String(i % 60).padStart(2, '0')}:00Z`,
+  }));
+  assertPass(validateStdin(history));
+
+  const historyInvalid = JSON.parse(JSON.stringify(history));
+  historyInvalid.verifications[99] = {
+    ...historyInvalid.verifications[99],
+    kind: 'deploy',
+  };
+  assertFail(validateStdin(historyInvalid), 'out-of-set verification kind among 100 must still be caught');
+});
+
 test('validate-run rejects verification kind / command inconsistencies', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   const cases = [

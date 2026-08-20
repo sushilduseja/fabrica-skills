@@ -73,18 +73,22 @@ npm run lint
 npm run setup
 ```
 
-Current `npm test` coverage (68 tests across 5 test files):
+Current `npm test` coverage (84 tests across 5 test files):
 
 - valid and invalid run-object fixtures;
 - every required top-level field;
 - invalid values for every run-object field family;
+- numeric/timestamp boundaries and out-of-set enums;
+- wrong-typed values, length/character limits, and compound violations;
+- Windows reserved-name sweep and absolute-path injection;
+- scale arrays with injected violations still caught;
 - post-schema semantic invariants;
 - status × phase matrix;
-- manifest/frontmatter drift and --write mode;
+- manifest/frontmatter drift, field-ownership overlap, orphan skill directories, and --write mode;
 - path traversal and symlink/junction protections;
 - local and global install safety;
 - Docker/container verification semantics;
 - gate-contract validation (fab-launch, fab-signal, fab-check, fab-pulse, prerequisite, timestamp, cost-precision);
-- EPERM copy-fallback and staleness refresh on Windows;
+- EPERM copy-fallback, ENOTEMPTY recovery, nested symlink-entry removal, and staleness refresh;
 - errors.json-to-SKILL.md reverse cross-reference;
-- .gitignore coverage.
+- .gitignore coverage and README cross-platform home paths.

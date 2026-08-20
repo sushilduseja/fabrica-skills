@@ -13,7 +13,7 @@
  *   node scripts/sync-manifest.mjs --check   # verify only (exit 1 on drift)
  *   node scripts/sync-manifest.mjs           # write generated files
  */
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -37,6 +37,24 @@ const VALID_CATEGORIES = ['core', 'prototype'];
 const SKILL_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+$/;
 const ERRORS_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+\/errors\.json$/;
 const SKILL_ID_RE = /^fab-[a-z0-9-]+$/;
+
+/**
+ * Run-object fields that are legitimately written by more than one skill.
+ * Anything not on this list must be owned by exactly one skill.
+ */
+const MULTI_WRITER_FIELDS = new Set([
+  'updated_at',
+  'current_step',
+  'next_action',
+  'last_error',
+  'status',
+  'app_stages',
+  'verifications',
+  'human_decisions',
+  'experiment_phase',
+  'current_app_stage',
+  'blueprint_path',
+]);
 
 const args = process.argv.slice(2);
 if (args.some((arg) => arg !== '--check' && arg !== '--write')) {
@@ -314,8 +332,26 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
 }
 
 for (const field of RUN_OBJECT_FIELDS) {
-  if (!fieldOwners[field] || fieldOwners[field].length === 0) {
+  const owners = fieldOwners[field] || [];
+  if (owners.length === 0) {
     error(`run object field "${field}" has no owning skill`);
+  }
+  if (owners.length > 1 && !MULTI_WRITER_FIELDS.has(field)) {
+    error(
+      `run object field "${field}" is written by multiple skills (${owners.join(', ')}) but is not in the multi-writer whitelist`,
+    );
+  }
+}
+
+for (const category of VALID_CATEGORIES) {
+  const categoryDir = resolve(root, 'skills', category);
+  if (!existsSync(categoryDir)) continue;
+  for (const entry of readdirSync(categoryDir)) {
+    const skillDirPath = `skills/${category}/${entry}`;
+    if (seenPaths.has(skillDirPath)) continue;
+    if (lstatIfPresent(resolve(categoryDir, entry, 'SKILL.md'))) {
+      error(`orphan skill directory ${skillDirPath} exists on disk but is not listed in skills/manifest.json`);
+    }
   }
 }
 
