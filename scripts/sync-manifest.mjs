@@ -17,10 +17,8 @@ import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import {
-  assertInsideRoot,
   assertSafeRelPath,
   assertDirectoryNotSymlink,
-  errorExit,
   lstatIfPresent,
   readJsonFile,
   stringifyJson,

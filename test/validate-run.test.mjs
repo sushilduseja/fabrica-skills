@@ -1,16 +1,13 @@
 import assert from 'assert';
 import { rmSync, writeFileSync, mkdtempSync } from 'fs';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { tmpdir } from 'os';
 import {
   assertFail,
   assertNoStackTrace,
   assertPass,
   combined,
-  copyRepoFixture,
-  mutateJson,
   readJson,
-  root,
   run,
   test,
   validateStdin,

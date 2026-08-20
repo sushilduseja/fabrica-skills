@@ -18,7 +18,7 @@ import { cpSync, mkdirSync, readFileSync, rmSync, rmdirSync, symlinkSync } from 
 import { join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
-import { assertInsideRoot, errorExit, lstatIfPresent, toRepoRelative } from './_path-utils.mjs';
+import { assertInsideRoot, lstatIfPresent, toRepoRelative } from './_path-utils.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');

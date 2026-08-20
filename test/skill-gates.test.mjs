@@ -1,14 +1,5 @@
 import assert from 'assert';
-import {
-  assertFail,
-  assertNoStackTrace,
-  assertPass,
-  combined,
-  readJson,
-  test,
-  validateStdin,
-  runAll,
-} from './_harness.mjs';
+import { assertFail, assertNoStackTrace, combined, readJson, test, validateStdin, runAll } from './_harness.mjs';
 import {
   validateFabLaunchGate,
   validateFabSignalGate,

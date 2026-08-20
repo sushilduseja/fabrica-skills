@@ -5,7 +5,7 @@
  * (via errorExit). They are not try-catch wrappers — callers that need
  * recovery should copy the logic rather than catch the exit.
  */
-import { existsSync, lstatSync, readFileSync } from 'fs';
+import { lstatSync, readFileSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 
 /**
