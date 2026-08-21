@@ -172,4 +172,31 @@ test('sync-manifest detects an orphan skill directory on disk with no manifest e
   assertNoStackTrace(result);
 });
 
+test('sync-manifest MULTI_WRITER_FIELDS whitelist matches actual multi-owned run-object fields', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const owners = {};
+  for (const skill of manifest.skills) {
+    for (const field of skill.writes_fields || []) {
+      if (!owners[field]) owners[field] = [];
+      owners[field].push(skill.id);
+    }
+  }
+  const actualMulti = new Set(
+    Object.entries(owners)
+      .filter(([, fieldOwners]) => fieldOwners.length > 1)
+      .map(([field]) => field),
+  );
+
+  const source = readFileSync('scripts/sync-manifest.mjs', 'utf-8');
+  const match = source.match(/const MULTI_WRITER_FIELDS = new Set\(\[([\s\S]*?)\]\);/);
+  assert(match, 'could not locate MULTI_WRITER_FIELDS Set literal in sync-manifest.mjs');
+  const declaredMulti = new Set([...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+
+  assert.deepStrictEqual(
+    [...actualMulti].sort(),
+    [...declaredMulti].sort(),
+    `MULTI_WRITER_FIELDS must equal the set of fields owned by more than one skill (actual ${JSON.stringify([...actualMulti].sort())}, declared ${JSON.stringify([...declaredMulti].sort())})`,
+  );
+});
+
 runAll();

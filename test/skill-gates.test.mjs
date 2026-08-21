@@ -1,4 +1,5 @@
 import assert from 'assert';
+import { readFileSync } from 'fs';
 import { assertFail, assertNoStackTrace, combined, readJson, test, validateStdin, runAll } from './_harness.mjs';
 import {
   validateFabLaunchGate,
@@ -444,6 +445,33 @@ test('validate-run rejects invalid cost precision', () => {
   assertFail(result);
   assert(combined(result).includes('must be equal to one of the allowed values'), combined(result));
   assertNoStackTrace(result);
+});
+
+/* ================================================================
+ *  Cross-check: gate-enforced rules must be documented in the
+ *  corresponding skill's SKILL.md Execution Guardrails section.
+ *  This catches doc/gate drift (a gate silently diverging from,
+ *  or a guardrail being removed without updating, the validator).
+ * ================================================================ */
+
+test('gate-enforced rules are documented in the corresponding SKILL.md guardrails', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+
+  const cases = [
+    { skill: 'fab-launch', keywords: ['explicit operator approval', 'Docker'] },
+    { skill: 'fab-signal', keywords: ['resolved_at', 'do not auto-decide'] },
+    { skill: 'fab-check', keywords: ['quality_score', 'below 6'] },
+    { skill: 'fab-pulse', keywords: ['unknown'] },
+    { skill: 'fab-weave', keywords: ['app_stages', 'done'] },
+  ];
+
+  for (const { skill, keywords } of cases) {
+    const content = readFileSync(`${pathById[skill]}/SKILL.md`, 'utf-8');
+    for (const kw of keywords) {
+      assert(content.includes(kw), `SKILL.md for ${skill} must document the gate-enforced rule containing "${kw}"`);
+    }
+  }
 });
 
 runAll();

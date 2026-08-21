@@ -27,7 +27,7 @@ Expected current result:
 [assert-invalid] OK — test/fixtures/invalid-run.json fails as expected (/status, /app_stages/0/quality_score)
 [assert-invalid] OK — test/fixtures/invalid-gate-keys.json fails as expected (/gate_levels)
 [sync-manifest] CHECK OK — all generated files match manifest
-84/84 tests passed
+87/87 tests passed
 ```
 
 `npm run setup` additionally creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
@@ -53,13 +53,13 @@ Tests are split by module under `test/`:
 
 | File | Tests | Focus |
 |---|---|---|
-| `test/validate-run.test.mjs` | 24 | Schema validation, semantic invariants, status×phase matrix, boundary/enum/type/length edges, reserved-name and path-injection sweep, scale |
-| `test/sync-manifest.test.mjs` | 13 | Manifest check and --write mode, generated-file drift, frontmatter drift, errors.json cross-reference, field-ownership overlap, orphan skill directories |
+| `test/validate-run.test.mjs` | 25 | Schema validation, semantic invariants, status×phase matrix (incl. schema/matrix completeness), boundary/enum/type/length edges, reserved-name and path-injection sweep, scale |
+| `test/sync-manifest.test.mjs` | 14 | Manifest check and --write mode, generated-file drift, frontmatter drift, errors.json cross-reference, field-ownership overlap, MULTI_WRITER_FIELDS whitelist sync, orphan skill directories |
 | `test/link-skills.test.mjs` | 15 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh, nested symlink-entry removal, ENOTEMPTY recovery |
-| `test/skill-gates.test.mjs` | 28 | Gate-contract validators for all 7 gate checks |
+| `test/skill-gates.test.mjs` | 29 | Gate-contract validators for all 7 gate checks (incl. gate↔SKILL.md guardrail cross-check) |
 | `test/docs.test.mjs` | 4 | Skill guardrails, error metadata, example doc layout, .gitignore coverage, README cross-platform home paths |
 
-All 84 tests:
+All 87 tests:
 
 - valid fixture acceptance;
 - malformed JSON error handling without stack traces;

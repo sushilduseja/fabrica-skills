@@ -2,6 +2,7 @@ import assert from 'assert';
 import { rmSync, writeFileSync, mkdtempSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { STATUS_PHASE_MATRIX } from '../scripts/validate-run.mjs';
 import {
   assertFail,
   assertNoStackTrace,
@@ -1089,6 +1090,22 @@ test('validate-run rejects verification kind / command inconsistencies', () => {
     assertFail(result, `${label} unexpectedly passed`);
     assert(combined(result).includes(expected), `${label}: ${combined(result)}`);
     assertNoStackTrace(result);
+  }
+});
+
+test('validate-run STATUS_PHASE_MATRIX covers exactly the schema status enum', () => {
+  const schema = readJson('schemas/run-object.schema.json');
+  const statusEnum = schema.properties.status.enum;
+  const matrixKeys = Object.keys(STATUS_PHASE_MATRIX).sort();
+  const expected = [...statusEnum].sort();
+  assert.deepStrictEqual(
+    matrixKeys,
+    expected,
+    `STATUS_PHASE_MATRIX keys must match the schema status enum (expected ${JSON.stringify(expected)}, got ${JSON.stringify(matrixKeys)})`,
+  );
+  for (const status of statusEnum) {
+    const phases = STATUS_PHASE_MATRIX[status];
+    assert(Array.isArray(phases) && phases.length > 0, `status "${status}" must map to a non-empty phase list`);
   }
 });
 

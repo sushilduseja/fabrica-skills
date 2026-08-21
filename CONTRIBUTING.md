@@ -73,7 +73,7 @@ npm run lint
 npm run setup
 ```
 
-Current `npm test` coverage (84 tests across 5 test files):
+Current `npm test` coverage (87 tests across 5 test files):
 
 - valid and invalid run-object fixtures;
 - every required top-level field;

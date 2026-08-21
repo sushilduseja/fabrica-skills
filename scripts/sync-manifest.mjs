@@ -21,6 +21,8 @@ import {
   assertDirectoryNotSymlink,
   lstatIfPresent,
   readJsonFile,
+  SKILL_ID_RE,
+  SKILL_PATH_RE,
   stringifyJson,
   toRepoRelative,
 } from './_path-utils.mjs';
@@ -34,9 +36,7 @@ const SCHEMA_PATH = resolve(root, 'schemas/run-object.schema.json');
 
 const VALID_GATES = ['auto', 'checkpoint', 'review', 'full'];
 const VALID_CATEGORIES = ['core', 'prototype'];
-const SKILL_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+$/;
 const ERRORS_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+\/errors\.json$/;
-const SKILL_ID_RE = /^fab-[a-z0-9-]+$/;
 
 /**
  * Run-object fields that are legitimately written by more than one skill.

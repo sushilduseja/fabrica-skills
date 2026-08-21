@@ -18,6 +18,12 @@ export function toRepoRelative(root, absPath) {
   return relative(root, absPath).split(sep).join('/');
 }
 
+/** Skill id pattern: fab-<lowercase-hyphenated>. */
+export const SKILL_ID_RE = /^fab-[a-z0-9-]+$/;
+
+/** Skill directory layout: skills/<core|prototype>/fab-<lowercase-hyphenated>. */
+export const SKILL_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+$/;
+
 /**
  * Assert that an absolute path does not escape the repository root.
  * Terminates the process if it does.
@@ -101,17 +107,17 @@ export function assertDirectoryNotSymlink(label, absPath) {
  * @param {string} label Human-readable label for error messages.
  * @returns {any}
  */
-export function readJsonFile(path, label) {
+export function readJsonFile(path, label, prefix = '[gstack]') {
   let raw;
   try {
     raw = readFileSync(path, 'utf-8');
   } catch (err) {
-    errorExit(`Cannot read ${label}: ${err.message}`);
+    errorExit(`Cannot read ${label}: ${err.message}`, prefix);
   }
   try {
     return JSON.parse(raw);
   } catch (err) {
-    errorExit(`Invalid JSON in ${label}: ${err.message}`);
+    errorExit(`Invalid JSON in ${label}: ${err.message}`, prefix);
   }
 }
 
@@ -119,8 +125,8 @@ export function readJsonFile(path, label) {
  * Log an error and exit the process.
  * @param {string} msg
  */
-export function errorExit(msg) {
-  console.error(`[gstack] ERROR: ${msg}`);
+export function errorExit(msg, prefix = '[gstack]') {
+  console.error(`${prefix} ERROR: ${msg}`);
   process.exit(1);
 }
 

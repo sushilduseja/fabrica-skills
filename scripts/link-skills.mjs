@@ -14,11 +14,18 @@
  *   node scripts/link-skills.mjs
  *   node scripts/link-skills.mjs --global
  */
-import { cpSync, mkdirSync, readFileSync, rmSync, rmdirSync, symlinkSync } from 'fs';
+import { cpSync, mkdirSync, rmSync, rmdirSync, symlinkSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
-import { assertInsideRoot, lstatIfPresent, toRepoRelative } from './_path-utils.mjs';
+import {
+  assertInsideRoot,
+  lstatIfPresent,
+  readJsonFile,
+  SKILL_ID_RE,
+  SKILL_PATH_RE,
+  toRepoRelative,
+} from './_path-utils.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -27,7 +34,6 @@ const homeRoot = homedir();
 const targetBase = globalInstall ? join(homeRoot, '.fabrica-skills') : root;
 const targetDir = globalInstall ? join(targetBase, '.skills') : resolve(root, '.skills');
 const isWindows = process.platform === 'win32';
-const SKILL_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+$/;
 
 /**
  * Log a link error and exit.
@@ -64,7 +70,7 @@ function assertSafeSkillPath(skill) {
   if (!skill || typeof skill !== 'object' || Array.isArray(skill)) {
     fail('Manifest contains a non-object skill entry');
   }
-  if (typeof skill.id !== 'string' || !/^fab-[a-z0-9-]+$/.test(skill.id)) {
+  if (typeof skill.id !== 'string' || !SKILL_ID_RE.test(skill.id)) {
     fail(`Manifest skill has invalid id: ${skill.id}`);
   }
   if (typeof skill.path !== 'string' || skill.path.trim() === '') {
@@ -91,22 +97,11 @@ function assertSafeSkillPath(skill) {
  */
 function loadManifest() {
   const manifestPath = resolve(root, 'skills/manifest.json');
-  let raw;
-  try {
-    raw = readFileSync(manifestPath, 'utf-8');
-  } catch (err) {
-    fail(`Cannot read skills/manifest.json: ${err.message}`);
+  const manifest = readJsonFile(manifestPath, 'skills/manifest.json', '[link-skills]');
+  if (!Array.isArray(manifest.skills) || manifest.skills.length === 0) {
+    fail('skills/manifest.json must contain a non-empty skills array');
   }
-
-  try {
-    const manifest = JSON.parse(raw);
-    if (!Array.isArray(manifest.skills) || manifest.skills.length === 0) {
-      fail('skills/manifest.json must contain a non-empty skills array');
-    }
-    return manifest;
-  } catch (err) {
-    fail(`Invalid JSON in skills/manifest.json: ${err.message}`);
-  }
+  return manifest;
 }
 
 /**

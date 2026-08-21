@@ -9,10 +9,11 @@
  *   node scripts/validate-run.mjs <path-to-fabrica.run.json>
  *   node scripts/validate-run.mjs --stdin < candidate.json
  */
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { validateAllGates } from './_skill-gates.mjs';
+import { readJsonFile } from './_path-utils.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -24,7 +25,7 @@ const SCHEMA_PATH = resolve(root, 'schemas/run-object.schema.json');
  * Each phase permits a subset of run-level statuses.
  * @type {Object<string, string[]>}
  */
-const STATUS_PHASE_MATRIX = {
+export const STATUS_PHASE_MATRIX = {
   designing: ['phase_0_spec'],
   framing: ['phase_0_spec'],
   forging: ['phase_1_slice', 'phase_2_pipeline'],
@@ -43,27 +44,6 @@ const STATUS_PHASE_MATRIX = {
 function fail(msg) {
   console.error(`[validate-run] ERROR: ${msg}`);
   process.exit(1);
-}
-
-/**
- * Read and parse a JSON file. Calls fail() on error.
- * @param {string} path
- * @param {string} label
- * @returns {any}
- */
-function readJsonFile(path, label) {
-  let raw;
-  try {
-    raw = readFileSync(path, 'utf-8');
-  } catch (err) {
-    fail(`Cannot read ${label}: ${err.message}`);
-  }
-
-  try {
-    return JSON.parse(raw);
-  } catch (err) {
-    fail(`Invalid JSON in ${label}: ${err.message}`);
-  }
 }
 
 /**
@@ -132,7 +112,7 @@ async function main() {
       fail(`File not found: ${targetPath}`);
     }
 
-    instance = readJsonFile(absolutePath, targetPath);
+    instance = readJsonFile(absolutePath, targetPath, '[validate-run]');
     inputLabel = targetPath;
   }
 
@@ -140,7 +120,7 @@ async function main() {
     fail(`Schema not found: ${SCHEMA_PATH}`);
   }
 
-  const schema = readJsonFile(SCHEMA_PATH, 'schemas/run-object.schema.json');
+  const schema = readJsonFile(SCHEMA_PATH, 'schemas/run-object.schema.json', '[validate-run]');
   const { Ajv, addFormats } = await loadAjv();
 
   let validate;
@@ -251,6 +231,9 @@ async function main() {
   console.log(`[validate-run] OK — run object from ${inputLabel} is valid`);
 }
 
-main().catch((err) => {
-  fail(`Unexpected validator failure: ${err.message}`);
-});
+const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+if (invokedDirectly) {
+  main().catch((err) => {
+    fail(`Unexpected validator failure: ${err.message}`);
+  });
+}
