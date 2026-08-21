@@ -209,6 +209,8 @@ for (let index = 0; index < manifest.skills.length; index += 1) {
   } catch (err) {
     error(`Cannot read ${skill.path}/SKILL.md: ${err.message}`);
   }
+  // Normalize CRLF so frontmatter/field parsing is identical on Windows fresh clones.
+  skillContent = skillContent.replace(/\r\n/g, '\n');
   const fmMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
   if (!fmMatch) {
     error(`skill "${skill.id}" missing YAML frontmatter`);

@@ -1,0 +1,3 @@
+# Force LF on checkout so fresh Windows clones match CI and LF-only parsers
+# (e.g. scripts/sync-manifest.mjs frontmatter parsing) work everywhere.
+* text=auto eol=lf
