@@ -92,3 +92,15 @@ no file was modified by `/fab-pulse` (it is read-only).
 - [ ] B. cold-session handoff
 - [ ] C. partial-run interruption
 - [ ] D. fab-pulse three states
+
+## Execution Tracking
+
+Do **not** mark the overall test suite "complete" in any summary doc until every row
+below has at least one dated execution with a recorded result.
+
+| Item | Last executed | Result |
+|---|---|---|
+| fab-trace recovery loop | — (pending) | pending |
+| Cold-session handoff resumability | — (pending) | pending |
+| Kill-mid-fab-forge recovery | — (pending) | pending |
+| fab-pulse rendering across precision states | — (pending) | pending |

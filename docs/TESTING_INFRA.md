@@ -95,3 +95,15 @@ Record: each step's exit code and any deviation from the expected outcome.
 - [ ] Node 16.7 run complete
 - [ ] Concurrency run complete
 - [ ] README run complete
+
+## Execution Tracking
+
+Do **not** mark the overall test suite "complete" in any summary doc until every row
+below has at least one dated execution with a recorded result.
+
+| Item | Last executed | Result |
+|---|---|---|
+| Node 16.7 floor pin | — (pending) | pending |
+| Concurrent install race | — (pending) | pending |
+| Windows junction install run | — (pending) | pending |
+| macOS/Linux symlink install run | — (pending) | pending |
