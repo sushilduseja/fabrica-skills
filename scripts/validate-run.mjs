@@ -14,6 +14,7 @@ import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { validateAllGates } from './_skill-gates.mjs';
 import { readJsonFile } from './_path-utils.mjs';
+import { buildsContainerCommand, invokesDockerCommand } from './_verification-kind.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -206,13 +207,13 @@ async function main() {
   }
 
   for (const [index, v] of instance.verifications.entries()) {
-    const invokesDocker = /(?:^|[^-\w])docker\b/.test(v.command);
+    const invokesDocker = invokesDockerCommand(v.command);
     if (v.kind === 'container_build' && !invokesDocker) {
       fail(
         `verifications[${index}] has kind "container_build" but command "${v.command}" does not appear to invoke Docker. For static Docker checks, use kind "static_analysis".`,
       );
     }
-    if (v.kind === 'static_analysis' && invokesDocker && /\b(build|compose)\b/.test(v.command)) {
+    if (v.kind === 'static_analysis' && buildsContainerCommand(v.command)) {
       fail(
         `verifications[${index}] has kind "static_analysis" but command "${v.command}" appears to build a container. For container builds, use kind "container_build".`,
       );

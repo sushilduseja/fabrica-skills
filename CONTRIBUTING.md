@@ -73,7 +73,7 @@ npm run lint
 npm run setup
 ```
 
-Current `npm test` coverage (87 tests across 5 test files):
+Current `npm test` coverage (89 tests across 6 test files):
 
 - valid and invalid run-object fixtures;
 - every required top-level field;
@@ -88,7 +88,7 @@ Current `npm test` coverage (87 tests across 5 test files):
 - path traversal and symlink/junction protections;
 - local and global install safety;
 - Docker/container verification semantics;
-- gate-contract validation (fab-launch, fab-signal, fab-check, fab-pulse, prerequisite, timestamp, cost-precision);
+- gate-contract validation (fab-launch, fab-signal, fab-check, fab-pulse, next-action, timestamp, cost-precision);
 - EPERM copy-fallback, ENOTEMPTY recovery, nested symlink-entry removal, and staleness refresh;
 - errors.json-to-SKILL.md reverse cross-reference;
 - .gitignore coverage and README cross-platform home paths.

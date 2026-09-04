@@ -6,7 +6,7 @@ import {
   validateFabSignalGate,
   validateFabCheckGate,
   validateFabPulseGate,
-  validatePrerequisiteGate,
+  validateNextActionGate,
   validateTimestampOrderGate,
   validateCostPrecisionGate,
 } from '../scripts/_skill-gates.mjs';
@@ -267,10 +267,10 @@ test('validate-run rejects unknown precision with numeric cost (fab-pulse gate)'
 });
 
 /* ================================================================
- *  Test 4 — next_action prerequisite-graph enforcement
+ *  Test 4 — next_action rule enforcement
  * ================================================================ */
 
-test('prerequisite gate: fab-weave next_action with pending stage is rejected', () => {
+test('next-action gate: fab-weave next_action with pending stage is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.status = 'weaving';
   run.experiment_phase = 'phase_2_pipeline';
@@ -278,13 +278,13 @@ test('prerequisite gate: fab-weave next_action with pending stage is rejected', 
   run.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'pending', quality_score: null, artifacts: [], notes: null },
   ];
-  const errors = validatePrerequisiteGate(run);
+  const errors = validateNextActionGate(run);
   assert(errors.length > 0, 'expected gate to reject fab-weave with pending stage');
   assert(errors[0].includes('fab-weave'), errors[0]);
   assert(errors[0].includes('pending'), errors[0]);
 });
 
-test('prerequisite gate: fab-weave next_action with all stages done is accepted', () => {
+test('next-action gate: fab-weave next_action with all stages done is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.status = 'weaving';
   run.experiment_phase = 'phase_2_pipeline';
@@ -292,25 +292,25 @@ test('prerequisite gate: fab-weave next_action with all stages done is accepted'
   run.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'done', quality_score: 8, artifacts: ['src/api.js'], notes: null },
   ];
-  const errors = validatePrerequisiteGate(run);
+  const errors = validateNextActionGate(run);
   assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
 });
 
-test('prerequisite gate: fab-launch next_action without verifying status is rejected', () => {
+test('next-action gate: fab-launch next_action without verifying status is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.next_action = '/fab-launch';
   run.status = 'weaving';
-  const errors = validatePrerequisiteGate(run);
+  const errors = validateNextActionGate(run);
   assert(errors.length > 0, 'expected gate to reject fab-launch without verifying status');
   assert(errors[0].includes('fab-launch'), errors[0]);
   assert(errors[0].includes('verifying'), errors[0]);
 });
 
-test('prerequisite gate: fab-launch next_action with verifying status is accepted', () => {
+test('next-action gate: fab-launch next_action with verifying status is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.next_action = '/fab-launch';
   run.status = 'verifying';
-  const errors = validatePrerequisiteGate(run);
+  const errors = validateNextActionGate(run);
   assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
 });
 
@@ -400,10 +400,10 @@ test('cost precision gate: valid precision values are accepted', () => {
 });
 
 /* ================================================================
- *  Integration-level: prerequisite, timestamp, cost through validate-run --stdin
+ *  Integration-level: next-action, timestamp, cost through validate-run --stdin
  * ================================================================ */
 
-test('validate-run rejects fab-weave with pending stage (prerequisite gate)', () => {
+test('validate-run rejects fab-weave with pending stage (next-action gate)', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   valid.status = 'weaving';
   valid.experiment_phase = 'phase_2_pipeline';

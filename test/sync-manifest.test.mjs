@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { MULTI_WRITER_FIELDS } from '../scripts/_skill-catalog.mjs';
 import {
   copyRepoFixture,
   mutateJson,
@@ -187,10 +188,7 @@ test('sync-manifest MULTI_WRITER_FIELDS whitelist matches actual multi-owned run
       .map(([field]) => field),
   );
 
-  const source = readFileSync('scripts/sync-manifest.mjs', 'utf-8');
-  const match = source.match(/const MULTI_WRITER_FIELDS = new Set\(\[([\s\S]*?)\]\);/);
-  assert(match, 'could not locate MULTI_WRITER_FIELDS Set literal in sync-manifest.mjs');
-  const declaredMulti = new Set([...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  const declaredMulti = new Set(MULTI_WRITER_FIELDS);
 
   assert.deepStrictEqual(
     [...actualMulti].sort(),

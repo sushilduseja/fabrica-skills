@@ -10,24 +10,7 @@
  * SKILL.md as executable invariants so they can be verified automatically
  * rather than left to agent good faith.
  */
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const _root = resolve(__dirname, '..');
-
-let _manifestPrereqs = null;
-function loadPrerequisiteGraph() {
-  if (_manifestPrereqs) return _manifestPrereqs;
-  const manifest = JSON.parse(readFileSync(resolve(_root, 'skills/manifest.json'), 'utf-8'));
-  const graph = {};
-  for (const s of manifest.skills) {
-    graph[s.id] = { prerequisites: s.prerequisites || [], blocks: s.blocks || [], phase: s.phase };
-  }
-  _manifestPrereqs = graph;
-  return graph;
-}
+import { invokesDockerCommand } from './_verification-kind.mjs';
 
 /**
  * Validate fab-launch (review gate) invariants.
@@ -53,7 +36,7 @@ export function validateFabLaunchGate(run) {
         );
       }
     }
-    if (v.kind === 'container_build' && !/(?:^|[^-\w])docker\b/.test(v.command)) {
+    if (v.kind === 'container_build' && !invokesDockerCommand(v.command)) {
       errors.push(`verifications[${i}].kind "container_build" command "${v.command}" does not invoke Docker`);
     }
   }
@@ -156,27 +139,25 @@ export function validateFabPulseGate(run) {
 }
 
 /**
- * Validate next_action prerequisite graph.
+ * Validate next_action transition rules.
  *
  * Key contracts:
- *   - A skill referenced in next_action must have all prerequisites met
- *     by the current run state
  *   - fab-weave requires all app_stages to be done
  *   - fab-launch requires status to be "verifying"
+ *
+ * The declarative manifest prerequisites/blocks table in
+ * skills/manifest.json remains the documented dependency record per ADR-003;
+ * it is not evaluated here.
  *
  * @param {Object} run — parsed fabrica.run.json
  * @returns {string[]}
  */
-export function validatePrerequisiteGate(run) {
+export function validateNextActionGate(run) {
   const errors = [];
 
   if (!run.next_action) return errors;
 
   const [nextSkill] = run.next_action.slice(1).split(' ');
-  const graph = loadPrerequisiteGraph();
-  const skillInfo = graph[nextSkill];
-
-  if (!skillInfo) return errors; // already caught by validate-run next_action check
 
   if (nextSkill === 'fab-weave') {
     const pending = (run.app_stages || []).filter((s) => s.status !== 'done');
@@ -257,7 +238,7 @@ export function validateAllGates(run) {
     ...validateFabSignalGate(run),
     ...validateFabCheckGate(run),
     ...validateFabPulseGate(run),
-    ...validatePrerequisiteGate(run),
+    ...validateNextActionGate(run),
     ...validateTimestampOrderGate(run),
     ...validateCostPrecisionGate(run),
   ];

@@ -218,7 +218,7 @@ Beyond JSON Schema, the validator rejects:
 | `validateFabSignalGate` | Every non-null decision must have a `resolved_at` timestamp — no auto-populated decisions |
 | `validateFabCheckGate` | Stage with `quality_score < 6` must not be `done` |
 | `validateFabPulseGate` | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` |
-| `validatePrerequisiteGate` | `fab-weave` requires all `app_stages` done; `fab-launch` requires `status === "verifying"` |
+| `validateNextActionGate` | `fab-weave` requires all `app_stages` done; `fab-launch` requires `status === "verifying"` |
 | `validateTimestampOrderGate` | `human_decisions[].resolved_at` must not be earlier than `triggered_at` |
 | `validateCostPrecisionGate` | `costs.precision` must be one of: `unknown`, `estimated`, `measured` |
 

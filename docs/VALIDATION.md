@@ -27,7 +27,7 @@ Expected current result:
 [assert-invalid] OK — test/fixtures/invalid-run.json fails as expected (/status, /app_stages/0/quality_score)
 [assert-invalid] OK — test/fixtures/invalid-gate-keys.json fails as expected (/gate_levels)
 [sync-manifest] CHECK OK — all generated files match manifest
-87/87 tests passed
+89/89 tests passed
 ```
 
 `npm run setup` additionally creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
@@ -57,9 +57,10 @@ Tests are split by module under `test/`:
 | `test/sync-manifest.test.mjs` | 14 | Manifest check and --write mode, generated-file drift, frontmatter drift, errors.json cross-reference, field-ownership overlap, MULTI_WRITER_FIELDS whitelist sync, orphan skill directories |
 | `test/link-skills.test.mjs` | 15 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh, nested symlink-entry removal, ENOTEMPTY recovery |
 | `test/skill-gates.test.mjs` | 29 | Gate-contract validators for all 7 gate checks (incl. gate↔SKILL.md guardrail cross-check) |
+| `test/verification-kind.test.mjs` | 2 | Verification-kind classification table (Docker invocation, container build) |
 | `test/docs.test.mjs` | 4 | Skill guardrails, error metadata, example doc layout, .gitignore coverage, README cross-platform home paths |
 
-All 87 tests:
+All 89 tests:
 
 - valid fixture acceptance;
 - malformed JSON error handling without stack traces;
@@ -93,14 +94,14 @@ All 87 tests:
 - symlinked skill directory rejection;
 - duplicate link ids, source symlinks, global file targets, and custom skill preservation;
 - frontmatter drift detection (name, description, category, phase, default_gate, overridability);
-- prerequisite graph enforcement (fab-weave requires all stages done, fab-launch requires verifying status);
+- next-action rule enforcement (fab-weave requires all stages done, fab-launch requires verifying status);
 - errors.json-to-SKILL.md reverse cross-reference (every error type documented in the skill);
 - cost precision integrity (valid enum values: unknown/estimated/measured);
 - human_decisions timestamp ordering (resolved_at after triggered_at);
 - .gitignore coverage for all generated and transient paths;
 - EPERM copy-fallback on Windows when junctions are blocked;
 - staleness refresh for copied skills after source update;
-- gate-contract validators (fab-launch, fab-signal, fab-check, fab-pulse, prerequisite, timestamp, cost-precision);
+- gate-contract validators (fab-launch, fab-signal, fab-check, fab-pulse, next-action, timestamp, cost-precision);
 - numeric and timestamp boundaries (quality_score 0/6/10/10.5, epoch and far-future timestamps);
 - out-of-set enum values in verification kinds, stage status, gate_levels keys, and by-step cost precision;
 - wrong-typed field values (string-for-number, array-for-object, null-for-required);
@@ -148,7 +149,7 @@ All 87 tests:
 | `validateFabSignalGate` | full | Every non-null decision must have a `resolved_at` timestamp — no auto-populated decisions |
 | `validateFabCheckGate` | auto | A stage with `quality_score < 6` must not be `done` (any sub-threshold axis blocks) |
 | `validateFabPulseGate` | auto | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` (no invented display values) |
-| `validatePrerequisiteGate` | (manifest) | `fab-weave` requires all `app_stages` done; `fab-launch` requires `status === "verifying"` |
+| `validateNextActionGate` | (next_action) | `fab-weave` requires all `app_stages` done; `fab-launch` requires `status === "verifying"` |
 | `validateTimestampOrderGate` | (integrity) | `human_decisions[i].resolved_at` must not be earlier than `triggered_at` |
 | `validateCostPrecisionGate` | (integrity) | `costs.precision` must be one of: `unknown`, `estimated`, `measured` |
 
