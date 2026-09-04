@@ -10,11 +10,11 @@ Invoke skills as `/fab-<name>`. The frontmatter name excludes the slash.
 
 `fabrica.run.json` is the durable state file for one run. It lives at the app project root (e.g., `../<app-name>/fabrica.run.json`). Skills read it on entry and update only the fields they own.
 
-Before `/fab-frame`, the run object and generated spec/blueprint may exist in the skills repo because the app directory does not exist yet. `/fab-frame` must copy `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the generated app directory. After that point, the app-directory copy is canonical and later skills must read/write that copy.
+Before `/fab-scaffold`, the run object and generated spec/blueprint may exist in the skills repo because the app directory does not exist yet. `/fab-scaffold` must copy `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the generated app directory. After that point, the app-directory copy is canonical and later skills must read/write that copy.
 
 ## Field Ownership
 
-Each skill declares which run object fields it writes (`writes_fields` in `skills/manifest.json`). Read-only skills (`fab-pulse`, `fab-passport`) must not write any fields. The canonical ownership table is in `skills/shared/run-object-schema.md`.
+Each skill declares which run object fields it writes (`writes_fields` in `skills/manifest.json`). Read-only skills (`fab-status`, `fab-handoff`) must not write any fields. The canonical ownership table is in `skills/shared/run-object-schema.md`.
 
 ## State Machine
 
@@ -52,7 +52,7 @@ Before replacing `fabrica.run.json`:
 
 ## Conventions
 
-- **`current_step`:** After every state change, set `current_step` to the current skill's id (e.g., `"fab-frame"`).
+- **`current_step`:** After every state change, set `current_step` to the current skill's id (e.g., `"fab-scaffold"`).
 - **`updated_at`:** After every state change, bump `updated_at` to the current ISO-8601 timestamp.
 - **Gate defaults:** Defined in `skills/manifest.json` (canonical source) and `SKILL.md` frontmatter (`default_gate`, `overridable`) for agent readability. Keep them in sync.
 
@@ -69,7 +69,7 @@ Gate levels are defined in `fabrica.run.json` under `gate_levels`.
 
 ## Naming Convention
 
-All skills use the `fab-` prefix to avoid collision with generic skill names. The slash form (`/fab-intake`) is the invocation convention; the frontmatter name excludes the slash (`fab-intake`).
+All skills use the `fab-` prefix to avoid collision with generic skill names. The slash form (`/fab-spec`) is the invocation convention; the frontmatter name excludes the slash (`fab-spec`).
 
 ## Error Handling
 

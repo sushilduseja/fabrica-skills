@@ -11,3 +11,6 @@ jobs:
         with: { node-version: lts/* }
       - run: npm ci
       - run: npm run check
+      - run: node bin/fabrica-skills.mjs install
+      - run: node bin/fabrica-skills.mjs status
+      - run: node bin/fabrica-skills.mjs uninstall

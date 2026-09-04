@@ -19,7 +19,7 @@ test('link-skills succeeds, is idempotent, and installs all manifest-managed ski
   try {
     let result = run(['scripts/link-skills.mjs'], { cwd: temp });
     assertPass(result, combined(result));
-    assert(existsSync(join(temp, '.skills/fab-intake/SKILL.md')));
+    assert(existsSync(join(temp, '.skills/fab-spec/SKILL.md')));
 
     result = run(['scripts/link-skills.mjs'], { cwd: temp });
     assertPass(result, combined(result));
@@ -32,11 +32,11 @@ test('link-skills succeeds, is idempotent, and installs all manifest-managed ski
 test('link-skills fails before partial install when a source is missing', () => {
   const temp = copyRepoFixture();
   try {
-    rmSync(join(temp, 'skills/core/fab-intake'), { recursive: true, force: true });
+    rmSync(join(temp, 'skills/core/fab-spec'), { recursive: true, force: true });
     const result = run(['scripts/link-skills.mjs'], { cwd: temp });
     assertFail(result);
     assert(combined(result).includes('Source directory not found'));
-    assert(!existsSync(join(temp, '.skills/fab-blueprint')));
+    assert(!existsSync(join(temp, '.skills/fab-plan')));
     assertNoStackTrace(result);
   } finally {
     rmSync(temp, { recursive: true, force: true });
@@ -47,7 +47,7 @@ test('link-skills rejects manifest path traversal', () => {
   const temp = copyRepoFixture();
   try {
     mutateJson(join(temp, 'skills/manifest.json'), (manifest) => {
-      manifest.skills[0].path = 'skills/core/fab-intake/../../../../tmp';
+      manifest.skills[0].path = 'skills/core/fab-spec/../../../../tmp';
     });
     const result = run(['scripts/link-skills.mjs'], { cwd: temp });
     assertFail(result);
@@ -70,7 +70,7 @@ test('link-skills refuses to write through a symlinked .skills directory', () =>
     const result = run(['scripts/link-skills.mjs'], { cwd: temp });
     assertFail(result);
     assert(combined(result).includes('must not be a symlink or junction'));
-    assert(!existsSync(join(outside, 'fab-intake')));
+    assert(!existsSync(join(outside, 'fab-spec')));
     assertNoStackTrace(result);
   } finally {
     rmSync(temp, { recursive: true, force: true });
@@ -87,7 +87,7 @@ test('link-skills --global happy path creates global install', () => {
       env: { HOME: home, USERPROFILE: home },
     });
     assertPass(result, combined(result));
-    assert(existsSync(join(home, '.fabrica-skills', '.skills', 'fab-intake', 'SKILL.md')));
+    assert(existsSync(join(home, '.fabrica-skills', '.skills', 'fab-spec', 'SKILL.md')));
     assert(combined(result).includes('DONE'));
   } finally {
     rmSync(temp, { recursive: true, force: true });
@@ -102,7 +102,7 @@ test('link-skills preserves custom fab-* skills and refreshes broken symlinks', 
     mkdirSync(join(temp, '.skills/fab-custom'), { recursive: true });
     writeFileSync(join(temp, '.skills/fab-custom/KEEP'), 'keep', 'utf-8');
     try {
-      symlinkSync(join(temp, 'missing-target'), join(temp, '.skills/fab-intake'), 'dir');
+      symlinkSync(join(temp, 'missing-target'), join(temp, '.skills/fab-spec'), 'dir');
     } catch {
       // Symlinks unsupported; still test preservation.
     }
@@ -110,7 +110,7 @@ test('link-skills preserves custom fab-* skills and refreshes broken symlinks', 
     const result = run(['scripts/link-skills.mjs'], { cwd: temp });
     assertPass(result, combined(result));
     assert(existsSync(join(temp, '.skills/fab-custom/KEEP')));
-    assert(existsSync(join(temp, '.skills/fab-intake/SKILL.md')));
+    assert(existsSync(join(temp, '.skills/fab-spec/SKILL.md')));
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
@@ -184,8 +184,8 @@ test('link-skills rejects duplicate ids and source symlinks', () => {
 
   temp = copyRepoFixture();
   try {
-    const original = join(temp, 'skills/core/fab-intake');
-    const moved = join(temp, 'skills/core/fab-intake-real');
+    const original = join(temp, 'skills/core/fab-spec');
+    const moved = join(temp, 'skills/core/fab-spec-real');
     try {
       cpSync(original, moved, { recursive: true });
       rmSync(original, { recursive: true, force: true });
@@ -220,7 +220,7 @@ test('link-skills --global refuses symlinked .skills directory', () => {
     });
     assertFail(result);
     assert(combined(result).includes('must not be a symlink or junction'));
-    assert(!existsSync(join(outside, 'fab-intake')));
+    assert(!existsSync(join(outside, 'fab-spec')));
     assertNoStackTrace(result);
   } finally {
     rmSync(temp, { recursive: true, force: true });
@@ -282,7 +282,7 @@ test('link-skills falls back to copy when junction/symlink fails with EPERM', ()
     assertPass(result, combined(result));
     const out = combined(result);
     assert(out.includes('COPY'), `expected COPY output but got:\n${out}`);
-    assert(existsSync(join(temp, '.skills/fab-intake/SKILL.md')));
+    assert(existsSync(join(temp, '.skills/fab-spec/SKILL.md')));
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
@@ -298,7 +298,7 @@ test('link-skills EPERM copy-fallback refreshes stale copies on rerun', () => {
     assertPass(result, combined(result));
 
     // Modify a source SKILL.md after the first install.
-    const sourceMd = join(temp, 'skills/core/fab-intake/SKILL.md');
+    const sourceMd = join(temp, 'skills/core/fab-spec/SKILL.md');
     const marker = '\n<!-- STALENESS_MARKER_REFRESHED -->\n';
     writeFileSync(sourceMd, readFileSync(sourceMd, 'utf-8') + marker, 'utf-8');
 
@@ -307,7 +307,7 @@ test('link-skills EPERM copy-fallback refreshes stale copies on rerun', () => {
     assertPass(result, combined(result));
 
     // Assert the copy in .skills/ has the marker (proving refresh).
-    const copyMd = readFileSync(join(temp, '.skills/fab-intake/SKILL.md'), 'utf-8');
+    const copyMd = readFileSync(join(temp, '.skills/fab-spec/SKILL.md'), 'utf-8');
     assert(copyMd.endsWith(marker), 'expected copy to be refreshed with source change');
   } finally {
     rmSync(temp, { recursive: true, force: true });
@@ -321,7 +321,7 @@ test('link-skills removes a managed skill entry that is a symlink to outside wit
     mkdirSync(join(temp, '.skills'), { recursive: true });
     writeFileSync(join(outside, 'MARKER'), 'do-not-delete', 'utf-8');
     try {
-      symlinkSync(outside, join(temp, '.skills', 'fab-intake'), 'dir');
+      symlinkSync(outside, join(temp, '.skills', 'fab-spec'), 'dir');
     } catch {
       rmSync(temp, { recursive: true, force: true });
       rmSync(outside, { recursive: true, force: true });
@@ -332,7 +332,7 @@ test('link-skills removes a managed skill entry that is a symlink to outside wit
     assertPass(result, combined(result));
     assert(existsSync(join(outside, 'MARKER')), 'symlink target must remain untouched');
     assert(!existsSync(join(outside, 'SKILL.md')), 'must not write through the symlink into its target');
-    assert(existsSync(join(temp, '.skills', 'fab-intake', 'SKILL.md')), 'managed entry should be reinstalled');
+    assert(existsSync(join(temp, '.skills', 'fab-spec', 'SKILL.md')), 'managed entry should be reinstalled');
   } finally {
     rmSync(temp, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });
@@ -342,7 +342,7 @@ test('link-skills removes a managed skill entry that is a symlink to outside wit
 test('link-skills recovers from ENOTEMPTY when clearing a managed entry (rmdirSync retry)', () => {
   const temp = copyRepoFixture();
   try {
-    mkdirSync(join(temp, '.skills', 'fab-intake'), { recursive: true });
+    mkdirSync(join(temp, '.skills', 'fab-spec'), { recursive: true });
 
     const mjsPath = join(temp, 'scripts', 'link-skills.mjs');
     const orig = readFileSync(mjsPath, 'utf-8');
@@ -355,7 +355,7 @@ test('link-skills recovers from ENOTEMPTY when clearing a managed entry (rmdirSy
     const result = run(['scripts/link-skills.mjs'], { cwd: temp });
     assertPass(result, combined(result));
     assert(combined(result).includes('CLEAN'), combined(result));
-    assert(existsSync(join(temp, '.skills', 'fab-intake', 'SKILL.md')));
+    assert(existsSync(join(temp, '.skills', 'fab-spec', 'SKILL.md')));
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }

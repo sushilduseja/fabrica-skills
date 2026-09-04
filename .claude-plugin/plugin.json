@@ -4,48 +4,48 @@
   "version": "0.2.0",
   "skills": [
     {
-      "name": "fab-intake",
-      "path": "skills/core/fab-intake/SKILL.md"
+      "name": "fab-spec",
+      "path": "skills/core/fab-spec/SKILL.md"
     },
     {
-      "name": "fab-blueprint",
-      "path": "skills/core/fab-blueprint/SKILL.md"
+      "name": "fab-plan",
+      "path": "skills/core/fab-plan/SKILL.md"
     },
     {
-      "name": "fab-frame",
-      "path": "skills/core/fab-frame/SKILL.md"
+      "name": "fab-scaffold",
+      "path": "skills/core/fab-scaffold/SKILL.md"
     },
     {
-      "name": "fab-forge",
-      "path": "skills/core/fab-forge/SKILL.md"
+      "name": "fab-build",
+      "path": "skills/core/fab-build/SKILL.md"
     },
     {
-      "name": "fab-check",
-      "path": "skills/core/fab-check/SKILL.md"
+      "name": "fab-eval",
+      "path": "skills/core/fab-eval/SKILL.md"
     },
     {
-      "name": "fab-pulse",
-      "path": "skills/core/fab-pulse/SKILL.md"
+      "name": "fab-status",
+      "path": "skills/core/fab-status/SKILL.md"
     },
     {
-      "name": "fab-passport",
-      "path": "skills/core/fab-passport/SKILL.md"
+      "name": "fab-handoff",
+      "path": "skills/core/fab-handoff/SKILL.md"
     },
     {
-      "name": "fab-trace",
-      "path": "skills/prototype/fab-trace/SKILL.md"
+      "name": "fab-fix",
+      "path": "skills/prototype/fab-fix/SKILL.md"
     },
     {
-      "name": "fab-weave",
-      "path": "skills/prototype/fab-weave/SKILL.md"
+      "name": "fab-integrate",
+      "path": "skills/prototype/fab-integrate/SKILL.md"
     },
     {
-      "name": "fab-launch",
-      "path": "skills/prototype/fab-launch/SKILL.md"
+      "name": "fab-verify",
+      "path": "skills/prototype/fab-verify/SKILL.md"
     },
     {
-      "name": "fab-signal",
-      "path": "skills/prototype/fab-signal/SKILL.md"
+      "name": "fab-decide",
+      "path": "skills/prototype/fab-decide/SKILL.md"
     },
     {
       "name": "fab-retro",

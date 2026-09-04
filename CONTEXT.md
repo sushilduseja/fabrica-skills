@@ -6,7 +6,7 @@
 |------|---------|
 | Skill | One reusable instruction document (`SKILL.md`) in this repo |
 | Pipeline step | One skill invocation in the fabrica workflow |
-| App stage | One buildable slice of the target app, defined by `fab-blueprint` |
+| App stage | One buildable slice of the target app, defined by `fab-plan` |
 | Run object | `fabrica.run.json`, the durable state file for one run |
 | Gate | A pause point where the operator must approve before proceeding |
 | Fabrica | The factory metaphor — turning raw ideas into small apps through skills |

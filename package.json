@@ -1,17 +1,26 @@
 {
   "name": "fabrica-skills",
-  "version": "0.2.0",
-  "private": true,
+  "version": "0.3.0",
+  "private": false,
   "type": "module",
   "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
   "license": "MIT",
-  "engines": {
-    "node": ">=16.7"
+  "engines": { "node": ">=16.7" },
+  "bin": {
+    "fabrica-skills": "./bin/fabrica-skills.mjs"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sushilduseja/fabrica-skills.git"
-  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "skills/",
+    "schemas/",
+    ".claude-plugin/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "validate:run": "node scripts/validate-run.mjs",
     "validate:manifest": "node scripts/sync-manifest.mjs --check",
@@ -19,19 +28,19 @@
     "validate:run-fail": "node scripts/_assert-invalid.mjs test/fixtures/invalid-run.json /status /app_stages/0/quality_score",
     "validate:run-gate-fail": "node scripts/_assert-invalid.mjs test/fixtures/invalid-gate-keys.json /gate_levels",
     "validate": "npm run validate:run-pass && npm run validate:run-fail && npm run validate:run-gate-fail && npm run validate:manifest",
-    "test": "node test/validate-run.test.mjs && node test/sync-manifest.test.mjs && node test/link-skills.test.mjs && node test/skill-gates.test.mjs && node test/verification-kind.test.mjs && node test/docs.test.mjs",
-    "lint": "eslint --ext .js,.mjs scripts/ test/ && prettier --check scripts/ test/",
-    "lint:fix": "eslint --ext .js,.mjs --fix scripts/ test/ && prettier --write scripts/ test/",
+    "test": "node test/validate-run.test.mjs && node test/sync-manifest.test.mjs && node test/link-skills.test.mjs && node test/skill-gates.test.mjs && node test/verification-kind.test.mjs && node test/docs.test.mjs && node test/install-cli.test.mjs",
+    "lint": "eslint --ext .js,.mjs scripts/ test/ bin/ && prettier --check scripts/ test/ bin/",
+    "lint:fix": "eslint --ext .js,.mjs --fix scripts/ test/ bin/ && prettier --write scripts/ test/ bin/",
     "check": "npm run validate && npm test && npm run lint",
-    "setup": "npm run validate && node scripts/link-skills.mjs"
+    "setup": "npm run validate && node scripts/link-skills.mjs",
+    "prepack": "npm run check"
+  },
+  "dependencies": {
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.0"
   },
   "devDependencies": {
-    "ajv": "^8.17.0",
-    "ajv-formats": "^3.0.0",
     "eslint": "^8.57.1",
     "prettier": "^3.4.2"
   }
 }
-
-
-

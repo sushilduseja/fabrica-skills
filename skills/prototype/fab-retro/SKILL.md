@@ -53,6 +53,6 @@ Done.
 
 ## Error Handling
 
-- `missing_input`: run object missing → halt and suggest `/fab-intake` only for new runs, or restore the run object for existing work.
+- `missing_input`: run object missing → halt and suggest `/fab-spec` only for new runs, or restore the run object for existing work.
 - `invalid_state`: run is not complete, blocked, or abandoned, or run object is corrupted → halt and show current status/validator output.
 - `external_failure`: retro write/rename fails or interruption occurs → keep prior retro if possible and tell the operator what to retry.

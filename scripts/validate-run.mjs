@@ -15,6 +15,7 @@ import { fileURLToPath } from 'url';
 import { validateAllGates } from './_skill-gates.mjs';
 import { readJsonFile } from './_path-utils.mjs';
 import { buildsContainerCommand, invokesDockerCommand } from './_verification-kind.mjs';
+import { SKILL_ALIASES, canonicalSkillId } from './_skill-aliases.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -117,6 +118,29 @@ async function main() {
     inputLabel = targetPath;
   }
 
+  // Alias shim (0.3.x): accept deprecated pre-rename skill ids in current_step
+  // and next_action by mapping to canonical ids before schema validation.
+  if (instance && typeof instance === 'object') {
+    const warnedAliases = new Set();
+    const warnAlias = (id) => {
+      if (!warnedAliases.has(id)) {
+        warnedAliases.add(id);
+        console.error(`[validate-run] WARN: skill id "${id}" is deprecated; use "${SKILL_ALIASES[id]}"`);
+      }
+    };
+    if (typeof instance.current_step === 'string' && SKILL_ALIASES[instance.current_step]) {
+      warnAlias(instance.current_step);
+      instance.current_step = canonicalSkillId(instance.current_step);
+    }
+    if (typeof instance.next_action === 'string') {
+      const [token] = instance.next_action.slice(1).split(' ');
+      if (SKILL_ALIASES[token]) {
+        warnAlias(token);
+        instance.next_action = `/${canonicalSkillId(token)}${instance.next_action.slice(token.length + 1)}`;
+      }
+    }
+  }
+
   if (!existsSync(SCHEMA_PATH)) {
     fail(`Schema not found: ${SCHEMA_PATH}`);
   }
@@ -181,7 +205,7 @@ async function main() {
     if (incomplete.length > 0) {
       fail(`status "complete" requires all app stages to be done (not done: ${incomplete.join(', ')})`);
     }
-    if (['fab-intake', 'fab-blueprint'].includes(instance.current_step)) {
+    if (['fab-spec', 'fab-plan'].includes(instance.current_step)) {
       fail(`status "complete" is not compatible with current_step "${instance.current_step}"`);
     }
   }
@@ -198,10 +222,10 @@ async function main() {
     if (!skillIds.includes(nextSkill)) {
       fail(`next_action skill "${nextSkill}" is not in skills/manifest.json`);
     }
-    if (['fab-forge', 'fab-check'].includes(nextSkill) && !stageNames.has(nextArg)) {
+    if (['fab-build', 'fab-eval'].includes(nextSkill) && !stageNames.has(nextArg)) {
       fail(`next_action "${instance.next_action}" references unknown app stage "${nextArg || ''}"`);
     }
-    if (nextSkill === 'fab-trace' && nextArg && nextArg !== 'integration' && !stageNames.has(nextArg)) {
+    if (nextSkill === 'fab-fix' && nextArg && nextArg !== 'integration' && !stageNames.has(nextArg)) {
       fail(`next_action "${instance.next_action}" references unknown trace target "${nextArg}"`);
     }
   }

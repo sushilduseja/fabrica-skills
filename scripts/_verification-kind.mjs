@@ -3,7 +3,7 @@
  *
  * Decides what evidence a verification command represents: whether it invokes
  * Docker, and whether it builds a container. The semantic validator
- * (scripts/validate-run.mjs) and the fab-launch Gate validator
+ * (scripts/validate-run.mjs) and the fab-verify Gate validator
  * (scripts/_skill-gates.mjs) share this classification; each caller keeps its
  * own Gate-specific consequence.
  */

@@ -16,7 +16,7 @@ import {
  *  These test the logic in isolation without spawning validate-run.
  * ================================================================ */
 
-test('fab-launch gate: external_deploy without human approval is rejected', () => {
+test('fab-verify gate: external_deploy without human approval is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.verifications = [
     {
@@ -32,7 +32,7 @@ test('fab-launch gate: external_deploy without human approval is rejected', () =
   assert(errors[0].includes('external_deploy'), errors[0]);
 });
 
-test('fab-launch gate: external_deploy WITH human approval is accepted', () => {
+test('fab-verify gate: external_deploy WITH human approval is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.verifications = [
     {
@@ -45,7 +45,7 @@ test('fab-launch gate: external_deploy WITH human approval is accepted', () => {
   ];
   run.human_decisions = [
     {
-      step: 'fab-launch',
+      step: 'fab-verify',
       decision_needed: 'Deploy?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -58,7 +58,7 @@ test('fab-launch gate: external_deploy WITH human approval is accepted', () => {
   assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
 });
 
-test('fab-launch gate: container_build without Docker command is rejected', () => {
+test('fab-verify gate: container_build without Docker command is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.verifications = [
     {
@@ -74,7 +74,7 @@ test('fab-launch gate: container_build without Docker command is rejected', () =
   assert(errors[0].includes('does not invoke Docker'), errors[0]);
 });
 
-test('fab-launch gate: complete state requires launch verification', () => {
+test('fab-verify gate: complete state requires launch verification', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.status = 'complete';
   run.experiment_phase = 'phase_2_pipeline';
@@ -87,11 +87,11 @@ test('fab-launch gate: complete state requires launch verification', () => {
   assert(errors[0].includes('no local_launch or container_build verification'), errors[0]);
 });
 
-test('fab-signal gate: decision with value but no resolved_at is rejected', () => {
+test('fab-decide gate: decision with value but no resolved_at is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -105,11 +105,11 @@ test('fab-signal gate: decision with value but no resolved_at is rejected', () =
   assert(errors[0].includes('no resolved_at'), errors[0]);
 });
 
-test('fab-signal gate: pending decision (null value) is accepted', () => {
+test('fab-decide gate: pending decision (null value) is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: null,
@@ -122,11 +122,11 @@ test('fab-signal gate: pending decision (null value) is accepted', () => {
   assert.strictEqual(errors.length, 0, `pending decision should be accepted: ${JSON.stringify(errors)}`);
 });
 
-test('fab-signal gate: properly resolved decision is accepted', () => {
+test('fab-decide gate: properly resolved decision is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -139,7 +139,7 @@ test('fab-signal gate: properly resolved decision is accepted', () => {
   assert.strictEqual(errors.length, 0, `resolved decision should be accepted: ${JSON.stringify(errors)}`);
 });
 
-test('fab-check gate: sub-threshold quality_score (< 6) with status "done" is rejected', () => {
+test('fab-eval gate: sub-threshold quality_score (< 6) with status "done" is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'done', quality_score: 5, artifacts: ['src/api.js'], notes: null },
@@ -149,7 +149,7 @@ test('fab-check gate: sub-threshold quality_score (< 6) with status "done" is re
   assert(errors[0].includes('quality_score 5'), errors[0]);
 });
 
-test('fab-check gate: sub-threshold stage with status "blocked" is accepted', () => {
+test('fab-eval gate: sub-threshold stage with status "blocked" is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'blocked', quality_score: 5, artifacts: ['src/api.js'], notes: null },
@@ -158,7 +158,7 @@ test('fab-check gate: sub-threshold stage with status "blocked" is accepted', ()
   assert.strictEqual(errors.length, 0, `blocked stage with low score should be accepted: ${JSON.stringify(errors)}`);
 });
 
-test('fab-check gate: high-scoring stage is accepted regardless of status', () => {
+test('fab-eval gate: high-scoring stage is accepted regardless of status', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'done', quality_score: 8, artifacts: ['src/api.js'], notes: null },
@@ -167,7 +167,7 @@ test('fab-check gate: high-scoring stage is accepted regardless of status', () =
   assert.strictEqual(errors.length, 0, `high-scoring done stage should be accepted: ${JSON.stringify(errors)}`);
 });
 
-test('fab-pulse gate: precision "unknown" with numeric cost field is rejected', () => {
+test('fab-status gate: precision "unknown" with numeric cost field is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.costs = {
     precision: 'unknown',
@@ -183,7 +183,7 @@ test('fab-pulse gate: precision "unknown" with numeric cost field is rejected', 
   assert(errors[0].includes('tokens_in'), errors[0]);
 });
 
-test('fab-pulse gate: all-unknown costs are accepted', () => {
+test('fab-status gate: all-unknown costs are accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   const errors = validateFabPulseGate(run);
   assert.strictEqual(
@@ -198,7 +198,7 @@ test('fab-pulse gate: all-unknown costs are accepted', () => {
  *  These verify the full pipeline (schema → semantic → gate).
  * ================================================================ */
 
-test('validate-run rejects external_deploy missing human approval (fab-launch gate)', () => {
+test('validate-run rejects external_deploy missing human approval (fab-verify gate)', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   valid.verifications = [
     {
@@ -216,11 +216,11 @@ test('validate-run rejects external_deploy missing human approval (fab-launch ga
   assertNoStackTrace(result);
 });
 
-test('validate-run rejects auto-decided decision (fab-signal gate)', () => {
+test('validate-run rejects auto-decided decision (fab-decide gate)', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   valid.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -236,7 +236,7 @@ test('validate-run rejects auto-decided decision (fab-signal gate)', () => {
   assertNoStackTrace(result);
 });
 
-test('validate-run rejects sub-threshold stage marked done (fab-check gate)', () => {
+test('validate-run rejects sub-threshold stage marked done (fab-eval gate)', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   valid.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'done', quality_score: 4.5, artifacts: ['src/api.js'], notes: null },
@@ -248,7 +248,7 @@ test('validate-run rejects sub-threshold stage marked done (fab-check gate)', ()
   assertNoStackTrace(result);
 });
 
-test('validate-run rejects unknown precision with numeric cost (fab-pulse gate)', () => {
+test('validate-run rejects unknown precision with numeric cost (fab-status gate)', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   valid.costs = {
     precision: 'unknown',
@@ -270,25 +270,25 @@ test('validate-run rejects unknown precision with numeric cost (fab-pulse gate)'
  *  Test 4 — next_action rule enforcement
  * ================================================================ */
 
-test('next-action gate: fab-weave next_action with pending stage is rejected', () => {
+test('next-action gate: fab-integrate next_action with pending stage is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.status = 'weaving';
   run.experiment_phase = 'phase_2_pipeline';
-  run.next_action = '/fab-weave';
+  run.next_action = '/fab-integrate';
   run.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'pending', quality_score: null, artifacts: [], notes: null },
   ];
   const errors = validateNextActionGate(run);
-  assert(errors.length > 0, 'expected gate to reject fab-weave with pending stage');
-  assert(errors[0].includes('fab-weave'), errors[0]);
+  assert(errors.length > 0, 'expected gate to reject fab-integrate with pending stage');
+  assert(errors[0].includes('fab-integrate'), errors[0]);
   assert(errors[0].includes('pending'), errors[0]);
 });
 
-test('next-action gate: fab-weave next_action with all stages done is accepted', () => {
+test('next-action gate: fab-integrate next_action with all stages done is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.status = 'weaving';
   run.experiment_phase = 'phase_2_pipeline';
-  run.next_action = '/fab-weave';
+  run.next_action = '/fab-integrate';
   run.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'done', quality_score: 8, artifacts: ['src/api.js'], notes: null },
   ];
@@ -296,19 +296,19 @@ test('next-action gate: fab-weave next_action with all stages done is accepted',
   assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
 });
 
-test('next-action gate: fab-launch next_action without verifying status is rejected', () => {
+test('next-action gate: fab-verify next_action without verifying status is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
-  run.next_action = '/fab-launch';
+  run.next_action = '/fab-verify';
   run.status = 'weaving';
   const errors = validateNextActionGate(run);
-  assert(errors.length > 0, 'expected gate to reject fab-launch without verifying status');
-  assert(errors[0].includes('fab-launch'), errors[0]);
+  assert(errors.length > 0, 'expected gate to reject fab-verify without verifying status');
+  assert(errors[0].includes('fab-verify'), errors[0]);
   assert(errors[0].includes('verifying'), errors[0]);
 });
 
-test('next-action gate: fab-launch next_action with verifying status is accepted', () => {
+test('next-action gate: fab-verify next_action with verifying status is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
-  run.next_action = '/fab-launch';
+  run.next_action = '/fab-verify';
   run.status = 'verifying';
   const errors = validateNextActionGate(run);
   assert.strictEqual(errors.length, 0, `unexpected errors: ${JSON.stringify(errors)}`);
@@ -322,7 +322,7 @@ test('timestamp gate: resolved_at before triggered_at is rejected', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -340,7 +340,7 @@ test('timestamp gate: resolved_at after triggered_at is accepted', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -357,7 +357,7 @@ test('timestamp gate: null resolved_at is accepted (pending decision)', () => {
   const run = readJson('test/fixtures/valid-run.json');
   run.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: null,
@@ -403,17 +403,17 @@ test('cost precision gate: valid precision values are accepted', () => {
  *  Integration-level: next-action, timestamp, cost through validate-run --stdin
  * ================================================================ */
 
-test('validate-run rejects fab-weave with pending stage (next-action gate)', () => {
+test('validate-run rejects fab-integrate with pending stage (next-action gate)', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   valid.status = 'weaving';
   valid.experiment_phase = 'phase_2_pipeline';
-  valid.next_action = '/fab-weave';
+  valid.next_action = '/fab-integrate';
   valid.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'pending', quality_score: null, artifacts: [], notes: null },
   ];
   const result = validateStdin(valid);
   assertFail(result);
-  assert(combined(result).includes('fab-weave'), combined(result));
+  assert(combined(result).includes('fab-integrate'), combined(result));
   assert(combined(result).includes('gate contract'), combined(result));
   assertNoStackTrace(result);
 });
@@ -422,7 +422,7 @@ test('validate-run rejects timestamp ordering violation', () => {
   const valid = readJson('test/fixtures/valid-run.json');
   valid.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -459,11 +459,11 @@ test('gate-enforced rules are documented in the corresponding SKILL.md guardrail
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
 
   const cases = [
-    { skill: 'fab-launch', keywords: ['explicit operator approval', 'Docker'] },
-    { skill: 'fab-signal', keywords: ['resolved_at', 'do not auto-decide'] },
-    { skill: 'fab-check', keywords: ['quality_score', 'below 6'] },
-    { skill: 'fab-pulse', keywords: ['unknown'] },
-    { skill: 'fab-weave', keywords: ['app_stages', 'done'] },
+    { skill: 'fab-verify', keywords: ['explicit operator approval', 'Docker'] },
+    { skill: 'fab-decide', keywords: ['resolved_at', 'do not auto-decide'] },
+    { skill: 'fab-eval', keywords: ['quality_score', 'below 6'] },
+    { skill: 'fab-status', keywords: ['unknown'] },
+    { skill: 'fab-integrate', keywords: ['app_stages', 'done'] },
   ];
 
   for (const { skill, keywords } of cases) {

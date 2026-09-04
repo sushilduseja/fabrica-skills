@@ -1,0 +1,40 @@
+{
+  "skill_id": "fab-fix",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "Stage name and failure context are missing",
+      "diagnosis": "There is not enough information to diagnose a failing stage",
+      "rescue_action": "Ask for the failing stage or error output",
+      "user_message": "Provide a failing stage name or error output before running trace."
+    },
+    {
+      "type": "prerequisite_missing",
+      "trigger": "No failing stage, run object, or last_error is available",
+      "diagnosis": "Trace requires a real failure to diagnose",
+      "rescue_action": "Halt and show the missing prerequisite",
+      "user_message": "No failing stage or error state was found. Run the failing skill first."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Manifest or errors metadata path is unsafe or invalid",
+      "diagnosis": "Trace cannot safely load rescue metadata",
+      "rescue_action": "Reject unsafe paths and ask to repair skills/manifest.json or errors.json",
+      "user_message": "Error metadata is invalid or unsafe. Repair manifest/errors metadata before tracing."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Error not reproducible or fix does not resolve root cause",
+      "diagnosis": "The error cannot be reproduced in a clean environment or the applied fix did not resolve it",
+      "rescue_action": "Log full context, suggest manual diagnosis, or route to /fab-decide",
+      "user_message": "Error not reproducible or fix did not resolve it. Manual diagnosis recommended."
+    },
+    {
+      "type": "validation_failed",
+      "trigger": "Candidate run object fails schema validation",
+      "diagnosis": "Trace update would corrupt run state",
+      "rescue_action": "Show validator output and do not replace fabrica.run.json",
+      "user_message": "The candidate run state failed validation. No state was written."
+    }
+  ]
+}

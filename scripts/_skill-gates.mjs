@@ -13,12 +13,12 @@
 import { invokesDockerCommand } from './_verification-kind.mjs';
 
 /**
- * Validate fab-launch (review gate) invariants.
+ * Validate fab-verify (review gate) invariants.
  *
  * Key contracts:
  *   - external_deploy verification requires prior human approval
  *   - container_build kind must invoke Docker
- *   - complete status requires a launch verification when current_step is fab-launch
+ *   - complete status requires a launch verification when current_step is fab-verify
  *
  * @param {Object} run — parsed fabrica.run.json
  * @returns {string[]}
@@ -28,11 +28,11 @@ export function validateFabLaunchGate(run) {
 
   for (const [i, v] of (run.verifications || []).entries()) {
     if (v.kind === 'external_deploy') {
-      const approved = (run.human_decisions || []).some((d) => d.step === 'fab-launch' && d.decision === 'continue');
+      const approved = (run.human_decisions || []).some((d) => d.step === 'fab-verify' && d.decision === 'continue');
       if (!approved) {
         errors.push(
           `verifications[${i}].kind "external_deploy" requires a prior human_decisions` +
-            ` entry with step "fab-launch" and decision "continue"`,
+            ` entry with step "fab-verify" and decision "continue"`,
         );
       }
     }
@@ -57,7 +57,7 @@ export function validateFabLaunchGate(run) {
 }
 
 /**
- * Validate fab-signal (full gate) invariants.
+ * Validate fab-decide (full gate) invariants.
  *
  * Key contracts:
  *   - A decision with a non-null value must have a resolved_at timestamp
@@ -83,7 +83,7 @@ export function validateFabSignalGate(run) {
 }
 
 /**
- * Validate fab-check (auto gate) invariants.
+ * Validate fab-eval (auto gate) invariants.
  *
  * Key contracts:
  *   - A stage with quality_score < 6 must not be marked "done"
@@ -109,7 +109,7 @@ export function validateFabCheckGate(run) {
 }
 
 /**
- * Validate fab-pulse (auto gate, read-only) invariants.
+ * Validate fab-status (auto gate, read-only) invariants.
  *
  * Key contracts:
  *   - Never substitute computed values for "unknown" cost data
@@ -142,8 +142,8 @@ export function validateFabPulseGate(run) {
  * Validate next_action transition rules.
  *
  * Key contracts:
- *   - fab-weave requires all app_stages to be done
- *   - fab-launch requires status to be "verifying"
+ *   - fab-integrate requires all app_stages to be done
+ *   - fab-verify requires status to be "verifying"
  *
  * The declarative manifest prerequisites/blocks table in
  * skills/manifest.json remains the documented dependency record per ADR-003;
@@ -159,18 +159,18 @@ export function validateNextActionGate(run) {
 
   const [nextSkill] = run.next_action.slice(1).split(' ');
 
-  if (nextSkill === 'fab-weave') {
+  if (nextSkill === 'fab-integrate') {
     const pending = (run.app_stages || []).filter((s) => s.status !== 'done');
     if (pending.length > 0) {
       errors.push(
-        `next_action "/fab-weave" requires all app_stages to be done, but ${pending.length} stage(s) ` +
+        `next_action "/fab-integrate" requires all app_stages to be done, but ${pending.length} stage(s) ` +
           `have status other than "done": ${pending.map((s) => `"${s.name}"(${s.status})`).join(', ')}`,
       );
     }
   }
 
-  if (nextSkill === 'fab-launch' && run.status !== 'verifying') {
-    errors.push(`next_action "/fab-launch" requires status "verifying", but current status is "${run.status}"`);
+  if (nextSkill === 'fab-verify' && run.status !== 'verifying') {
+    errors.push(`next_action "/fab-verify" requires status "verifying", but current status is "${run.status}"`);
   }
 
   return errors;

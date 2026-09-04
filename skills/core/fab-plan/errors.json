@@ -1,0 +1,47 @@
+{
+  "skill_id": "fab-plan",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "Spec missing or malformed",
+      "diagnosis": "The product spec file does not exist or cannot be parsed",
+      "rescue_action": "Halt and suggest running /fab-spec first to create the spec",
+      "user_message": "docs/spec.md is missing or malformed. Run /fab-spec first."
+    },
+    {
+      "type": "prerequisite_missing",
+      "trigger": "Run object missing, invalid, or not in designing state",
+      "diagnosis": "fab-spec has not completed cleanly",
+      "rescue_action": "Halt, show the unmet prerequisite, and suggest the next safe command",
+      "user_message": "Blueprint prerequisites are not met. Run or repair /fab-spec first."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Blueprint conflicts with spec",
+      "diagnosis": "The generated architecture contradicts the spec constraints",
+      "rescue_action": "Show the conflict and suggest spec revision before retrying",
+      "user_message": "The blueprint conflicts with the spec. Review and revise the spec."
+    },
+    {
+      "type": "gate_blocked",
+      "trigger": "Operator does not approve the blueprint or write",
+      "diagnosis": "The checkpoint gate was not approved",
+      "rescue_action": "Leave files unchanged and wait for approval or requested edits",
+      "user_message": "Blueprint is pending approval. No files were changed."
+    },
+    {
+      "type": "validation_failed",
+      "trigger": "Candidate run object fails schema validation",
+      "diagnosis": "Generated app stages or state fields are invalid",
+      "rescue_action": "Show validator output and do not replace fabrica.run.json",
+      "user_message": "The candidate run state failed validation. No state was written."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Blueprint or run-object write/rename fails or is interrupted",
+      "diagnosis": "Filesystem operation failed before commit",
+      "rescue_action": "Keep original files, remove temp files if possible, and retry after fixing the filesystem issue",
+      "user_message": "Could not write blueprint files safely. Existing files were left unchanged where possible."
+    }
+  ]
+}

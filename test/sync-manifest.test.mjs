@@ -71,9 +71,9 @@ test('sync-manifest --write updates generated files and is idempotent', () => {
 
 test('sync-manifest detects frontmatter name drift from manifest', () => {
   const temp = copyRepoFixture();
-  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const skillMdPath = join(temp, 'skills/core/fab-spec/SKILL.md');
   const content = readFileSync(skillMdPath, 'utf-8');
-  const patched = content.replace(/^name:\s*fab-intake$/m, 'name: fab-intake-modified');
+  const patched = content.replace(/^name:\s*fab-spec$/m, 'name: fab-spec-modified');
   writeFileSync(skillMdPath, patched, 'utf-8');
   const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
   assertFail(result);
@@ -83,7 +83,7 @@ test('sync-manifest detects frontmatter name drift from manifest', () => {
 
 test('sync-manifest detects frontmatter phase drift from manifest', () => {
   const temp = copyRepoFixture();
-  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const skillMdPath = join(temp, 'skills/core/fab-spec/SKILL.md');
   const content = readFileSync(skillMdPath, 'utf-8');
   const patched = content.replace(/^phase:\s*0$/m, 'phase: 2');
   writeFileSync(skillMdPath, patched, 'utf-8');
@@ -95,9 +95,9 @@ test('sync-manifest detects frontmatter phase drift from manifest', () => {
 
 test('sync-manifest detects orphaned error type in errors.json not mentioned in SKILL.md', () => {
   const temp = copyRepoFixture();
-  const errPath = join(temp, 'skills/core/fab-intake/errors.json');
+  const errPath = join(temp, 'skills/core/fab-spec/errors.json');
   const errMeta = JSON.parse(readFileSync(errPath, 'utf-8'));
-  // Add prerequisite_missing — valid in schema, but NOT in fab-intake's SKILL.md Error Handling section.
+  // Add prerequisite_missing — valid in schema, but NOT in fab-spec's SKILL.md Error Handling section.
   errMeta.errors.push({
     type: 'prerequisite_missing',
     trigger: 'Not in SKILL.md',
@@ -114,7 +114,7 @@ test('sync-manifest detects orphaned error type in errors.json not mentioned in 
 
 test('sync-manifest detects frontmatter category drift from manifest', () => {
   const temp = copyRepoFixture();
-  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const skillMdPath = join(temp, 'skills/core/fab-spec/SKILL.md');
   const content = readFileSync(skillMdPath, 'utf-8');
   const patched = content.replace(/^category:\s*core$/m, 'category: other');
   writeFileSync(skillMdPath, patched, 'utf-8');
@@ -126,7 +126,7 @@ test('sync-manifest detects frontmatter category drift from manifest', () => {
 
 test('sync-manifest detects frontmatter default_gate drift from manifest', () => {
   const temp = copyRepoFixture();
-  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const skillMdPath = join(temp, 'skills/core/fab-spec/SKILL.md');
   const content = readFileSync(skillMdPath, 'utf-8');
   const patched = content.replace(/^default_gate:\s*checkpoint$/m, 'default_gate: auto');
   writeFileSync(skillMdPath, patched, 'utf-8');
@@ -138,7 +138,7 @@ test('sync-manifest detects frontmatter default_gate drift from manifest', () =>
 
 test('sync-manifest detects frontmatter overridable drift from manifest', () => {
   const temp = copyRepoFixture();
-  const skillMdPath = join(temp, 'skills/core/fab-intake/SKILL.md');
+  const skillMdPath = join(temp, 'skills/core/fab-spec/SKILL.md');
   const content = readFileSync(skillMdPath, 'utf-8');
   const patched = content.replace(/^overridable:\s*true$/m, 'overridable: false');
   writeFileSync(skillMdPath, patched, 'utf-8');
@@ -151,7 +151,7 @@ test('sync-manifest detects frontmatter overridable drift from manifest', () => 
 test('sync-manifest detects writes_fields ownership overlap not in the multi-writer whitelist', () => {
   const temp = copyRepoFixture();
   mutateJson(join(temp, 'skills/manifest.json'), (data) => {
-    const bp = data.skills.find((s) => s.id === 'fab-blueprint');
+    const bp = data.skills.find((s) => s.id === 'fab-plan');
     bp.writes_fields = [...bp.writes_fields, 'spec_path'];
   });
   const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });

@@ -20,45 +20,90 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 - Node.js 16.7+.
 - An AI coding agent that can read local markdown skill files.
 
-## Quick Start
+## Install
 
-Use a disposable clone or branch for your first run. The first two skills write `docs/spec.md`, `docs/blueprint.md`, and `fabrica.run.json`; `fab-frame` then creates the app in a sibling directory named `../<app-name>/`.
-
-### 1. Clone and install
+Project (recommended):
 
 ```bash
-git clone https://github.com/sushilduseja/fabrica-skills.git
-cd fabrica-skills
-npm ci
+npm install -D fabrica-skills
+npx fabrica-skills install
 ```
 
-### 2. Validate and link
+Or without adding a dependency:
 
 ```bash
-npm run setup
+npx fabrica-skills@latest install
 ```
 
-Expected result: validation passes, and a `.skills/` directory contains one entry per active skill (see `skills/manifest.json`). If validation or linking fails, the command exits nonzero and prints a `[validate-run]`, `[assert-invalid]`, `[sync-manifest]`, or `[link-skills]` error with the fix. For the full positive, negative, and security regression suite along with format and lint checks, run `npm run check`.
+Global (all repos on this machine):
 
-On Windows, the script uses directory junctions. On macOS and Linux, it uses symlinks. If a Windows junction is blocked, it falls back to copying the skill directory and tells you to rerun setup after source updates to refresh copied skills.
+```bash
+npx fabrica-skills@latest install --global
+```
 
-### 3. Open this repo in your AI coding agent
+Global roots resolve through `os.homedir()` (`C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS).
 
-Make sure the agent can see `.skills/`.
+Upgrade:
+
+```bash
+npx fabrica-skills@latest update
+```
+
+Uninstall:
+
+```bash
+npx fabrica-skills uninstall
+```
+
+### Renamed in 0.3.0
+
+| Old id | New id |
+|---|---|
+| `fab-intake` | `fab-spec` |
+| `fab-blueprint` | `fab-plan` |
+| `fab-frame` | `fab-scaffold` |
+| `fab-forge` | `fab-build` |
+| `fab-check` | `fab-eval` |
+| `fab-pulse` | `fab-status` |
+| `fab-passport` | `fab-handoff` |
+| `fab-trace` | `fab-fix` |
+| `fab-weave` | `fab-integrate` |
+| `fab-launch` | `fab-verify` |
+| `fab-signal` | `fab-decide` |
+| `fab-retro` | `fab-retro` (unchanged) |
+
+Old ids still validate with a deprecation warning in 0.3.x. Migrate saved run objects with `npx fabrica-skills validate --migrate-run fabrica.run.json`.
+
+## First run
+
+In your app repo (after install), ask your coding agent:
+
+```text
+/fab-spec
+Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
+```
+
+Then follow `next_action` in `fabrica.run.json`.
+
+## Skill walkthrough
+
+### 1. Open your project in your AI coding agent
+
+Make sure the agent can see the installed skills.
 
 If your agent supports slash commands, use the `/fab-*` names below. If it does not, ask it to follow the matching skill file directly, for example:
 
 ```text
-Follow .skills/fab-intake/SKILL.md.
+Follow .agents/skills/fab-spec/SKILL.md.
 Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
 ```
 
-### 4. Run intake
+### 2. Run intake
 
 Send this to the agent:
 
 ```text
-/fab-intake
+/fab-spec
 Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
 ```
 
@@ -68,14 +113,14 @@ Approve only when the spec is specific enough for a stranger to build. The skill
 
 - `docs/spec.md`
 - `fabrica.run.json`
-- `next_action: "/fab-blueprint"`
+- `next_action: "/fab-plan"`
 
-### 5. Create the blueprint
+### 3. Create the blueprint
 
 Send:
 
 ```text
-/fab-blueprint
+/fab-plan
 ```
 
 The agent should propose architecture, stack, app stages, and build order.
@@ -84,17 +129,17 @@ Approve only when the plan is small and testable. The skill writes:
 
 - `docs/blueprint.md`
 - app stages in `fabrica.run.json`
-- `next_action: "/fab-frame"`
+- `next_action: "/fab-scaffold"`
 
-### 6. Scaffold the app
+### 4. Scaffold the app
 
 Send:
 
 ```text
-/fab-frame
+/fab-scaffold
 ```
 
-The skill creates a sibling app directory:
+The skill scaffolds inside the current project root. In a source checkout of `fabrica-skills` itself it keeps the contributor behavior and creates a sibling app directory:
 
 ```text
 ../<app-name>/
@@ -110,28 +155,22 @@ Expected files include:
 - dependency files such as `pyproject.toml`, `requirements.txt`, `Makefile`, or `package.json`
 - `.env.example` when the app needs environment variables
 
-`/fab-frame` copies `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the generated app directory. After `/fab-frame`, the app-directory copy is canonical. The source-repo copies are runtime outputs only and are ignored by git.
+In a source checkout, `/fab-scaffold` copies `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the generated app directory. After `/fab-scaffold`, the app-directory copy is canonical. The source-repo copies are runtime outputs only and are ignored by git.
 
-After this step, continue work from the generated app directory. If your agent loses access to slash commands after switching directories, point it back to the source skill path, such as:
-
-```text
-Follow ../fabrica-skills/skills/core/fab-forge/SKILL.md.
-```
-
-### 7. Build one stage
+### 5. Build one stage
 
 Use the exact stage name from `fabrica.run.json` or `docs/blueprint.md`.
 
 ```text
-/fab-forge <stage-name>
+/fab-build <stage-name>
 ```
 
 The skill implements only that stage, adds focused tests, runs the narrowest useful test command, and updates `fabrica.run.json`.
 
-### 8. Check quality
+### 6. Check quality
 
 ```text
-/fab-check <stage-name>
+/fab-eval <stage-name>
 ```
 
 The skill writes:
@@ -140,60 +179,21 @@ The skill writes:
 docs/eval/<stage-name>.md
 ```
 
-It scores the stage from 0 to 10 on spec fit, contract fit, tests, clarity, and safety. Any axis below 6 blocks the stage and sets the next action to `/fab-trace <stage-name>`.
+It scores the stage from 0 to 10 on spec fit, contract fit, tests, clarity, and safety. Any axis below 6 blocks the stage and sets the next action to `/fab-fix <stage-name>`.
 
-### 9. Continue from the run state
+### 7. Continue from the run state
 
 Use `next_action` in `fabrica.run.json` as the source of truth. For the full visual state machine and common command pathways, see [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md).
 
 Useful commands:
 
 ```text
-/fab-pulse
-/fab-passport
+/fab-status
+/fab-handoff
 ```
 
-- `/fab-pulse` shows pipeline, quality, cost, and next action. Pass `--mode=details` for per-step cost breakdown.
-- `/fab-passport` writes a resumable handoff at `docs/handoff.md`.
-
-## Install Options
-
-### Local: `.skills/` (recommended for per-project use)
-
-```bash
-node scripts/link-skills.mjs
-```
-
-Creates `.skills/` inside the repo with one entry per active skill (see `skills/manifest.json`). The command is idempotent and refreshes only manifest-managed skill entries; unrelated skills, including unrelated `fab-*` skills, are left alone. The command refuses to use `.skills/` if it is a symlink or junction.
-
-### Global: `~/.fabrica-skills/` (for cross-project agent access)
-
-```bash
-node scripts/link-skills.mjs --global
-```
-
-Installs to `~/.fabrica-skills/.skills/` using `os.homedir()` for cross-platform resolution (`C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS). The command refuses to write through a symlinked or junctioned global install directory. The agent must be pointed at this path to discover skills.
-
-### Agent Discovery
-
-| Agent | Discovery mechanism |
-|---|---|
-| Claude Code | `.claude-plugin/plugin.json` + `CLAUDE.md` |
-| OpenCode / Codex CLI | `AGENTS.md` (already in repo) |
-| Any agent with configurable skill path | Point to `.skills/` directory |
-
-The `AGENTS.md` at the repo root covers non-Claude agents. After a global install, point each agent's skill search path to `~/.fabrica-skills/.skills/`.
-
-### Manual copy
-
-Copy any individual `SKILL.md` into your agent's skill directory:
-
-```text
-skills/core/fab-intake/SKILL.md
-skills/prototype/fab-trace/SKILL.md
-```
-
-Each skill is designed to be readable on its own, but the full workflow works best when all skills are available. The active skill count is defined in `skills/manifest.json`.
+- `/fab-status` shows pipeline, quality, cost, and next action. Pass `--mode=details` for per-step cost breakdown.
+- `/fab-handoff` writes a resumable handoff at `docs/handoff.md`.
 
 ## Workflow
 
@@ -201,17 +201,17 @@ Visual state machine and pathway reference: [`docs/STATE_MACHINE.md`](docs/STATE
 
 ```text
 Phase 0: Spec and blueprint
-  /fab-intake -> /fab-blueprint
+  /fab-spec -> /fab-plan
   Output: docs/spec.md, docs/blueprint.md, fabrica.run.json
 
 Phase 1: One or more vertical slices
-  /fab-frame -> /fab-forge <stage> -> /fab-check <stage>
+  /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
   Repeat forge/check until required stages are done.
   Output: scaffolded app, tests, quality scores, next_action
 
 Phase 2: Integrated local prototype
-  /fab-weave -> /fab-launch -> /fab-passport -> /fab-retro
-  Recovery and decision commands as needed: /fab-trace <stage|integration>, /fab-signal, /fab-pulse
+  /fab-integrate -> /fab-verify -> /fab-handoff -> /fab-retro
+  Recovery and decision commands as needed: /fab-fix <stage|integration>, /fab-decide, /fab-status
   Output: local end-to-end verification, launch evidence, decisions, handoff, retrospective
 ```
 
@@ -219,34 +219,34 @@ Phase 2: Integrated local prototype
 
 | Skill | Phase | Default gate | Job |
 |---|---:|---|---|
-| `/fab-intake` | 0 | checkpoint | Convert a rough idea into a spec and initialize the run object. |
-| `/fab-blueprint` | 0 | checkpoint | Convert a spec into app architecture and a build order. |
-| `/fab-frame` | 1 | auto | Scaffold the app project skeleton and first-stage contracts. |
-| `/fab-forge` | 1 | auto | Implement one named app stage against the blueprint. |
-| `/fab-check` | 1 | auto | Evaluate one app stage against quality criteria. |
-| `/fab-pulse` | 1 | auto | Render the current run state as a terminal dashboard. |
-| `/fab-passport` | 1 | auto | Write a resumable handoff document. |
-| `/fab-trace` | 2 | auto | Diagnose a failing stage and apply the smallest viable fix. |
-| `/fab-weave` | 2 | checkpoint | Connect completed stages into an end-to-end flow. |
-| `/fab-launch` | 2 | review | Run a pre-launch checklist and verify the app locally. |
-| `/fab-signal` | 2 | full | Capture a human decision. |
+| `/fab-spec` | 0 | checkpoint | Convert a rough idea into a spec and initialize the run object. |
+| `/fab-plan` | 0 | checkpoint | Convert a spec into app architecture and a build order. |
+| `/fab-scaffold` | 1 | auto | Scaffold the app project skeleton and first-stage contracts. |
+| `/fab-build` | 1 | auto | Implement one named app stage against the blueprint. |
+| `/fab-eval` | 1 | auto | Evaluate one app stage against quality criteria. |
+| `/fab-status` | 1 | auto | Render the current run state as a terminal dashboard. |
+| `/fab-handoff` | 1 | auto | Write a resumable handoff document. |
+| `/fab-fix` | 2 | auto | Diagnose a failing stage and apply the smallest viable fix. |
+| `/fab-integrate` | 2 | checkpoint | Connect completed stages into an end-to-end flow. |
+| `/fab-verify` | 2 | review | Run a pre-launch checklist and verify the app locally. |
+| `/fab-decide` | 2 | full | Capture a human decision. |
 | `/fab-retro` | 2 | auto | Score the run and identify process improvements. |
 
 Plain-language aliases:
 
 | Skill | Means |
 |---|---|
-| `/fab-intake` | collect requirements and write the spec |
-| `/fab-blueprint` | design the architecture and build stages |
-| `/fab-frame` | scaffold the project skeleton |
-| `/fab-forge` | implement one stage |
-| `/fab-check` | evaluate one stage |
-| `/fab-pulse` | show status |
-| `/fab-passport` | write handoff notes |
-| `/fab-trace` | debug a failure |
-| `/fab-weave` | integrate stages |
-| `/fab-launch` | verify local launch |
-| `/fab-signal` | record a human decision |
+| `/fab-spec` | collect requirements and write the spec |
+| `/fab-plan` | design the architecture and build stages |
+| `/fab-scaffold` | scaffold the project skeleton |
+| `/fab-build` | implement one stage |
+| `/fab-eval` | evaluate one stage |
+| `/fab-status` | show status |
+| `/fab-handoff` | write handoff notes |
+| `/fab-fix` | debug a failure |
+| `/fab-integrate` | integrate stages |
+| `/fab-verify` | verify local launch |
+| `/fab-decide` | record a human decision |
 | `/fab-retro` | write the retrospective |
 
 Gate meanings:
@@ -272,7 +272,7 @@ Important fields:
 - `app_stages`: stage status, artifacts, notes, and quality score.
 - `costs`: measured, estimated, or `unknown`.
 - `verifications`: test and launch results.
-- `human_decisions`: decisions recorded by `/fab-signal`.
+- `human_decisions`: decisions recorded by `/fab-decide`.
 
 The schema is in `schemas/run-object.schema.json`. Post-schema semantic checks live in `scripts/validate-run.mjs`. Skills validate state before writing.
 
@@ -310,7 +310,7 @@ docs/spec.md
 docs/blueprint.md
 ```
 
-Those live paths are generated by `/fab-intake` and `/fab-blueprint` and are ignored by git.
+Those live paths are generated by `/fab-spec` and `/fab-plan` and are ignored by git.
 
 `docs/VALIDATION.md` records the current validation evidence: schema checks, script hardening checks, manifest/frontmatter drift checks, install safety checks, and container/full-stack guidance coverage.
 
@@ -320,8 +320,8 @@ Those live paths are generated by `/fab-intake` and `/fab-blueprint` and are ign
 |---|---|
 | `node` is not found | Install Node.js 16.7+ and rerun `npm run setup`. |
 | Slash command is not found | Point your agent at `.skills/<skill-name>/SKILL.md` or use the `.claude-plugin/plugin.json` manifest if supported. |
-| `fabrica.run.json` is missing | Start with `/fab-intake`. It is the only entry-point skill. |
-| A stage is blocked | Run `/fab-trace <stage-name>` with the failure output. |
+| `fabrica.run.json` is missing | Start with `/fab-spec`. It is the only entry-point skill. |
+| A stage is blocked | Run `/fab-fix <stage-name>` with the failure output. |
 | Cost shows `unknown` | This is expected when token or API spend has not been measured. |
 | External deploy is requested | Stop unless you explicitly want it. MVP launch verification is local-first. |
 

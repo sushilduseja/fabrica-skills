@@ -57,33 +57,36 @@ record the failure mode here before deciding whether to add a lockfile.
 ## 3. README command-by-command execution (plan item 26)
 
 Copy each README fenced block verbatim and run it in order. Do not paraphrase.
+Run consumer steps in a disposable temp project, never in the source checkout.
 
-1. "Clone and install":
+1. "Install" (project):
+   ```bash
+   npx fabrica-skills@latest install
+   ```
+   Expected: `.agents/skills/fab-spec/SKILL.md` exists with a
+   `.fabrica-managed.json` marker.
+
+2. "First run": send `/fab-spec` plus a raw idea. Expected: `docs/spec.md`
+   and `fabrica.run.json` are created and both validate
+   (`npx fabrica-skills validate fabrica.run.json` exits 0).
+
+3. "Upgrade":
+   ```bash
+   npx fabrica-skills@latest update
+   ```
+   Expected: exit 0; any foreign skill dirs under the harness roots are untouched.
+
+4. "Uninstall":
+   ```bash
+   npx fabrica-skills uninstall
+   ```
+   Expected: managed `fab-*` dirs are removed; foreign skill dirs remain.
+
+5. "Full regression suite" (source checkout):
    ```bash
    git clone https://github.com/sushilduseja/fabrica-skills.git
    cd fabrica-skills
    npm ci
-   ```
-   Expected: install succeeds; `npm ls` shows no high-severity audit findings
-   (`npm audit --audit-level=high` exits 0).
-
-2. "Validate and link":
-   ```bash
-   npm run setup
-   ```
-   Expected: validation passes, `.skills/` contains one entry per active skill.
-   Any failure prints a `[validate-run]`, `[assert-invalid]`, `[sync-manifest]`,
-   or `[link-skills]` error with a fix.
-
-3. "Open this repo in your AI coding agent": point the agent at `.skills/` and
-   confirm it can read `.skills/fab-intake/SKILL.md`.
-
-4. "Run intake": send `/fab-intake` plus a raw idea. Expected: `docs/spec.md`
-   and `fabrica.run.json` are created and both validate
-   (`node scripts/validate-run.mjs fabrica.run.json` exits 0).
-
-5. "Full regression suite":
-   ```bash
    npm run check
    ```
    Expected: same pass counts as CI.

@@ -8,6 +8,65 @@
 - Gate-contract validators (executable skill guardrails) live in `scripts/_skill-gates.mjs`, imported by `validate-run.mjs`.
 - The visual workflow reference is `docs/STATE_MACHINE.md`.
 
+## Source checkout setup
+
+Contributors work from a source checkout. Consumers should use the npx flow in `README.md` instead.
+
+### Clone and install
+
+```bash
+git clone https://github.com/sushilduseja/fabrica-skills.git
+cd fabrica-skills
+npm ci
+```
+
+### Validate and link
+
+```bash
+npm run setup
+```
+
+Expected result: validation passes, and a `.skills/` directory contains one entry per active skill (see `skills/manifest.json`). If validation or linking fails, the command exits nonzero and prints a `[validate-run]`, `[assert-invalid]`, `[sync-manifest]`, or `[link-skills]` error with the fix. For the full positive, negative, and security regression suite along with format and lint checks, run `npm run check`.
+
+On Windows, the script uses directory junctions. On macOS and Linux, it uses symlinks. If a Windows junction is blocked, it falls back to copying the skill directory and tells you to rerun setup after source updates to refresh copied skills.
+
+### Local: `.skills/` (recommended for per-project use)
+
+```bash
+node scripts/link-skills.mjs
+```
+
+Creates `.skills/` inside the repo with one entry per active skill (see `skills/manifest.json`). The command is idempotent and refreshes only manifest-managed skill entries; unrelated skills, including unrelated `fab-*` skills, are left alone. The command refuses to use `.skills/` if it is a symlink or junction.
+
+### Global: `~/.fabrica-skills/` (for cross-project agent access)
+
+```bash
+node scripts/link-skills.mjs --global
+```
+
+Installs to `~/.fabrica-skills/.skills/` using `os.homedir()` for cross-platform resolution (`C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS). The command refuses to write through a symlinked or junctioned global install directory. The agent must be pointed at this path to discover skills.
+
+### Agent Discovery
+
+| Agent | Discovery mechanism |
+|---|---|
+| Claude Code | `.claude-plugin/plugin.json` + `CLAUDE.md` |
+| OpenCode / Codex CLI | `AGENTS.md` (already in repo) |
+| Any agent with configurable skill path | Point to `.skills/` directory |
+
+The `AGENTS.md` at the repo root covers non-Claude agents. After a global install, point each agent's skill search path to `~/.fabrica-skills/.skills/`.
+
+### Manual copy
+
+Copy any individual `SKILL.md` into your agent's skill directory:
+
+```text
+skills/core/fab-spec/SKILL.md
+skills/prototype/fab-fix/SKILL.md
+```
+
+Each skill is designed to be readable on its own, but the full workflow works best when all skills are available. The active skill count is defined in `skills/manifest.json`.
+
 ## Skill author workflow
 
 1. Edit `skills/manifest.json` first when adding, removing, renaming, or moving a skill.
@@ -73,9 +132,10 @@ npm run lint
 npm run setup
 ```
 
-Current `npm test` coverage (89 tests across 6 test files):
+Current `npm test` coverage (101 tests across 7 test files):
 
 - valid and invalid run-object fixtures;
+- deprecated skill-id acceptance with a deprecation warning;
 - every required top-level field;
 - invalid values for every run-object field family;
 - numeric/timestamp boundaries and out-of-set enums;
@@ -88,7 +148,8 @@ Current `npm test` coverage (89 tests across 6 test files):
 - path traversal and symlink/junction protections;
 - local and global install safety;
 - Docker/container verification semantics;
-- gate-contract validation (fab-launch, fab-signal, fab-check, fab-pulse, next-action, timestamp, cost-precision);
+- gate-contract validation (fab-verify, fab-decide, fab-eval, fab-status, next-action, timestamp, cost-precision);
 - EPERM copy-fallback, ENOTEMPTY recovery, nested symlink-entry removal, and staleness refresh;
+- consumer install safety (markers, idempotent install, foreign-skill preservation, unmarked skip, update refresh, selective harness, multi-root default);
 - errors.json-to-SKILL.md reverse cross-reference;
 - .gitignore coverage and README cross-platform home paths.

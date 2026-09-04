@@ -21,6 +21,24 @@ test('validate-run accepts the valid fixture', () => {
   assert(combined(result).includes('[validate-run] OK'));
 });
 
+test('validate-run accepts deprecated skill ids with a deprecation warning', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  candidate.current_step = 'fab-intake';
+  candidate.next_action = '/fab-weave';
+  const result = validateStdin(candidate);
+  assertPass(result, combined(result));
+  assert(
+    combined(result).includes('[validate-run] WARN: skill id "fab-intake" is deprecated; use "fab-spec"'),
+    combined(result),
+  );
+  assert(
+    combined(result).includes('[validate-run] WARN: skill id "fab-weave" is deprecated; use "fab-integrate"'),
+    combined(result),
+  );
+  assert(combined(result).includes('[validate-run] OK'), combined(result));
+  assertNoStackTrace(result);
+});
+
 test('validate-run rejects malformed JSON with a clear error and no stack trace', () => {
   const result = run(['scripts/validate-run.mjs', '--stdin'], { input: '{bad json' });
   assertFail(result);
@@ -106,7 +124,7 @@ test('validate-run rejects invalid values for every run-object field family', ()
     [
       'next_action',
       (o) => {
-        o.next_action = '/fab-forge ../stage';
+        o.next_action = '/fab-build ../stage';
       },
     ],
     [
@@ -166,7 +184,7 @@ test('validate-run rejects invalid values for every run-object field family', ()
     [
       'gate_levels',
       (o) => {
-        o.gate_levels['fab-launch'] = 'auto';
+        o.gate_levels['fab-verify'] = 'auto';
       },
     ],
     [
@@ -199,7 +217,7 @@ test('validate-run accepts fully populated valid run objects', () => {
   const candidate = readJson('test/fixtures/valid-run.json');
   candidate.experiment_phase = 'phase_2_pipeline';
   candidate.status = 'complete';
-  candidate.current_step = 'fab-launch';
+  candidate.current_step = 'fab-verify';
   candidate.current_app_stage = 'parse-input';
   candidate.next_action = '/fab-retro';
   candidate.last_error = { type: 'external_failure', message: 'Resolved local launch issue' };
@@ -222,7 +240,7 @@ test('validate-run accepts fully populated valid run objects', () => {
     estimated_usd: 0.03,
     budget_usd: 1,
     by_step: {
-      'fab-forge': { precision: 'estimated', tokens_in: 5, tokens_out: 9, usd: 0.01 },
+      'fab-build': { precision: 'estimated', tokens_in: 5, tokens_out: 9, usd: 0.01 },
     },
   };
   candidate.verifications = [
@@ -236,7 +254,7 @@ test('validate-run accepts fully populated valid run objects', () => {
   ];
   candidate.human_decisions = [
     {
-      step: 'fab-signal',
+      step: 'fab-decide',
       decision_needed: 'Continue with local-only launch?',
       options: ['continue', 'abandon'],
       decision: 'continue',
@@ -281,10 +299,10 @@ test('validate-run exhaustively enforces status × phase matrix', () => {
           },
         ];
         candidate.current_app_stage = 'api';
-        candidate.next_action = status === 'complete' ? '/fab-retro' : '/fab-forge api';
+        candidate.next_action = status === 'complete' ? '/fab-retro' : '/fab-build api';
       }
       if (status === 'complete') {
-        candidate.current_step = 'fab-launch';
+        candidate.current_step = 'fab-verify';
         candidate.verifications = [
           {
             kind: 'local_launch',
@@ -370,7 +388,7 @@ test('validate-run rejects nested additional properties in all structured object
       'cost by_step extra',
       (o) => {
         o.costs.by_step = {
-          'fab-forge': { precision: 'estimated', tokens_in: 1, tokens_out: 1, usd: 0.01, model: 'x' },
+          'fab-build': { precision: 'estimated', tokens_in: 1, tokens_out: 1, usd: 0.01, model: 'x' },
         };
       },
     ],
@@ -394,7 +412,7 @@ test('validate-run rejects nested additional properties in all structured object
       (o) => {
         o.human_decisions = [
           {
-            step: 'fab-signal',
+            step: 'fab-decide',
             decision_needed: 'Pick',
             options: ['a'],
             decision: null,
@@ -424,13 +442,13 @@ test('validate-run accepts valid trace integration and terminal complete states'
   trace.app_stages = [
     { name: 'api', purpose: 'Build API', status: 'failed', quality_score: 4, artifacts: ['src/api.js'], notes: null },
   ];
-  trace.next_action = '/fab-trace integration';
+  trace.next_action = '/fab-fix integration';
   assertPass(validateStdin(trace));
 
   const complete = JSON.parse(JSON.stringify(valid));
   complete.status = 'complete';
   complete.experiment_phase = 'phase_2_pipeline';
-  complete.current_step = 'fab-launch';
+  complete.current_step = 'fab-verify';
   complete.current_app_stage = 'api';
   complete.next_action = '/fab-retro';
   complete.app_stages = [
@@ -473,7 +491,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
         o.experiment_phase = 'phase_1_slice';
         o.current_app_stage = 'missing';
         o.app_stages = [baseStage];
-        o.next_action = '/fab-forge api';
+        o.next_action = '/fab-build api';
       },
       'current_app_stage "missing"',
     ],
@@ -490,7 +508,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
         o.status = 'forging';
         o.experiment_phase = 'phase_1_slice';
         o.app_stages = [baseStage];
-        o.next_action = '/fab-forge';
+        o.next_action = '/fab-build';
       },
       'references unknown app stage',
     ],
@@ -500,7 +518,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
         o.status = 'forging';
         o.experiment_phase = 'phase_1_slice';
         o.app_stages = [baseStage];
-        o.next_action = '/fab-forge web';
+        o.next_action = '/fab-build web';
       },
       'references unknown app stage "web"',
     ],
@@ -509,7 +527,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
       (o) => {
         o.status = 'blocked';
         o.app_stages = [baseStage];
-        o.next_action = '/fab-trace web';
+        o.next_action = '/fab-fix web';
       },
       'unknown trace target "web"',
     ],
@@ -529,7 +547,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
         o.status = 'complete';
         o.experiment_phase = 'phase_2_pipeline';
         o.app_stages = [baseStage];
-        o.current_step = 'fab-intake';
+        o.current_step = 'fab-spec';
         o.next_action = '/fab-retro';
       },
       'not compatible with current_step',
@@ -540,7 +558,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
         o.status = 'forging';
         o.experiment_phase = 'phase_1_slice';
         o.app_stages = [];
-        o.next_action = '/fab-frame';
+        o.next_action = '/fab-scaffold';
       },
       'requires at least one app_stages entry',
     ],
@@ -594,7 +612,7 @@ test('validate-run rejects Windows-hostile and trailing-punctuation slugs', () =
     [
       'reserved next action argument',
       (o) => {
-        o.next_action = '/fab-forge con';
+        o.next_action = '/fab-build con';
       },
     ],
   ];
@@ -723,7 +741,7 @@ test('validate-run rejects out-of-set enum values across structured fields', () 
     [
       'cost by_step precision out of set',
       (o) => {
-        o.costs.by_step = { 'fab-forge': { precision: 'approximate', tokens_in: 1, tokens_out: 1, usd: 0.01 } };
+        o.costs.by_step = { 'fab-build': { precision: 'approximate', tokens_in: 1, tokens_out: 1, usd: 0.01 } };
       },
     ],
   ];
@@ -942,7 +960,7 @@ test('validate-run rejects every Windows reserved name across name-bearing field
   reservedArg.app_stages = [
     { name: 'api', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: null },
   ];
-  reservedArg.next_action = '/fab-forge com3';
+  reservedArg.next_action = '/fab-build com3';
   assertFail(validateStdin(reservedArg), 'reserved next_action argument "com3" unexpectedly passed');
 
   const reservedStage = JSON.parse(JSON.stringify(valid));
@@ -1032,7 +1050,7 @@ test('validate-run handles large app_stages and history arrays without error', (
 
   const history = JSON.parse(JSON.stringify(valid));
   history.human_decisions = Array.from({ length: 200 }, (_, i) => ({
-    step: 'fab-signal',
+    step: 'fab-decide',
     decision_needed: 'Pick',
     options: ['continue', 'abandon'],
     decision: null,

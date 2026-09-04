@@ -76,17 +76,17 @@
         {
           "type": "string",
           "enum": [
-            "fab-intake",
-            "fab-blueprint",
-            "fab-frame",
-            "fab-forge",
-            "fab-check",
-            "fab-pulse",
-            "fab-passport",
-            "fab-trace",
-            "fab-weave",
-            "fab-launch",
-            "fab-signal",
+            "fab-spec",
+            "fab-plan",
+            "fab-scaffold",
+            "fab-build",
+            "fab-eval",
+            "fab-status",
+            "fab-handoff",
+            "fab-fix",
+            "fab-integrate",
+            "fab-verify",
+            "fab-decide",
             "fab-retro"
           ]
         }
@@ -487,43 +487,43 @@
     "gate_levels": {
       "type": "object",
       "required": [
-        "fab-intake",
-        "fab-blueprint",
-        "fab-frame",
-        "fab-forge",
-        "fab-check",
-        "fab-pulse",
-        "fab-passport",
-        "fab-trace",
-        "fab-weave",
-        "fab-launch",
-        "fab-signal",
+        "fab-spec",
+        "fab-plan",
+        "fab-scaffold",
+        "fab-build",
+        "fab-eval",
+        "fab-status",
+        "fab-handoff",
+        "fab-fix",
+        "fab-integrate",
+        "fab-verify",
+        "fab-decide",
         "fab-retro"
       ],
       "propertyNames": {
         "enum": [
-          "fab-intake",
-          "fab-blueprint",
-          "fab-frame",
-          "fab-forge",
-          "fab-check",
-          "fab-pulse",
-          "fab-passport",
-          "fab-trace",
-          "fab-weave",
-          "fab-launch",
-          "fab-signal",
+          "fab-spec",
+          "fab-plan",
+          "fab-scaffold",
+          "fab-build",
+          "fab-eval",
+          "fab-status",
+          "fab-handoff",
+          "fab-fix",
+          "fab-integrate",
+          "fab-verify",
+          "fab-decide",
           "fab-retro"
         ]
       },
       "properties": {
-        "fab-pulse": {
+        "fab-status": {
           "const": "auto"
         },
-        "fab-launch": {
+        "fab-verify": {
           "const": "review"
         },
-        "fab-signal": {
+        "fab-decide": {
           "const": "full"
         }
       },

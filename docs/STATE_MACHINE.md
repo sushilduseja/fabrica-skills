@@ -26,19 +26,19 @@ Every writer skill must:
 
 ```mermaid
 flowchart TD
-  Start([Raw idea]) --> Intake["/fab-intake"]
+  Start([Raw idea]) --> Intake["/fab-spec"]
   Intake --> Spec["docs/spec.md + fabrica.run.json\nstatus: designing\nphase: phase_0_spec"]
-  Spec --> Blueprint["/fab-blueprint"]
+  Spec --> Blueprint["/fab-plan"]
   Blueprint --> Framing["docs/blueprint.md + app_stages\nstatus: framing\nphase: phase_0_spec"]
-  Framing --> Frame["/fab-frame"]
+  Framing --> Frame["/fab-scaffold"]
   Frame --> Forging["project scaffold + relocated run state\nstatus: forging\nphase: phase_1_slice"]
-  Forging --> Forge["/fab-forge <stage>"]
-  Forge --> Check["/fab-check <stage>"]
+  Forging --> Forge["/fab-build <stage>"]
+  Forge --> Check["/fab-eval <stage>"]
   Check --> MoreStages{"more pending stages?"}
   MoreStages -- yes --> Forge
-  MoreStages -- no --> Weave["/fab-weave"]
+  MoreStages -- no --> Weave["/fab-integrate"]
   Weave --> Verifying["integrated flow\nstatus: verifying\nphase: phase_2_pipeline"]
-  Verifying --> Launch["/fab-launch"]
+  Verifying --> Launch["/fab-verify"]
   Launch --> Complete["status: complete\nnext_action: /fab-retro"]
   Complete --> Retro["/fab-retro"]
 ```
@@ -54,10 +54,10 @@ flowchart TD
   Write -- yes --> Quality{"quality / tests pass?"}
   Quality -- yes --> Next["set next_action"]
   Quality -- no --> Blocked["stage blocked or failed\nlast_error set"]
-  Blocked --> Trace["/fab-trace <stage|integration>"]
+  Blocked --> Trace["/fab-fix <stage|integration>"]
   Trace --> Resolved{"fixed?"}
   Resolved -- yes --> Resume["resume previous next_action"]
-  Resolved -- no --> Signal["/fab-signal"]
+  Resolved -- no --> Signal["/fab-decide"]
   Signal --> HumanDecision["record human_decisions[]"]
   HumanDecision --> Resume
 ```
@@ -66,9 +66,9 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  RunState["fabrica.run.json"] --> Pulse["/fab-pulse\nread-only dashboard"]
-  RunState --> Passport["/fab-passport\nwrite docs/handoff.md"]
-  RunState --> Signal["/fab-signal\nrecord decision"]
+  RunState["fabrica.run.json"] --> Pulse["/fab-status\nread-only dashboard"]
+  RunState --> Passport["/fab-handoff\nwrite docs/handoff.md"]
+  RunState --> Signal["/fab-decide\nrecord decision"]
   RunState --> Retro["/fab-retro\nwrite docs/retro.md after terminal state"]
 ```
 
@@ -76,13 +76,13 @@ flowchart LR
 
 | `status` | Meaning | Valid phases | Common setter |
 |---|---|---|---|
-| `designing` | Intake/spec work is in progress | `phase_0_spec` | `/fab-intake` |
-| `framing` | Blueprint exists and scaffold is next | `phase_0_spec` | `/fab-blueprint` |
-| `forging` | One or more app stages are being implemented | `phase_1_slice`, `phase_2_pipeline` | `/fab-frame`, `/fab-forge` |
-| `checking` | Stage quality evaluation is in progress | `phase_1_slice`, `phase_2_pipeline` | `/fab-check` if used as an intermediate state |
-| `weaving` | Integration work is in progress | `phase_2_pipeline` | `/fab-weave` if used as an intermediate state |
-| `verifying` | Integrated prototype is ready for launch verification | `phase_2_pipeline` | `/fab-weave` |
-| `complete` | Local launch verification passed | `phase_2_pipeline` | `/fab-launch` |
+| `designing` | Intake/spec work is in progress | `phase_0_spec` | `/fab-spec` |
+| `framing` | Blueprint exists and scaffold is next | `phase_0_spec` | `/fab-plan` |
+| `forging` | One or more app stages are being implemented | `phase_1_slice`, `phase_2_pipeline` | `/fab-scaffold`, `/fab-build` |
+| `checking` | Stage quality evaluation is in progress | `phase_1_slice`, `phase_2_pipeline` | `/fab-eval` if used as an intermediate state |
+| `weaving` | Integration work is in progress | `phase_2_pipeline` | `/fab-integrate` if used as an intermediate state |
+| `verifying` | Integrated prototype is ready for launch verification | `phase_2_pipeline` | `/fab-integrate` |
+| `complete` | Local launch verification passed | `phase_2_pipeline` | `/fab-verify` |
 | `blocked` | Work cannot continue without diagnosis or decision | any phase | any writer skill |
 | `abandoned` | Operator intentionally stopped the run | any phase | operator decision |
 
@@ -90,36 +90,36 @@ flowchart LR
 
 | Phase | Purpose | Typical commands |
 |---|---|---|
-| `phase_0_spec` | Convert idea into spec and blueprint | `/fab-intake`, `/fab-blueprint` |
-| `phase_1_slice` | Build at least one vertical app slice | `/fab-frame`, `/fab-forge <stage>`, `/fab-check <stage>` |
-| `phase_2_pipeline` | Integrate, verify, launch, and summarize | `/fab-weave`, `/fab-launch`, `/fab-signal`, `/fab-passport`, `/fab-retro` |
+| `phase_0_spec` | Convert idea into spec and blueprint | `/fab-spec`, `/fab-plan` |
+| `phase_1_slice` | Build at least one vertical app slice | `/fab-scaffold`, `/fab-build <stage>`, `/fab-eval <stage>` |
+| `phase_2_pipeline` | Integrate, verify, launch, and summarize | `/fab-integrate`, `/fab-verify`, `/fab-decide`, `/fab-handoff`, `/fab-retro` |
 
 ## Common command pathways
 
 ### New project, single-stage app
 
 ```text
-/fab-intake
-/fab-blueprint
-/fab-frame
-/fab-forge <stage>
-/fab-check <stage>
-/fab-weave
-/fab-launch
+/fab-spec
+/fab-plan
+/fab-scaffold
+/fab-build <stage>
+/fab-eval <stage>
+/fab-integrate
+/fab-verify
 /fab-retro
 ```
 
 ### Generic multi-service pathway
 
 ```text
-/fab-intake
-/fab-blueprint   # must define service plan
-/fab-frame       # creates one directory per service and relocates run state
-/fab-forge <stage>
-/fab-check <stage>
+/fab-spec
+/fab-plan   # must define service plan
+/fab-scaffold       # creates one directory per service and relocates run state
+/fab-build <stage>
+/fab-eval <stage>
 ...
-/fab-weave
-/fab-launch
+/fab-integrate
+/fab-verify
 /fab-retro
 ```
 
@@ -128,47 +128,47 @@ The service plan, not the skill name, determines whether the generated app uses 
 ### New project, multi-stage app
 
 ```text
-/fab-intake
-/fab-blueprint
-/fab-frame
-/fab-forge <stage-1>
-/fab-check <stage-1>
-/fab-forge <stage-2>
-/fab-check <stage-2>
+/fab-spec
+/fab-plan
+/fab-scaffold
+/fab-build <stage-1>
+/fab-eval <stage-1>
+/fab-build <stage-2>
+/fab-eval <stage-2>
 ...
-/fab-weave
-/fab-launch
+/fab-integrate
+/fab-verify
 /fab-retro
 ```
 
 ### Stage fails tests or quality gate
 
 ```text
-/fab-forge <stage>
-/fab-check <stage>
-/fab-trace <stage>
-/fab-check <stage>
+/fab-build <stage>
+/fab-eval <stage>
+/fab-fix <stage>
+/fab-eval <stage>
 ```
 
 If trace cannot resolve the issue:
 
 ```text
-/fab-signal
+/fab-decide
 ```
 
 ### Integration fails
 
 ```text
-/fab-weave
-/fab-trace integration
-/fab-weave
+/fab-integrate
+/fab-fix integration
+/fab-integrate
 ```
 
 ### Session handoff or status check
 
 ```text
-/fab-pulse
-/fab-passport
+/fab-status
+/fab-handoff
 ```
 
 ### Containerized or multi-service prototype
@@ -176,12 +176,12 @@ If trace cannot resolve the issue:
 When a blueprint declares multiple services, containers, or Docker Compose:
 
 ```text
-/fab-blueprint   # defines service plan, local commands, container commands, ports, env vars, data paths
-/fab-frame       # scaffolds per-service directories, manifests, config boundaries, Dockerfiles/Compose if required
-/fab-forge <stage>
-/fab-check <stage>
-/fab-weave
-/fab-launch      # records container_build only if Docker actually runs; otherwise static_analysis plus explicit caveat
+/fab-plan   # defines service plan, local commands, container commands, ports, env vars, data paths
+/fab-scaffold       # scaffolds per-service directories, manifests, config boundaries, Dockerfiles/Compose if required
+/fab-build <stage>
+/fab-eval <stage>
+/fab-integrate
+/fab-verify      # records container_build only if Docker actually runs; otherwise static_analysis plus explicit caveat
 ```
 
 Rules:
@@ -189,7 +189,7 @@ Rules:
 - Do not assume a specific stack. React, FastAPI, SQLite, Docker, Go, Rust, Java, Rails, Svelte, Postgres, Redis, and CLI-only apps must all be blueprint-derived cases.
 - `container_build` means an actual container build or runtime check ran.
 - `static_analysis` means files were checked without running the container runtime.
-- If Docker is unavailable, `/fab-launch` must not claim Docker runtime verification. It must either keep the run non-complete with `external_failure`, or record an explicit `/fab-signal` decision accepting static-only validation in that environment.
+- If Docker is unavailable, `/fab-verify` must not claim Docker runtime verification. It must either keep the run non-complete with `external_failure`, or record an explicit `/fab-decide` decision accepting static-only validation in that environment.
 
 The state machine is stack-agnostic. It does not know whether a stage is Python, Node, Go, Rust, Java, a CLI, a web app, or a containerized multi-service system. Technology-specific evidence belongs in `verifications[]`, not in status names.
 
@@ -205,8 +205,8 @@ Beyond JSON Schema, the validator rejects:
 - lifecycle statuses such as `forging`, `checking`, `weaving`, `verifying`, or `complete` with no app stages;
 - `complete` runs with any app stage not `done`;
 - `next_action` commands for unknown skills;
-- `/fab-forge <stage>` or `/fab-check <stage>` references to unknown stages;
-- `/fab-trace <target>` references to unknown targets, except the special target `integration`.
+- `/fab-build <stage>` or `/fab-eval <stage>` references to unknown stages;
+- `/fab-fix <target>` references to unknown targets, except the special target `integration`.
 
 ### Gate-contract validators in `_skill-gates.mjs`
 
@@ -218,7 +218,7 @@ Beyond JSON Schema, the validator rejects:
 | `validateFabSignalGate` | Every non-null decision must have a `resolved_at` timestamp — no auto-populated decisions |
 | `validateFabCheckGate` | Stage with `quality_score < 6` must not be `done` |
 | `validateFabPulseGate` | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` |
-| `validateNextActionGate` | `fab-weave` requires all `app_stages` done; `fab-launch` requires `status === "verifying"` |
+| `validateNextActionGate` | `fab-integrate` requires all `app_stages` done; `fab-verify` requires `status === "verifying"` |
 | `validateTimestampOrderGate` | `human_decisions[].resolved_at` must not be earlier than `triggered_at` |
 | `validateCostPrecisionGate` | `costs.precision` must be one of: `unknown`, `estimated`, `measured` |
 

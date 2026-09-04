@@ -1,0 +1,26 @@
+{
+  "skill_id": "fab-handoff",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "Run object missing or handoff context incomplete",
+      "diagnosis": "Some fields expected in the handoff document are missing or empty",
+      "rescue_action": "Halt if run object is missing; otherwise write available context and clearly note gaps",
+      "user_message": "Handoff context is incomplete. Missing: {gaps}. Proceeding only with available context."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Run object corrupted or schema-invalid",
+      "diagnosis": "The run object exists but fails JSON parse or schema validation",
+      "rescue_action": "Show validator output and suggest restore before handoff",
+      "user_message": "Run object is corrupted or invalid. Restore it before writing handoff."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Handoff write/rename fails or is interrupted",
+      "diagnosis": "Filesystem operation failed before commit",
+      "rescue_action": "Keep prior handoff where possible, clean temp files, and retry",
+      "user_message": "Could not write handoff safely. Existing handoff was preserved where possible."
+    }
+  ]
+}
