@@ -12,4 +12,4 @@
 - Managed-skill markers to protect foreign skills
 
 ### Fixed
-- ...
+- Fresh Windows clones no longer fail `npm run setup`: frontmatter parsing tolerates CRLF and `.gitattributes` pins LF line endings.
