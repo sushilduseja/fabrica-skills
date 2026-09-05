@@ -107,6 +107,8 @@ Idea: Build a local CLI that accepts pasted invoice text and returns normalized 
 
 Then follow `next_action` in `fabrica.run.json`.
 
+For a complete worked example from zero to running app, see [examples/fabrica-skills-QUICKSTART.md](examples/fabrica-skills-QUICKSTART.md).
+
 ## Skill walkthrough
 
 ### 1. Open your project in your AI coding agent
