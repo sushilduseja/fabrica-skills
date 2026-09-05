@@ -2,6 +2,7 @@
   "name": "fabrica-skills",
   "version": "0.3.0",
   "private": false,
+  "allowScripts": {},
   "type": "module",
   "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
   "license": "MIT",
@@ -36,8 +37,7 @@
     "lint": "eslint --ext .js,.mjs scripts/ test/ bin/ && prettier --check scripts/ test/ bin/",
     "lint:fix": "eslint --ext .js,.mjs --fix scripts/ test/ bin/ && prettier --write scripts/ test/ bin/",
     "check": "npm run validate && npm test && npm run lint",
-    "setup": "npm run validate && node scripts/link-skills.mjs",
-    "prepack": "npm run check"
+    "setup": "npm run validate && node scripts/link-skills.mjs"
   },
   "dependencies": {
     "ajv": "^8.17.0",

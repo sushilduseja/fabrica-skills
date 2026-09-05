@@ -1,0 +1,56 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm run check
+
+      - name: Assert tag matches package.json version
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "Tag $TAG_VERSION does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Guard against lifecycle trigger scripts
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const forbidden = ['postinstall', 'build', 'preinstall', 'install', 'prepack', 'prepare'];
+            const found = forbidden.filter(s => pkg.scripts && pkg.scripts[s]);
+            if (found.length > 0) {
+              console.error('Forbidden lifecycle scripts present:', found.join(', '));
+              process.exit(1);
+            }
+          "
+
+      - name: Pre-publish tarball consumer smoke test
+        run: |
+          npm pack
+          mkdir -p /tmp/smoke && cd /tmp/smoke && npm init -y
+          npm install $GITHUB_WORKSPACE/fabrica-skills-*.tgz
+          npx fabrica-skills install
+          npx fabrica-skills status
+          EXPECTED=$(node -p "require('$GITHUB_WORKSPACE/skills/manifest.json').skills.length")
+          npx fabrica-skills status | grep -q "$EXPECTED/$EXPECTED" || (echo "status does not show $EXPECTED/$EXPECTED" && exit 1)
+
+      - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -90,6 +90,14 @@ export function checkSkillCatalog(root) {
   if (!Array.isArray(manifest.skills)) fail('manifest.skills must be an array');
   if (manifest.skills.length === 0) fail('manifest.skills is empty');
 
+  const pkgVersion = readJsonFile(resolve(root, 'package.json'), 'package.json').version;
+  const pluginVersion = readJsonFile(resolve(root, '.claude-plugin/plugin.json'), '.claude-plugin/plugin.json').version;
+  if (pkgVersion !== manifest.repo_version || pkgVersion !== pluginVersion) {
+    fail(
+      `Version drift: package.json=${pkgVersion}, manifest.json=${manifest.repo_version}, plugin.json=${pluginVersion} — all three must match`,
+    );
+  }
+
   const schema = readJsonFile(SCHEMA_PATH, 'schemas/run-object.schema.json');
   const lastErrorSchema = schema?.properties?.last_error?.oneOf?.[1]?.properties?.type?.enum;
   if (!Array.isArray(lastErrorSchema)) {

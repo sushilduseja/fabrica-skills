@@ -208,4 +208,22 @@ test('sync-manifest rejects a skill alias colliding with a manifest id', () => {
   assertNoStackTrace(result);
 });
 
+test('sync-manifest rejects version drift across package/manifest/plugin', () => {
+  const temp = copyRepoFixture();
+  const pkgPath = join(temp, 'package.json');
+  const original = JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
+  mutateJson(pkgPath, (data) => {
+    data.version = `${original}-drifted`;
+  });
+  const drifted = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertFail(drifted);
+  assert(combined(drifted).includes('Version drift'), combined(drifted));
+  assertNoStackTrace(drifted);
+  mutateJson(pkgPath, (data) => {
+    data.version = original;
+  });
+  const clean = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertPass(clean, combined(clean));
+});
+
 runAll();

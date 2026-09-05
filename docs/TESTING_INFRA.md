@@ -61,7 +61,8 @@ Run consumer steps in a disposable temp project, never in the source checkout.
 
 1. "Install" (project):
    ```bash
-   npx fabrica-skills@latest install
+   npm install -D fabrica-skills
+   npx fabrica-skills install
    ```
    Expected: `.agents/skills/fab-spec/SKILL.md` exists with a
    `.fabrica-managed.json` marker.

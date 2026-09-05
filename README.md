@@ -33,19 +33,11 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 - An AI coding agent that can read local markdown skill files.
 
 ## Install
-
-**From npm (after publish):**
-
-```bash
-npx fabrica-skills@latest install
-```
-
-**From Git (always works):**
-
-```bash
-npm install -D github:sushilduseja/fabrica-skills
+npm install -D fabrica-skills
 npx fabrica-skills install
-```
+
+### Alternative (no local dependency)
+npx fabrica-skills@latest install
 
 **Global:**
 

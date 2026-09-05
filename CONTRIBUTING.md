@@ -20,6 +20,13 @@ cd fabrica-skills
 npm ci
 ```
 
+### Git-dependency install (slower, clone-based, contributor-only)
+
+```bash
+npm install -D github:sushilduseja/fabrica-skills
+npx fabrica-skills install
+```
+
 ### Validate and link
 
 ```bash
