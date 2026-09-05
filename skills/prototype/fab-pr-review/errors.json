@@ -1,0 +1,26 @@
+{
+  "skill_id": "fab-pr-review",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "No PR URL supplied, or GitHub CLI missing or unauthenticated",
+      "diagnosis": "The review cannot start without a PR URL and working gh authentication",
+      "rescue_action": "Halt and show the invocation form plus gh auth login",
+      "user_message": "No pull request to review. Supply a PR URL and run gh auth login first."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Snapshot incomplete: unverifiable SHAs, partial diff, or missing needed CI evidence",
+      "diagnosis": "A verdict requires the full deterministic bundle; partial state is unreviewable",
+      "rescue_action": "Stop without reviewing and report exactly what is missing",
+      "user_message": "The PR snapshot is incomplete. Fix collection before reviewing."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "gh, git, or network call fails mid-collection",
+      "diagnosis": "Collection depends on remote GitHub and git operations that can fail transiently",
+      "rescue_action": "Halt, show the collector output, and suggest retry or access fix",
+      "user_message": "Collection failed. Retry, or fix gh and network access first."
+    }
+  ]
+}

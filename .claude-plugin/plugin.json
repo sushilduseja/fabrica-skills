@@ -48,6 +48,10 @@
       "path": "skills/prototype/fab-decide/SKILL.md"
     },
     {
+      "name": "fab-pr-review",
+      "path": "skills/prototype/fab-pr-review/SKILL.md"
+    },
+    {
       "name": "fab-retro",
       "path": "skills/prototype/fab-retro/SKILL.md"
     }

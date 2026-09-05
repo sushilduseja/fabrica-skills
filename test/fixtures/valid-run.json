@@ -36,6 +36,7 @@
     "fab-integrate": "checkpoint",
     "fab-verify": "review",
     "fab-decide": "full",
+    "fab-pr-review": "auto",
     "fab-retro": "auto"
   }
 }

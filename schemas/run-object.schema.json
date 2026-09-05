@@ -87,6 +87,7 @@
             "fab-integrate",
             "fab-verify",
             "fab-decide",
+            "fab-pr-review",
             "fab-retro"
           ]
         }
@@ -498,6 +499,7 @@
         "fab-integrate",
         "fab-verify",
         "fab-decide",
+        "fab-pr-review",
         "fab-retro"
       ],
       "propertyNames": {
@@ -513,6 +515,7 @@
           "fab-integrate",
           "fab-verify",
           "fab-decide",
+          "fab-pr-review",
           "fab-retro"
         ]
       },
@@ -525,6 +528,9 @@
         },
         "fab-decide": {
           "const": "full"
+        },
+        "fab-pr-review": {
+          "const": "auto"
         }
       },
       "additionalProperties": {

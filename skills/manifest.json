@@ -158,6 +158,20 @@
       "error_metadata_path": "skills/prototype/fab-decide/errors.json"
     },
     {
+      "id": "fab-pr-review",
+      "path": "skills/prototype/fab-pr-review",
+      "category": "prototype",
+      "phase": 2,
+      "description": "Review a GitHub pull request for production defects, security gaps, and intent mismatches with an evidence-backed verdict.",
+      "default_gate": "auto",
+      "overridable": false,
+      "prerequisites": [],
+      "blocks": [],
+      "read_only": true,
+      "writes_fields": [],
+      "error_metadata_path": "skills/prototype/fab-pr-review/errors.json"
+    },
+    {
       "id": "fab-retro",
       "path": "skills/prototype/fab-retro",
       "category": "prototype",
