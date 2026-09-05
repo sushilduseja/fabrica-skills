@@ -20,7 +20,7 @@ npm run check
 ```
 
 Expected: `npm run check` completes with the same pass counts as the CI run:
-validate sub-steps OK, all 82 tests ok, eslint 0 errors, prettier clean.
+validate sub-steps OK, all tests ok (same pass counts as CI), eslint 0 errors, prettier clean.
 
 Record: terminal output of `node -v` and the final `npm run check` tail.
 
