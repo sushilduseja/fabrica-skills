@@ -16,7 +16,13 @@ import { readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(__dirname, '..');
-const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'));
+let pkg;
+try {
+  pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'));
+} catch (err) {
+  console.error(`[fabrica-skills] ERROR: Cannot read package metadata: ${err.message}`);
+  process.exit(1);
+}
 
 const args = process.argv.slice(2);
 const cmd = args[0];

@@ -13,7 +13,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { isAbsolute, join, relative, sep } from 'path';
 import { homedir } from 'os';
 import { spawnSync } from 'child_process';
-import { SKILL_ID_RE, lstatIfPresent } from './_path-utils.mjs';
+import { SKILL_ID_RE, SKILL_PATH_RE, lstatIfPresent, readJsonFile } from './_path-utils.mjs';
 
 export const HARNESS = {
   agents: {
@@ -101,7 +101,12 @@ function catalogRoot({ global, pkgRoot, version }) {
 }
 
 function loadManifest(pkgRoot) {
-  return JSON.parse(readFileSync(join(pkgRoot, 'skills/manifest.json'), 'utf8'));
+  const manifestPath = join(pkgRoot, 'skills/manifest.json');
+  const manifest = readJsonFile(manifestPath, 'skills/manifest.json', '[fabrica-skills]');
+  if (!manifest || typeof manifest !== 'object' || !Array.isArray(manifest.skills) || manifest.skills.length === 0) {
+    fail('skills/manifest.json must contain a non-empty skills array');
+  }
+  return manifest;
 }
 
 function writeMarker(skillDir, { skillId, version, scope }) {
@@ -199,6 +204,17 @@ function installSkillProjection({ sourceSkillDir, destSkillDir, harnessRoot, ski
 function projectAllSkills({ manifest, catalog, roots, version, scope }) {
   let skipped = 0;
   for (const skill of manifest.skills) {
+    if (
+      !skill ||
+      typeof skill !== 'object' ||
+      typeof skill.path !== 'string' ||
+      skill.path.includes('\\') ||
+      skill.path.startsWith('/') ||
+      skill.path.split('/').includes('..') ||
+      !SKILL_PATH_RE.test(skill.path)
+    ) {
+      fail(`Refusing to install skill with unsafe path: ${skill && skill.id}`);
+    }
     const relSkillPath = skill.path.replace(/^skills\//, '');
     const sourceSkillDir = join(catalog, relSkillPath);
     for (const { root } of roots) {

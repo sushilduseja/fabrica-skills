@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
 import { validateAllGates } from './_skill-gates.mjs';
 import { readJsonFile } from './_path-utils.mjs';
 import { buildsContainerCommand, invokesDockerCommand } from './_verification-kind.mjs';
-import { SKILL_ALIASES, canonicalSkillId } from './_skill-aliases.mjs';
+import { SKILL_ALIASES, canonicalSkillId, isDeprecatedSkillId } from './_skill-aliases.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const root = resolve(__dirname, '..');
@@ -128,13 +128,13 @@ async function main() {
         console.error(`[validate-run] WARN: skill id "${id}" is deprecated; use "${SKILL_ALIASES[id]}"`);
       }
     };
-    if (typeof instance.current_step === 'string' && SKILL_ALIASES[instance.current_step]) {
+    if (isDeprecatedSkillId(instance.current_step)) {
       warnAlias(instance.current_step);
       instance.current_step = canonicalSkillId(instance.current_step);
     }
     if (typeof instance.next_action === 'string') {
       const [token] = instance.next_action.slice(1).split(' ');
-      if (SKILL_ALIASES[token]) {
+      if (isDeprecatedSkillId(token)) {
         warnAlias(token);
         instance.next_action = `/${canonicalSkillId(token)}${instance.next_action.slice(token.length + 1)}`;
       }

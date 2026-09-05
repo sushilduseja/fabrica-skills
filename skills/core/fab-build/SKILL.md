@@ -44,6 +44,7 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 4. Never write outside the scaffolded app directory or the run object. Paths must be relative, must not contain `..`, and must match the selected stack layout.
 5. Update implementation files before run state. If implementation writes fail, do not mutate `fabrica.run.json`.
 6. Validate the full candidate run object with `node <fabrica-skills>/scripts/validate-run.mjs --stdin` before replacing `fabrica.run.json`; use a temp file and atomic rename.
+7. Implementation code must not contain hardcoded secrets, credentials, or tokens; must validate untrusted inputs at trust boundaries; must use parameterized queries and never interpolate input into SQL, shell, or path expressions; must return safe error messages without stack traces or internals.
 
 ## Behavior
 

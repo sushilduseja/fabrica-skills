@@ -51,7 +51,7 @@ One app stage has implementation and tests (`status = done` in run object).
    - **Contract fit** (weighted double) — do signatures match the blueprint?
    - **Tests** — coverage, quality, edge cases
    - **Code clarity** — readability, naming, structure
-   - **Safety** — error handling, input validation, no secrets
+   - **Safety** — error handling, input validation, no hardcoded secrets/credentials/tokens, parameterized queries (no string-built SQL or shell commands), required authentication checks present, safe error messages, pinned dependencies. Score below 6 on hardcoded secrets, unvalidated trust-boundary inputs, injection flaws, missing required auth, or unpinned dependencies.
 2. Compute weighted average: spec fit × 2, contract fit × 2, tests × 1, clarity × 1, safety × 1. Divide by 7.
 3. Mark stage `blocked` if any axis is below 6. Set `last_error = { "type": "gate_blocked", "message": "Quality score below threshold on <axis>" }`.
 4. List blocking fixes separately from optional improvements.

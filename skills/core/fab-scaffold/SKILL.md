@@ -49,6 +49,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
 6. Do not assume any technology stack. Derive runtimes, service names, dependency files, commands, ports, data paths, and container files from the blueprint service plan.
 7. Write generated files through temporary files and atomic renames where possible.
 8. Validate the full candidate run object with `node <fabrica-skills>/scripts/validate-run.mjs --stdin` before replacing the app-directory `fabrica.run.json`.
+9. Generated app code must not contain hardcoded secrets, credentials, tokens, or private keys. All secrets come from environment variables documented in `.env.example`.
 
 ## Behavior
 
@@ -63,6 +64,9 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
 9. For a multi-service app, create one directory per declared service. Do not assume service names such as `backend` or `frontend`; use the names from the blueprint.
 10. For each service, create only the folders needed for the first app stage plus shared contracts.
 11. For each service, write stub files with correct function signatures, imports, and docstrings/comments — no implementation logic.
+    - Validate untrusted inputs at trust boundaries; use parameterized queries and never build SQL commands or shell commands from strings.
+    - Return safe error messages without stack traces, paths, or secrets in user-facing output.
+    - Ship closed by default: no debug endpoints, no admin backdoors, no permissive CORS; enforce the blueprint's authentication and authorization decisions on every route, defaulting to deny.
 12. For each service, add the dependency manifest specified by the blueprint. Examples include but are not limited to `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, `Gemfile`, or `composer.json`.
 13. Pin dependency versions or version ranges when generating manifests. Do not use `latest` unless the blueprint explicitly says this is an upgrade-compatibility experiment.
 14. Add toolchain-local config boundaries when the selected stack needs them for a clean first build or to avoid parent-project config bleed. Examples: `tsconfig.json`, Vite env type shims, local PostCSS config, `pyproject.toml`, `pytest.ini`, `go.work`, `.npmrc`, or equivalent stack-specific boundaries.

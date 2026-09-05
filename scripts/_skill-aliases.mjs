@@ -21,11 +21,21 @@ export const SKILL_ALIASES = {
 };
 
 /**
+ * Whether a value is a known deprecated Skill id (own-property lookup, so
+ * prototype-chain names like "__proto__" never match).
+ * @param {any} id Candidate Skill id from a run object.
+ * @returns {boolean}
+ */
+export function isDeprecatedSkillId(id) {
+  return typeof id === 'string' && Object.prototype.hasOwnProperty.call(SKILL_ALIASES, id);
+}
+
+/**
  * Map a possibly-deprecated Skill id to its canonical id.
  * @param {string} id Skill id from a run object.
  * @returns {string} Canonical Skill id (unchanged when already canonical).
  */
 export function canonicalSkillId(id) {
-  if (!id) return id;
-  return SKILL_ALIASES[id] || id;
+  if (!isDeprecatedSkillId(id)) return id;
+  return SKILL_ALIASES[id];
 }

@@ -39,6 +39,17 @@ test('validate-run accepts deprecated skill ids with a deprecation warning', () 
   assertNoStackTrace(result);
 });
 
+test('validate-run rejects __proto__ current_step cleanly without alias warning', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  candidate.current_step = '__proto__';
+  const result = validateStdin(candidate);
+  assertFail(result);
+  const out = combined(result);
+  assert(!out.includes('WARN: skill id "__proto__"'), out);
+  assert(out.includes('FAILED') || out.includes('ERROR'), out);
+  assertNoStackTrace(result);
+});
+
 test('validate-run rejects malformed JSON with a clear error and no stack trace', () => {
   const result = run(['scripts/validate-run.mjs', '--stdin'], { input: '{bad json' });
   assertFail(result);

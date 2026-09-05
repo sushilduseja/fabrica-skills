@@ -4,6 +4,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import {
   copyRepoFixture,
+  mutateJson,
   root,
   run,
   test,
@@ -272,6 +273,49 @@ test('install projects skill alias fab-code-review and uninstall removes it', ()
     result = cli(ctx.pkg, ['uninstall'], { cwd: ctx.project, home: ctx.home });
     assertPass(result, combined(result));
     assert(!existsSync(join(ctx.project, '.agents', 'skills', 'fab-code-review')));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('install fails cleanly on malformed manifest', () => {
+  const ctx = setup();
+  try {
+    mutateJson(join(ctx.pkg, 'skills/manifest.json'), (m) => {
+      m.skills = null;
+    });
+    const result = cli(ctx.pkg, ['install'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('non-empty skills array'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('install refuses a skill path escaping the catalog', () => {
+  const ctx = setup();
+  try {
+    mutateJson(join(ctx.pkg, 'skills/manifest.json'), (m) => {
+      m.skills[0].path = 'skills/core/fab-spec/../../../../tmp';
+    });
+    const result = cli(ctx.pkg, ['install'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('unsafe path'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('cli fails cleanly on corrupt package metadata', () => {
+  const ctx = setup();
+  try {
+    writeFileSync(join(ctx.pkg, 'package.json'), '{bad json', 'utf-8');
+    const result = cli(ctx.pkg, ['install'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('package metadata'), combined(result));
     assertNoStackTrace(result);
   } finally {
     teardown(ctx);

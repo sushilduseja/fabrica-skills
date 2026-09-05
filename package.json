@@ -32,7 +32,7 @@
     "validate:run-fail": "node scripts/_assert-invalid.mjs test/fixtures/invalid-run.json /status /app_stages/0/quality_score",
     "validate:run-gate-fail": "node scripts/_assert-invalid.mjs test/fixtures/invalid-gate-keys.json /gate_levels",
     "validate": "npm run validate:run-pass && npm run validate:run-fail && npm run validate:run-gate-fail && npm run validate:manifest",
-    "test": "node test/validate-run.test.mjs && node test/sync-manifest.test.mjs && node test/link-skills.test.mjs && node test/skill-gates.test.mjs && node test/verification-kind.test.mjs && node test/docs.test.mjs && node test/install-cli.test.mjs",
+    "test": "node test/validate-run.test.mjs && node test/sync-manifest.test.mjs && node test/link-skills.test.mjs && node test/skill-gates.test.mjs && node test/verification-kind.test.mjs && node test/docs.test.mjs && node test/install-cli.test.mjs && node test/migrate-run-skill-ids.test.mjs",
     "lint": "eslint --ext .js,.mjs scripts/ test/ bin/ && prettier --check scripts/ test/ bin/",
     "lint:fix": "eslint --ext .js,.mjs --fix scripts/ test/ bin/ && prettier --write scripts/ test/ bin/",
     "check": "npm run validate && npm test && npm run lint",

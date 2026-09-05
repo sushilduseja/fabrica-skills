@@ -69,6 +69,8 @@ Confirmed spec exists (`docs/spec.md` present, `status = designing` in run objec
 10. Define app stages as tracer bullets: small end-to-end vertical slices in build order. Each must fire from raw input to visible output before the next begins.
 11. Write `docs/blueprint.md` with:
     - ASCII data-flow diagram
+    - trust boundaries, authentication/authorization decisions per service
+    - sensitive data handled and how it is protected (environment-only secrets, nothing sensitive in code, logs, or error messages)
     - service plan
     - chosen stack and rationale
     - local commands
