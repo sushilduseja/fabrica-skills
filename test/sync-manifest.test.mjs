@@ -197,4 +197,15 @@ test('sync-manifest MULTI_WRITER_FIELDS whitelist matches actual multi-owned run
   );
 });
 
+test('sync-manifest rejects a skill alias colliding with a manifest id', () => {
+  const temp = copyRepoFixture();
+  mutateJson(join(temp, 'skills/manifest.json'), (data) => {
+    data.skills.find((s) => s.id === 'fabrica-code-review').aliases = ['fab-spec'];
+  });
+  const result = run(['scripts/sync-manifest.mjs', '--check'], { cwd: temp });
+  assertFail(result);
+  assert(combined(result).includes('collides'), combined(result));
+  assertNoStackTrace(result);
+});
+
 runAll();

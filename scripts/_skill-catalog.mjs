@@ -23,8 +23,8 @@ import {
 } from './_path-utils.mjs';
 
 export const VALID_GATES = ['auto', 'checkpoint', 'review', 'full'];
-export const VALID_CATEGORIES = ['core', 'prototype'];
-export const ERRORS_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+\/errors\.json$/;
+export const VALID_CATEGORIES = ['core', 'prototype', 'standalone'];
+export const ERRORS_PATH_RE = /^skills\/(core|prototype|standalone)\/(?:fab|fabrica)-[a-z0-9-]+\/errors\.json$/;
 
 /**
  * Run-object fields that are legitimately written by more than one skill.
@@ -100,6 +100,7 @@ export function checkSkillCatalog(root) {
   const fieldOwners = {};
   const seenIds = new Set();
   const seenPaths = new Set();
+  const seenAliases = new Set();
   const skillIds = [];
 
   for (let index = 0; index < manifest.skills.length; index += 1) {
@@ -229,6 +230,27 @@ export function checkSkillCatalog(root) {
       }
       if (!manifest.skills.some((s) => s.id === blocked)) {
         fail(`skill "${skill.id}" blocks "${blocked}" not found in manifest`);
+      }
+    }
+
+    if (skill.aliases !== undefined) {
+      if (!Array.isArray(skill.aliases)) {
+        fail(`skill "${skill.id}" aliases must be an array`);
+      }
+      for (const alias of skill.aliases) {
+        if (typeof alias !== 'string' || !SKILL_ID_RE.test(alias)) {
+          fail(`skill "${skill.id}" alias has invalid id "${alias}"`);
+        }
+        if (alias === skill.id) {
+          fail(`skill "${skill.id}" alias must not equal its own id`);
+        }
+        if (manifest.skills.some((s) => s.id === alias)) {
+          fail(`skill "${skill.id}" alias "${alias}" collides with a manifest skill id`);
+        }
+        if (seenAliases.has(alias)) {
+          fail(`duplicate skill alias "${alias}"`);
+        }
+        seenAliases.add(alias);
       }
     }
 

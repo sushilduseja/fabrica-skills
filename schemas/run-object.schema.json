@@ -88,7 +88,8 @@
             "fab-verify",
             "fab-decide",
             "fab-pr-review",
-            "fab-retro"
+            "fab-retro",
+            "fabrica-code-review"
           ]
         }
       ]
@@ -500,7 +501,8 @@
         "fab-verify",
         "fab-decide",
         "fab-pr-review",
-        "fab-retro"
+        "fab-retro",
+        "fabrica-code-review"
       ],
       "propertyNames": {
         "enum": [
@@ -516,7 +518,8 @@
           "fab-verify",
           "fab-decide",
           "fab-pr-review",
-          "fab-retro"
+          "fab-retro",
+          "fabrica-code-review"
         ]
       },
       "properties": {

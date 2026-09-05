@@ -361,4 +361,18 @@ test('link-skills recovers from ENOTEMPTY when clearing a managed entry (rmdirSy
   }
 });
 
+test('link-skills creates alias entries pointing at the canonical skill source', () => {
+  const temp = copyRepoFixture();
+  try {
+    const result = run(['scripts/link-skills.mjs'], { cwd: temp });
+    assertPass(result, combined(result));
+    assert(existsSync(join(temp, '.skills/fab-code-review/SKILL.md')));
+    const content = readFileSync(join(temp, '.skills/fab-code-review/SKILL.md'), 'utf-8');
+    assert(content.includes('name: fabrica-code-review'), content.slice(0, 200));
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 runAll();

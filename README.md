@@ -6,7 +6,7 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 
 ## What You Get
 
-- 13 `fab-*` skills, each stored as a self-contained `SKILL.md`.
+- 14 skills, each stored as a self-contained `SKILL.md` (13 `fab-*` pipeline skills plus standalone `fabrica-code-review`).
 - A canonical skill manifest at `skills/manifest.json` — the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
 - A spec-first workflow: idea -> product spec -> blueprint -> scaffold -> implementation -> quality check -> integration -> local launch.
 - Stack-agnostic scaffolding guidance. Skills must derive runtimes, services, commands, files, and verification steps from the blueprint rather than hardcoding Python, Node, React, FastAPI, Docker, or any sample app.
@@ -232,6 +232,7 @@ Phase 2: Integrated local prototype
 | `/fab-decide` | 2 | full | Capture a human decision. |
 | `/fab-pr-review` | 2 | auto | Review a GitHub pull request with an evidence-backed verdict. |
 | `/fab-retro` | 2 | auto | Score the run and identify process improvements. |
+| `/fab-code-review` | 2 | auto | Review changes since a fixed git point on Standards and Spec axes. |
 
 Plain-language aliases:
 
@@ -250,6 +251,9 @@ Plain-language aliases:
 | `/fab-decide` | record a human decision |
 | `/fab-pr-review` | review a pull request |
 | `/fab-retro` | write the retrospective |
+| `/fab-code-review` | review a diff since a fixed point |
+
+The review skill is installed as `fabrica-code-review` and invoked as `/fab-code-review`.
 
 Gate meanings:
 

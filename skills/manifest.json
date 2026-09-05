@@ -184,6 +184,21 @@
       "read_only": true,
       "writes_fields": [],
       "error_metadata_path": "skills/prototype/fab-retro/errors.json"
+    },
+    {
+      "id": "fabrica-code-review",
+      "path": "skills/standalone/fabrica-code-review",
+      "category": "standalone",
+      "phase": 2,
+      "description": "Two-axis review of changes since a fixed git point: Standards and Spec, via parallel sub-agents.",
+      "default_gate": "auto",
+      "overridable": true,
+      "prerequisites": [],
+      "blocks": [],
+      "aliases": ["fab-code-review"],
+      "read_only": true,
+      "writes_fields": [],
+      "error_metadata_path": "skills/standalone/fabrica-code-review/errors.json"
     }
   ]
 }

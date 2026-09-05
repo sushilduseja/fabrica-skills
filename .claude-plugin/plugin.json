@@ -54,6 +54,10 @@
     {
       "name": "fab-retro",
       "path": "skills/prototype/fab-retro/SKILL.md"
+    },
+    {
+      "name": "fabrica-code-review",
+      "path": "skills/standalone/fabrica-code-review/SKILL.md"
     }
   ]
 }

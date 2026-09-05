@@ -67,7 +67,7 @@ test('project install creates .agents/skills/fab-spec/SKILL.md plus marker', () 
     assert.strictEqual(marker.package_version, '0.3.0');
     assert.strictEqual(marker.install_scope, 'project');
     assert(typeof marker.installed_at === 'string' && marker.installed_at.length > 0);
-    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 13);
+    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 15);
     assertNoStackTrace(result);
   } finally {
     teardown(ctx);
@@ -82,7 +82,7 @@ test('project install is idempotent', () => {
     const before = readFileSync(join(ctx.project, '.agents', 'skills', 'fab-spec', 'SKILL.md'), 'utf-8');
     result = cli(ctx.pkg, ['install'], { cwd: ctx.project, home: ctx.home });
     assertPass(result, combined(result));
-    assert(combined(result).includes('installed 13 skills'));
+    assert(combined(result).includes('installed 14 skills'));
     const after = readFileSync(join(ctx.project, '.agents', 'skills', 'fab-spec', 'SKILL.md'), 'utf-8');
     assert.strictEqual(after, before);
     assert(existsSync(join(ctx.project, '.agents', 'skills', 'fab-spec', '.fabrica-managed.json')));
@@ -234,7 +234,7 @@ test('default install projects all skills into all five harness roots', () => {
       const marker = readMarker(join(root, 'fab-spec', '.fabrica-managed.json'));
       assert.strictEqual(marker.managed_by, 'fabrica-skills');
       assert.strictEqual(marker.skill_id, 'fab-spec');
-      assert.strictEqual(readdirSync(root).length, 13, `expected 13 skills in ${dir}/skills`);
+      assert.strictEqual(readdirSync(root).length, 15, `expected 14 skills plus alias in ${dir}/skills`);
     }
     assertNoStackTrace(result);
   } finally {
@@ -249,11 +249,29 @@ test('selective --agent=claude,agents only writes two roots', () => {
     assertPass(result, combined(result));
     assert(existsSync(join(ctx.project, '.claude', 'skills', 'fab-spec', 'SKILL.md')));
     assert(existsSync(join(ctx.project, '.agents', 'skills', 'fab-spec', 'SKILL.md')));
-    assert.strictEqual(readdirSync(join(ctx.project, '.claude', 'skills')).length, 13);
-    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 13);
+    assert.strictEqual(readdirSync(join(ctx.project, '.claude', 'skills')).length, 15);
+    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 15);
     assert(!existsSync(join(ctx.project, '.cursor')), 'unselected agents root must not be created');
     assert(!existsSync(join(ctx.project, '.codex')), 'unselected agents root must not be created');
     assert(!existsSync(join(ctx.project, '.opencode')), 'unselected agents root must not be created');
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('install projects skill alias fab-code-review and uninstall removes it', () => {
+  const ctx = setup();
+  try {
+    let result = cli(ctx.pkg, ['install'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(existsSync(join(ctx.project, '.agents', 'skills', 'fab-code-review', 'SKILL.md')));
+    const marker = readMarker(join(ctx.project, '.agents', 'skills', 'fab-code-review', '.fabrica-managed.json'));
+    assert.strictEqual(marker.managed_by, 'fabrica-skills');
+    assert.strictEqual(marker.skill_id, 'fabrica-code-review');
+    result = cli(ctx.pkg, ['uninstall'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(!existsSync(join(ctx.project, '.agents', 'skills', 'fab-code-review')));
     assertNoStackTrace(result);
   } finally {
     teardown(ctx);

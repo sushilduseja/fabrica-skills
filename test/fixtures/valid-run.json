@@ -37,6 +37,7 @@
     "fab-verify": "review",
     "fab-decide": "full",
     "fab-pr-review": "auto",
-    "fab-retro": "auto"
+    "fab-retro": "auto",
+    "fabrica-code-review": "auto"
   }
 }

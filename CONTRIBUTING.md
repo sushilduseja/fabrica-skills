@@ -132,7 +132,7 @@ npm run lint
 npm run setup
 ```
 
-Current `npm test` coverage (101 tests across 7 test files):
+Current `npm test` coverage (104 tests across 7 test files):
 
 - valid and invalid run-object fixtures;
 - deprecated skill-id acceptance with a deprecation warning;

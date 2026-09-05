@@ -18,11 +18,11 @@ export function toRepoRelative(root, absPath) {
   return relative(root, absPath).split(sep).join('/');
 }
 
-/** Skill id pattern: fab-<lowercase-hyphenated>. */
-export const SKILL_ID_RE = /^fab-[a-z0-9-]+$/;
+/** Skill id pattern: fab-<lowercase-hyphenated>, plus standalone fabrica- skills. */
+export const SKILL_ID_RE = /^(?:fab|fabrica)-[a-z0-9-]+$/;
 
-/** Skill directory layout: skills/<core|prototype>/fab-<lowercase-hyphenated>. */
-export const SKILL_PATH_RE = /^skills\/(core|prototype)\/fab-[a-z0-9-]+$/;
+/** Skill directory layout: skills/<core|prototype|standalone>/<id>. */
+export const SKILL_PATH_RE = /^skills\/(core|prototype|standalone)\/(?:fab|fabrica)-[a-z0-9-]+$/;
 
 /**
  * Assert that an absolute path does not escape the repository root.

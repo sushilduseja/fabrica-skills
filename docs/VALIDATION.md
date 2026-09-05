@@ -27,7 +27,7 @@ Expected current result:
 [assert-invalid] OK — test/fixtures/invalid-run.json fails as expected (/status, /app_stages/0/quality_score)
 [assert-invalid] OK — test/fixtures/invalid-gate-keys.json fails as expected (/gate_levels)
 [sync-manifest] CHECK OK — all generated files match manifest
-101/101 tests passed
+104/104 tests passed
 ```
 
 `npm run setup` additionally creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
@@ -54,14 +54,14 @@ Tests are split by module under `test/`:
 | File | Tests | Focus |
 |---|---|---|
 | `test/validate-run.test.mjs` | 26 | Schema validation, semantic invariants, status×phase matrix (incl. schema/matrix completeness), boundary/enum/type/length edges, reserved-name and path-injection sweep, scale, deprecated skill-id aliases |
-| `test/sync-manifest.test.mjs` | 14 | Manifest check and --write mode, generated-file drift, frontmatter drift, errors.json cross-reference, field-ownership overlap, MULTI_WRITER_FIELDS whitelist sync, orphan skill directories |
-| `test/link-skills.test.mjs` | 15 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh, nested symlink-entry removal, ENOTEMPTY recovery |
+| `test/sync-manifest.test.mjs` | 15 | Manifest check and --write mode, generated-file drift, frontmatter drift, errors.json cross-reference, field-ownership overlap, MULTI_WRITER_FIELDS whitelist sync, orphan skill directories, skill alias collision rejection |
+| `test/link-skills.test.mjs` | 16 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh, nested symlink-entry removal, ENOTEMPTY recovery, skill alias entries |
 | `test/skill-gates.test.mjs` | 29 | Gate-contract validators for all 7 gate checks (incl. gate↔SKILL.md guardrail cross-check) |
 | `test/verification-kind.test.mjs` | 2 | Verification-kind classification table (Docker invocation, container build) |
 | `test/docs.test.mjs` | 4 | Skill guardrails, error metadata, example doc layout, .gitignore coverage, README cross-platform home paths |
-| `test/install-cli.test.mjs` | 11 | Consumer install (project/global), markers, idempotency, foreign-skill safety, unmarked skip, update refresh, selective agents, multi-root default |
+| `test/install-cli.test.mjs` | 12 | Consumer install (project/global), markers, idempotency, foreign-skill safety, unmarked skip, update refresh, selective agents, multi-root default, skill alias projection |
 
-All 101 tests:
+All 104 tests:
 
 - valid fixture acceptance;
 - deprecated skill-id acceptance with a deprecation warning;
@@ -165,6 +165,7 @@ All 101 tests:
 - skill directory existence and symlink/junction rejection;
 - frontmatter consistency with manifest `name`, `description`, `category`, `phase`, `default_gate`, and `overridable`;
 - prerequisite and block references;
+- skill alias pattern, self-reference, and collision checks;
 - adjacent `errors.json` metadata and error taxonomy;
 - field ownership coverage;
 - field-ownership overlap rejection for any run-object field not on the explicit multi-writer whitelist;

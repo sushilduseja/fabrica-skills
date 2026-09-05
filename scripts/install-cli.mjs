@@ -211,6 +211,17 @@ function projectAllSkills({ manifest, catalog, roots, version, scope }) {
         scope,
       });
       if (outcome === 'skipped') skipped += 1;
+      for (const alias of Array.isArray(skill.aliases) ? skill.aliases : []) {
+        const aliasOutcome = installSkillProjection({
+          sourceSkillDir,
+          destSkillDir: join(root, alias),
+          harnessRoot: root,
+          skillId: skill.id,
+          version,
+          scope,
+        });
+        if (aliasOutcome === 'skipped') skipped += 1;
+      }
     }
   }
   return skipped;

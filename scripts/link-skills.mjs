@@ -140,12 +140,21 @@ function ensureSafeDirectory(path, label) {
 /**
  * Validate that a manifest skill's source exists and is a real directory
  * with a SKILL.md inside.
- * @param {{ id: string, path: string }} skill
- * @returns {{ skillName: string, skillPath: string }}
+ * @param {{ id: string, path: string, aliases?: string[] }} skill
+ * @returns {{ skillName: string, skillPath: string, aliases: string[] }}
  */
 function preflightSkill(skill) {
   const skillPath = assertSafeSkillPath(skill);
   const skillName = skill.id;
+  if (skill.aliases !== undefined && !Array.isArray(skill.aliases)) {
+    fail(`Manifest skill "${skill.id}" aliases must be an array`);
+  }
+  const aliases = skill.aliases || [];
+  for (const alias of aliases) {
+    if (typeof alias !== 'string' || !SKILL_ID_RE.test(alias)) {
+      fail(`Manifest skill "${skill.id}" has invalid alias: ${alias}`);
+    }
+  }
 
   const stat = statIfPresent(skillPath);
   if (!stat) {
@@ -158,7 +167,7 @@ function preflightSkill(skill) {
     fail(`SKILL.md missing for ${skillName}: ${toRepoRelative(root, join(skillPath, 'SKILL.md'))}`);
   }
 
-  return { skillName, skillPath };
+  return { skillName, skillPath, aliases };
 }
 
 function removeExistingManagedSkill(linkDest, skillName) {
@@ -209,6 +218,24 @@ const skillNames = new Set(skills.map((s) => s.skillName));
 if (skillNames.size !== skills.length) {
   fail('skills/manifest.json contains duplicate skill ids');
 }
+const aliasNames = new Set();
+for (const { skillName, aliases } of skills) {
+  for (const alias of aliases) {
+    if (skillNames.has(alias) || aliasNames.has(alias)) {
+      fail(`skills/manifest.json contains colliding skill alias "${alias}" (skill "${skillName}")`);
+    }
+    aliasNames.add(alias);
+  }
+}
+// Link targets: one entry per skill plus one per alias, all pointing at the
+// same source directory so aliases invoke identically to their canonical skill.
+const targets = [];
+for (const { skillName, skillPath, aliases } of skills) {
+  targets.push({ name: skillName, source: skillPath });
+  for (const alias of aliases) {
+    targets.push({ name: alias, source: skillPath });
+  }
+}
 
 if (globalInstall) {
   console.log(`[link-skills] GLOBAL install → ${targetDir}`);
@@ -220,11 +247,11 @@ if (globalInstall) {
 ensureSafeDirectory(targetDir, '.skills directory');
 
 // Only remove manifest-managed entries. Do not delete arbitrary fab-* user skills.
-for (const { skillName } of skills) {
+for (const { name: skillName } of targets) {
   removeExistingManagedSkill(join(targetDir, skillName), skillName);
 }
 
-for (const { skillName, skillPath } of skills) {
+for (const { name: skillName, source: skillPath } of targets) {
   const linkDest = join(targetDir, skillName);
 
   try {

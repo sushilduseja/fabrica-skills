@@ -1,0 +1,33 @@
+{
+  "skill_id": "fabrica-code-review",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "User did not supply a fixed point and did not answer the follow-up",
+      "diagnosis": "The diff range cannot be pinned without a commit, branch, tag, or revision",
+      "rescue_action": "Ask for a commit, branch, tag, or revision to diff against HEAD",
+      "user_message": "No fixed point to review against. Supply a commit, branch, tag, or revision."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Fixed point does not resolve, or the repository is not a git work tree",
+      "diagnosis": "Review requires git history and a resolvable ref for the diff range",
+      "rescue_action": "Verify git status and the ref; re-run with a valid fixed point",
+      "user_message": "Cannot resolve the fixed point or find git history. Check the ref and retry."
+    },
+    {
+      "type": "missing_input",
+      "trigger": "Diff is empty between fixed point and HEAD",
+      "diagnosis": "An empty diff contains nothing to review on either axis",
+      "rescue_action": "Choose an earlier fixed point or confirm the correct branch is checked out",
+      "user_message": "Nothing changed between the fixed point and HEAD. Nothing to review."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "A sub-agent or issue-fetch command failed",
+      "diagnosis": "Review depends on sub-agent execution and optionally remote issue fetch",
+      "rescue_action": "Re-run the failed axis alone; paste spec text if issue fetch is unavailable",
+      "user_message": "A review step failed. Re-run the failed axis, or paste the spec text directly."
+    }
+  ]
+}
