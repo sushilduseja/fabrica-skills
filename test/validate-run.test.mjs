@@ -514,7 +514,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
       'next_action skill "fab-not-real"',
     ],
     [
-      'forge next_action missing stage argument',
+      'build next_action missing stage argument',
       (o) => {
         o.status = 'forging';
         o.experiment_phase = 'phase_1_slice';
@@ -524,7 +524,7 @@ test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema
       'references unknown app stage',
     ],
     [
-      'forge next_action unknown stage',
+      'build next_action unknown stage',
       (o) => {
         o.status = 'forging';
         o.experiment_phase = 'phase_1_slice';

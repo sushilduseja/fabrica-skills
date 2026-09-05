@@ -5,7 +5,7 @@
       "type": "missing_input",
       "trigger": "App artifacts or blueprint inputs are missing",
       "diagnosis": "The integration path cannot be wired because required files are absent",
-      "rescue_action": "List missing files and suggest completing the relevant forge/check step",
+      "rescue_action": "List missing files and suggest completing the relevant build/eval step",
       "user_message": "Required artifacts are missing: {artifacts}. Complete them before weaving."
     },
     {
