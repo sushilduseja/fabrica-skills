@@ -27,7 +27,7 @@ Expected current result:
 [assert-invalid] OK — test/fixtures/invalid-run.json fails as expected (/status, /app_stages/0/quality_score)
 [assert-invalid] OK — test/fixtures/invalid-gate-keys.json fails as expected (/gate_levels)
 [sync-manifest] CHECK OK — all generated files match manifest
-112/112 tests passed
+117/117 tests passed
 ```
 
 `npm run setup` additionally creates `.skills/` for local source-checkout use. Generated `.skills/` and `node_modules/` are not repository source artifacts.
@@ -53,15 +53,15 @@ Tests are split by module under `test/`:
 
 | File | Tests | Focus |
 |---|---|---|
-| `test/validate-run.test.mjs` | 26 | Schema validation, semantic invariants, status×phase matrix (incl. schema/matrix completeness), boundary/enum/type/length edges, reserved-name and path-injection sweep, scale, deprecated skill-id aliases |
+| `test/validate-run.test.mjs` | 27 | Schema validation, semantic invariants, status×phase matrix (incl. schema/matrix completeness), boundary/enum/type/length edges, reserved-name and path-injection sweep, scale, deprecated skill-id aliases |
 | `test/sync-manifest.test.mjs` | 15 | Manifest check and --write mode, generated-file drift, frontmatter drift, errors.json cross-reference, field-ownership overlap, MULTI_WRITER_FIELDS whitelist sync, orphan skill directories, skill alias collision rejection |
 | `test/link-skills.test.mjs` | 16 | Local and global install, symlink safety, path traversal, EPERM copy-fallback, staleness refresh, nested symlink-entry removal, ENOTEMPTY recovery, skill alias entries |
 | `test/skill-gates.test.mjs` | 29 | Gate-contract validators for all 7 gate checks (incl. gate↔SKILL.md guardrail cross-check) |
 | `test/verification-kind.test.mjs` | 2 | Verification-kind classification table (Docker invocation, container build) |
 | `test/docs.test.mjs` | 4 | Skill guardrails, error metadata, example doc layout, .gitignore coverage, README cross-platform home paths |
-| `test/install-cli.test.mjs` | 12 | Consumer install (project/global), markers, idempotency, foreign-skill safety, unmarked skip, update refresh, selective agents, multi-root default, skill alias projection |
+| `test/install-cli.test.mjs` | 20 | Consumer install (project/global), markers, idempotency, foreign-skill safety, unmarked skip, update refresh, selective agents, multi-root default, skill alias projection, init-run creation/overwrite/gate-levels, example template drift |
 
-All 104 tests:
+All 117 tests:
 
 - valid fixture acceptance;
 - deprecated skill-id acceptance with a deprecation warning;
@@ -105,6 +105,7 @@ All 104 tests:
 - staleness refresh for copied skills after source update;
 - gate-contract validators (fab-verify, fab-decide, fab-eval, fab-status, next-action, timestamp, cost-precision);
 - consumer install safety (markers, idempotent install, foreign-skill preservation, unmarked skip, update refresh, selective harness, multi-root default);
+- init-run creation of schema-valid run objects, no-overwrite refusal, --force overwrite, and manifest-complete gate_levels;
 - numeric and timestamp boundaries (quality_score 0/6/10/10.5, epoch and far-future timestamps);
 - out-of-set enum values in verification kinds, stage status, gate_levels keys, and by-step cost precision;
 - wrong-typed field values (string-for-number, array-for-object, null-for-required);

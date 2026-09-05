@@ -7,6 +7,7 @@
  *   fabrica-skills uninstall [--global] [--orphans]
  *   fabrica-skills status  [--global]
  *   fabrica-skills validate [path/to/fabrica.run.json]
+ *   fabrica-skills init-run [--name <slug>] [--out <path>] [--force]
  *   fabrica-skills --version | --help
  */
 import { pathToFileURL } from 'url';
@@ -41,6 +42,7 @@ Usage:
   fabrica-skills uninstall [--global] [--orphans]
   fabrica-skills status [--global]
   fabrica-skills validate [fabrica.run.json]
+  fabrica-skills init-run [--name <slug>] [--out <path>] [--force]
 `);
   process.exit(cmd ? 0 : 1);
 }

@@ -10,8 +10,9 @@
  * unchanged and stays in scripts/link-skills.mjs.
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
-import { isAbsolute, join, relative, sep } from 'path';
+import { dirname, isAbsolute, join, relative, sep } from 'path';
 import { homedir } from 'os';
+import { randomUUID } from 'crypto';
 import { spawnSync } from 'child_process';
 import { SKILL_ID_RE, SKILL_PATH_RE, lstatIfPresent, readJsonFile } from './_path-utils.mjs';
 
@@ -65,13 +66,31 @@ function parseFlags(argv) {
     orphans: false,
     agents: null, // null = default full set
     migrateRun: null,
+    name: null,
+    out: null,
+    force: false,
     positional: [],
   };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === '--global' || a === '-g') flags.global = true;
     else if (a === '--orphans') flags.orphans = true;
-    else if (a === '--migrate-run') {
+    else if (a === '--force') flags.force = true;
+    else if (a === '--name') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('--name requires a slug value');
+      }
+      flags.name = value;
+      i += 1;
+    } else if (a === '--out') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('--out requires a run-object path');
+      }
+      flags.out = value;
+      i += 1;
+    } else if (a === '--migrate-run') {
       const value = argv[i + 1];
       if (!value || value.startsWith('-')) {
         throw new Error('--migrate-run requires a run-object path');
@@ -292,6 +311,69 @@ function cmdStatus({ pkgRoot, version, cwd, flags }) {
   }
 }
 
+function readRunObjectNamePattern(pkgRoot) {
+  const schemaPath = join(pkgRoot, 'schemas/run-object.schema.json');
+  const schema = readJsonFile(schemaPath, 'schemas/run-object.schema.json', '[fabrica-skills]');
+  const pattern = schema?.properties?.name?.pattern;
+  if (typeof pattern !== 'string') {
+    fail('Cannot determine run-object name pattern from schemas/run-object.schema.json');
+  }
+  return new RegExp(pattern);
+}
+
+function cmdInitRun({ pkgRoot, cwd, flags }) {
+  const name = flags.name || 'app';
+  if (!readRunObjectNamePattern(pkgRoot).test(name)) {
+    fail(`Invalid --name "${name}": must be a lowercase slug (letters, digits, ., _, -)`);
+  }
+  const outPath = isAbsolute(flags.out || '') ? flags.out : join(cwd, flags.out || 'fabrica.run.json');
+  if (existsSync(outPath) && !flags.force) {
+    fail(`Refusing to overwrite existing ${outPath} (use --force to overwrite)`);
+  }
+  const manifest = loadManifest(pkgRoot);
+  const now = new Date().toISOString();
+  const gate_levels = {};
+  for (const skill of manifest.skills) {
+    gate_levels[skill.id] = skill.default_gate;
+  }
+  const runObject = {
+    schema_version: '0.2',
+    id: randomUUID(),
+    name,
+    experiment_phase: 'phase_0_spec',
+    created_at: now,
+    updated_at: now,
+    status: 'designing',
+    current_step: 'fab-spec',
+    current_app_stage: null,
+    next_action: '/fab-spec',
+    last_error: null,
+    spec_path: null,
+    blueprint_path: null,
+    app_stages: [],
+    costs: {
+      precision: 'unknown',
+      tokens_in: 'unknown',
+      tokens_out: 'unknown',
+      api_calls: 'unknown',
+      estimated_usd: 'unknown',
+      budget_usd: null,
+      by_step: {},
+    },
+    verifications: [],
+    human_decisions: [],
+    gate_levels,
+  };
+  try {
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, `${JSON.stringify(runObject, null, 2)}\n`, 'utf8');
+  } catch (err) {
+    fail(`Cannot write ${outPath}: ${err.message}`);
+  }
+  console.log(`[fabrica-skills] wrote ${outPath}`);
+  console.log('next: open this file after /fab-spec');
+}
+
 function cmdValidate({ pkgRoot, flags }) {
   if (flags.migrateRun) {
     const result = spawnSync(
@@ -313,7 +395,7 @@ function cmdValidate({ pkgRoot, flags }) {
 
 /**
  * Run the fabrica-skills CLI command.
- * @param {string} cmd install | update | uninstall | status | validate
+ * @param {string} cmd install | update | uninstall | status | validate | init-run
  * @param {string[]} argv Flags and positionals after the command.
  * @param {{pkgRoot: string, version: string}} ctx Package context.
  */
@@ -342,8 +424,11 @@ export async function runCli(cmd, argv, ctx) {
     case 'validate':
       cmdValidate({ pkgRoot, flags });
       break;
+    case 'init-run':
+      cmdInitRun({ pkgRoot, cwd, flags });
+      break;
     default:
-      fail(`Unknown command: ${cmd} (expected install, update, uninstall, status, or validate)`);
+      fail(`Unknown command: ${cmd} (expected install, update, uninstall, status, validate, or init-run)`);
       break;
   }
 }

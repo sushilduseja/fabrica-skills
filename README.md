@@ -4,6 +4,18 @@ Agent-readable markdown skills for turning a rough product idea into a small loc
 
 This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool, or agent orchestrator. You install the skill documents, then your AI coding agent follows them while you approve the checkpoint steps.
 
+## What this is
+
+- Markdown skills your coding agent follows
+- A CLI to install those skills into agent skill directories
+- A JSON Schema + validator for optional `fabrica.run.json` run state
+
+## What this is not
+
+- An autonomous orchestrator that runs skills without an agent
+- A hosted build service
+- A guarantee that `npx @latest` works before the package is published to npm
+
 ## What You Get
 
 - 14 skills, each stored as a self-contained `SKILL.md` (13 `fab-*` pipeline skills plus standalone `fabrica-code-review`).
@@ -22,23 +34,25 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 
 ## Install
 
-Project (recommended):
-
-```bash
-npm install -D fabrica-skills
-npx fabrica-skills install
-```
-
-Or without adding a dependency:
+**From npm (after publish):**
 
 ```bash
 npx fabrica-skills@latest install
 ```
 
-Global (all repos on this machine):
+**From Git (always works):**
+
+```bash
+npm install -D github:sushilduseja/fabrica-skills
+npx fabrica-skills install
+```
+
+**Global:**
 
 ```bash
 npx fabrica-skills@latest install --global
+# or, from a local checkout:
+node bin/fabrica-skills.mjs install --global
 ```
 
 Global roots resolve through `os.homedir()` (`C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS).
@@ -75,6 +89,12 @@ npx fabrica-skills uninstall
 Old ids still validate with a deprecation warning in 0.3.x. Migrate saved run objects with `npx fabrica-skills validate --migrate-run fabrica.run.json`.
 
 ## First run
+
+Start with a valid run object (or let `/fab-spec` create one):
+
+```bash
+npx fabrica-skills init-run --name my-app
+```
 
 In your app repo (after install), ask your coding agent:
 

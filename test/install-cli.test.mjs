@@ -322,4 +322,87 @@ test('cli fails cleanly on corrupt package metadata', () => {
   }
 });
 
+test('init-run writes a schema-valid run object', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    const result = cli(ctx.pkg, ['init-run', '--name', 'my-app'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(existsSync(out), 'expected fabrica.run.json to be written');
+    const check = run(['scripts/validate-run.mjs', out]);
+    assertPass(check, combined(check));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run refuses to overwrite without --force', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    assertPass(cli(ctx.pkg, ['init-run', '--name', 'my-app'], { cwd: ctx.project, home: ctx.home }));
+    const before = readFileSync(out, 'utf-8');
+    const result = cli(ctx.pkg, ['init-run', '--name', 'other-app'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('--force'), combined(result));
+    assert.strictEqual(readFileSync(out, 'utf-8'), before);
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run --force overwrites the existing file', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    assertPass(cli(ctx.pkg, ['init-run', '--name', 'my-app'], { cwd: ctx.project, home: ctx.home }));
+    const before = readFileSync(out, 'utf-8');
+    const result = cli(ctx.pkg, ['init-run', '--name', 'other-app', '--force'], {
+      cwd: ctx.project,
+      home: ctx.home,
+    });
+    assertPass(result, combined(result));
+    const after = readFileSync(out, 'utf-8');
+    assert.notStrictEqual(after, before);
+    assert(after.includes('"name": "other-app"'), after);
+    const check = run(['scripts/validate-run.mjs', out]);
+    assertPass(check, combined(check));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run output matches examples/run-object.empty.json apart from volatile fields', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    assertPass(cli(ctx.pkg, ['init-run', '--name', 'app'], { cwd: ctx.project, home: ctx.home }));
+    const normalize = (obj) => ({ ...obj, id: '<uuid>', created_at: '<ts>', updated_at: '<ts>' });
+    const fresh = normalize(JSON.parse(readFileSync(out, 'utf-8')));
+    const canonical = normalize(JSON.parse(readFileSync(join(root, 'examples/run-object.empty.json'), 'utf-8')));
+    assert.deepStrictEqual(fresh, canonical);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run gate_levels keys match the manifest skill ids', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    assertPass(cli(ctx.pkg, ['init-run'], { cwd: ctx.project, home: ctx.home }));
+    const manifest = JSON.parse(readFileSync(join(ctx.pkg, 'skills/manifest.json'), 'utf-8'));
+    const written = JSON.parse(readFileSync(out, 'utf-8'));
+    assert.deepStrictEqual(Object.keys(written.gate_levels).sort(), manifest.skills.map((s) => s.id).sort());
+    for (const skill of manifest.skills) {
+      assert.strictEqual(written.gate_levels[skill.id], skill.default_gate);
+    }
+  } finally {
+    teardown(ctx);
+  }
+});
+
 runAll();

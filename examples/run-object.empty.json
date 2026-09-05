@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.2",
+  "id": "56ce4f74-1254-4b3f-b12d-4a124620b889",
+  "name": "app",
+  "experiment_phase": "phase_0_spec",
+  "created_at": "2026-09-05T06:58:08.086Z",
+  "updated_at": "2026-09-05T06:58:08.086Z",
+  "status": "designing",
+  "current_step": "fab-spec",
+  "current_app_stage": null,
+  "next_action": "/fab-spec",
+  "last_error": null,
+  "spec_path": null,
+  "blueprint_path": null,
+  "app_stages": [],
+  "costs": {
+    "precision": "unknown",
+    "tokens_in": "unknown",
+    "tokens_out": "unknown",
+    "api_calls": "unknown",
+    "estimated_usd": "unknown",
+    "budget_usd": null,
+    "by_step": {}
+  },
+  "verifications": [],
+  "human_decisions": [],
+  "gate_levels": {
+    "fab-spec": "checkpoint",
+    "fab-plan": "checkpoint",
+    "fab-scaffold": "auto",
+    "fab-build": "auto",
+    "fab-eval": "auto",
+    "fab-status": "auto",
+    "fab-handoff": "auto",
+    "fab-fix": "auto",
+    "fab-integrate": "checkpoint",
+    "fab-verify": "review",
+    "fab-decide": "full",
+    "fab-pr-review": "auto",
+    "fab-retro": "auto",
+    "fabrica-code-review": "auto"
+  }
+}

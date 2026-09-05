@@ -14,3 +14,6 @@
 ### Fixed
 - Fresh Windows clones no longer fail `npm run setup`: frontmatter parsing tolerates CRLF and `.gitattributes` pins LF line endings.
 - Bumped `fast-uri` past 3.1.5 to close GHSA SSRF/host-confusion advisories (`npm audit` clean).
+
+### Notes
+- Historical docs may still use pre-0.3 ids; canonical ids are in `skills/manifest.json`.
