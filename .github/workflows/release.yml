@@ -51,6 +51,5 @@ jobs:
           EXPECTED=$(node -p "require('$GITHUB_WORKSPACE/skills/manifest.json').skills.length")
           npx fabrica-skills status | grep -q "$EXPECTED/$EXPECTED" || (echo "status does not show $EXPECTED/$EXPECTED" && exit 1)
 
-      - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Publish is manual — run locally by maintainer, not automated.
+      # See CONTRIBUTING.md for the release process.
