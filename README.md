@@ -2,7 +2,7 @@
 
 Agent-readable markdown skills for turning a rough product idea into a small local app prototype.
 
-This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool, or agent orchestrator. You install the skill documents, then your AI coding agent follows them while you approve the checkpoint steps.
+This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool, or agent orchestrator. You install the skills. Your AI coding agent follows the skills. You approve each gate.
 
 ## What this is
 
@@ -18,77 +18,88 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 
 ## What You Get
 
-- 14 skills, each stored as a self-contained `SKILL.md` (13 `fab-*` pipeline skills plus standalone `fabrica-code-review`).
-- A canonical skill manifest at `skills/manifest.json`: the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
-- A spec-first workflow: idea -> product spec -> blueprint -> scaffold -> implementation -> quality check -> integration -> local launch.
-- Stack-agnostic scaffolding guidance. Skills must derive runtimes, services, commands, files, and verification steps from the blueprint rather than hardcoding Python, Node, React, FastAPI, Docker, or any sample app.
-- A durable run state file: `fabrica.run.json`.
-- A JSON Schema for validating run state: `schemas/run-object.schema.json`.
-- Local-first prototype behavior. External deploy is deferred and must be explicitly approved. Docker/container verification is supported when the blueprint calls for it, but static Docker checks must not be reported as runtime Docker verification.
+- 14 skills. Each skill is one self-contained `SKILL.md` file. The count covers 13 `fab-*` pipeline skills plus standalone `fabrica-code-review`.
+- A canonical skill manifest lives at `skills/manifest.json`. It is the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
+- The workflow is spec-first. It runs from idea to product spec to blueprint to scaffold to implementation to quality check to integration to launch.
+- Scaffolding guidance is stack-agnostic. Skills derive runtimes, services, commands, files, and verification steps from the blueprint. Skills never hardcode Python, Node, React, FastAPI, Docker, or any sample app.
+- The durable run state file is `fabrica.run.json`.
+- A JSON Schema validates run state. It lives at `schemas/run-object.schema.json`.
+- Prototype behavior is local-first. External deploy stays deferred. It needs your explicit approval.
+- Docker and container verification are supported when the blueprint calls for them. Never report static Docker checks as runtime Docker verification.
 
 ## Requirements
 
 - Git.
 - Node.js 16.7+.
-- An AI coding agent that can read local markdown skill files.
+- An AI coding agent that reads local markdown skill files.
 
-## Install
-npm install -D fabrica-skills
-npx fabrica-skills install
+## Quickstart
 
-### Alternative (no local dependency)
+1. Install the package.
+
+   ```bash
+   npm install -D fabrica-skills
+   ```
+
+2. Install the skills into your project.
+
+   ```bash
+   npx fabrica-skills install
+   ```
+
+3. Confirm the install.
+
+   ```bash
+   npx fabrica-skills status
+   ```
+
+   The command lists 14 installed skills.
+
+## Other install methods
+
+Install without a local dependency. Run this command:
+
+```bash
 npx fabrica-skills@latest install
+```
 
-**Global:**
+Install for every repo on the machine (global install). Run this command:
 
 ```bash
 npx fabrica-skills@latest install --global
-# or, from a local checkout:
+```
+
+Install from a local checkout. Run this command from the repo root:
+
+```bash
 node bin/fabrica-skills.mjs install --global
 ```
 
 Global roots resolve through `os.homedir()` (`C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS).
 
-Upgrade:
+Upgrade the skills. Run this command:
 
 ```bash
 npx fabrica-skills@latest update
 ```
 
-Uninstall:
+Remove the skills. Run this command:
 
 ```bash
 npx fabrica-skills uninstall
 ```
 
-### Renamed in 0.3.0
-
-| Old id | New id |
-|---|---|
-| `fab-intake` | `fab-spec` |
-| `fab-blueprint` | `fab-plan` |
-| `fab-frame` | `fab-scaffold` |
-| `fab-forge` | `fab-build` |
-| `fab-check` | `fab-eval` |
-| `fab-pulse` | `fab-status` |
-| `fab-passport` | `fab-handoff` |
-| `fab-trace` | `fab-fix` |
-| `fab-weave` | `fab-integrate` |
-| `fab-launch` | `fab-verify` |
-| `fab-signal` | `fab-decide` |
-| `fab-retro` | `fab-retro` (unchanged) |
-
-Old ids still validate with a deprecation warning in 0.3.x. Migrate saved run objects with `npx fabrica-skills validate --migrate-run fabrica.run.json`.
+See CHANGELOG.md for release history.
 
 ## First run
 
-Start with a valid run object (or let `/fab-spec` create one):
+Create a valid run object. Run this command:
 
 ```bash
 npx fabrica-skills init-run --name my-app
 ```
 
-In your app repo (after install), ask your coding agent:
+Then ask your coding agent to run intake:
 
 ```text
 /fab-spec
@@ -101,14 +112,7 @@ Then follow `next_action` in `fabrica.run.json`.
 
 ### 1. Open your project in your AI coding agent
 
-Make sure the agent can see the installed skills.
-
-If your agent supports slash commands, use the `/fab-*` names below. If it does not, ask it to follow the matching skill file directly, for example:
-
-```text
-Follow .agents/skills/fab-spec/SKILL.md.
-Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
-```
+Confirm the agent sees the installed skills.
 
 ### 2. Run intake
 
@@ -119,7 +123,7 @@ Send this to the agent:
 Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
 ```
 
-The agent should ask targeted questions, then show a spec for approval.
+The agent asks targeted questions. Then the agent shows a spec for approval.
 
 Approve only when the spec is specific enough for a stranger to build. The skill writes:
 
@@ -135,7 +139,7 @@ Send:
 /fab-plan
 ```
 
-The agent should propose architecture, stack, app stages, and build order.
+The agent proposes architecture, stack, app stages, and build order.
 
 Approve only when the plan is small and testable. The skill writes:
 
@@ -151,7 +155,7 @@ Send:
 /fab-scaffold
 ```
 
-The skill scaffolds inside the current project root. In a source checkout of `fabrica-skills` itself it keeps the contributor behavior and creates a sibling app directory:
+The skill scaffolds inside the current project root. In a source checkout of `fabrica-skills` itself, the skill keeps the contributor behavior. It creates a sibling app directory:
 
 ```text
 ../<app-name>/
@@ -177,7 +181,7 @@ Use the exact stage name from `fabrica.run.json` or `docs/blueprint.md`.
 /fab-build <stage-name>
 ```
 
-The skill implements only that stage, adds focused tests, runs the narrowest useful test command, and updates `fabrica.run.json`.
+The skill implements only that stage. It adds focused tests. It runs the narrowest useful test command. It updates `fabrica.run.json`.
 
 ### 6. Check quality
 
@@ -191,7 +195,7 @@ The skill writes:
 docs/eval/<stage-name>.md
 ```
 
-It scores the stage from 0 to 10 on spec fit, contract fit, tests, clarity, and safety. Any axis below 6 blocks the stage and sets the next action to `/fab-fix <stage-name>`.
+It scores the stage from 0 to 10 on spec fit, contract fit, tests, clarity, and safety. Any axis below 6 blocks the stage. It sets the next action to `/fab-fix <stage-name>`.
 
 ### 7. Continue from the run state
 
@@ -218,7 +222,7 @@ Phase 0: Spec and blueprint
 
 Phase 1: One or more vertical slices
   /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
-  Repeat forge/check until required stages are done.
+  Repeat build/eval until required stages are done.
   Output: scaffolded app, tests, quality scores, next_action
 
 Phase 2: Integrated local prototype
@@ -265,7 +269,7 @@ Plain-language aliases:
 | `/fab-retro` | write the retrospective |
 | `/fab-code-review` | review a diff since a fixed point |
 
-The review skill is installed as `fabrica-code-review` and invoked as `/fab-code-review`.
+The review skill installs as `fabrica-code-review`. Run it as `/fab-code-review`.
 
 Gate meanings:
 
@@ -334,15 +338,15 @@ docs/spec.md
 docs/blueprint.md
 ```
 
-Those live paths are generated by `/fab-spec` and `/fab-plan` and are ignored by git.
+Those live paths are generated by `/fab-spec` and `/fab-plan`. Git ignores those paths.
 
-`docs/VALIDATION.md` records the current validation evidence: schema checks, script hardening checks, manifest/frontmatter drift checks, install safety checks, and container/full-stack guidance coverage.
+`docs/VALIDATION.md` records the validation evidence. It covers schema checks, script hardening checks, manifest and frontmatter drift checks, install safety checks, and container and full-stack guidance coverage.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `node` is not found | Install Node.js 16.7+ and rerun `npm run setup`. |
+| `node` is not found | Install Node.js 16.7+. Then rerun `npm run setup`. |
 | Slash command is not found | Point your agent at `.skills/<skill-name>/SKILL.md` or use the `.claude-plugin/plugin.json` manifest if supported. |
 | `fabrica.run.json` is missing | Start with `/fab-spec`. It is the only entry-point skill. |
 | A stage is blocked | Run `/fab-fix <stage-name>` with the failure output. |
@@ -357,6 +361,3 @@ Those live paths are generated by `/fab-spec` and `/fab-plan` and are ignored by
 - No multi-agent scheduler.
 - No production deploy provider matrix.
 - No exact token metering unless the agent/provider exposes it cleanly.
-
-
-

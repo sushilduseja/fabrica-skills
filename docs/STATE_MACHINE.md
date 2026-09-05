@@ -78,9 +78,9 @@ flowchart LR
 |---|---|---|---|
 | `designing` | Intake/spec work is in progress | `phase_0_spec` | `/fab-spec` |
 | `framing` | Blueprint exists and scaffold is next | `phase_0_spec` | `/fab-plan` |
-| `forging` | One or more app stages are being implemented | `phase_1_slice`, `phase_2_pipeline` | `/fab-scaffold`, `/fab-build` |
-| `checking` | Stage quality evaluation is in progress | `phase_1_slice`, `phase_2_pipeline` | `/fab-eval` if used as an intermediate state |
-| `weaving` | Integration work is in progress | `phase_2_pipeline` | `/fab-integrate` if used as an intermediate state |
+| `forging` | One or more app stages are being implemented | `phase_1_slice`, `phase_2_pipeline` | `/fab-scaffold` |
+| `checking` | Stage quality evaluation is in progress | `phase_1_slice`, `phase_2_pipeline` | none (valid but unused; no skill writes this status) |
+| `weaving` | Integration work is in progress | `phase_2_pipeline` | none (valid but unused; no skill writes this status) |
 | `verifying` | Integrated prototype is ready for launch verification | `phase_2_pipeline` | `/fab-integrate` |
 | `complete` | Local launch verification passed | `phase_2_pipeline` | `/fab-verify` |
 | `blocked` | Work cannot continue without diagnosis or decision | any phase | any writer skill |

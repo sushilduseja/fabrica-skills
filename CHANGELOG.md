@@ -16,7 +16,7 @@ First stable public release.
 ## 0.3.0
 
 ### Breaking
-- Skill ids renamed (fab-intake → fab-spec, ...). See README mapping table.
+- Skill ids renamed (fab-intake → fab-spec, ...). Canonical ids are in `skills/manifest.json`.
 - Consumer install path is now harness skill directories via CLI.
 
 ### Added

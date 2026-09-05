@@ -160,3 +160,14 @@ Current `npm test` coverage (104 tests across 7 test files):
 - consumer install safety (markers, idempotent install, foreign-skill preservation, unmarked skip, update refresh, selective harness, multi-root default);
 - errors.json-to-SKILL.md reverse cross-reference;
 - .gitignore coverage and README cross-platform home paths.
+
+## Release process
+
+Releases are published manually by a maintainer, not automated in CI.
+
+1. Merge all changes to main.
+2. Bump version in package.json, skills/manifest.json, .claude-plugin/plugin.json.
+3. Update CHANGELOG.md.
+4. Tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
+5. CI runs validation and a tarball smoke test on the tag, but does not publish.
+6. Maintainer runs `npm publish --access public --provenance` locally after CI passes.
