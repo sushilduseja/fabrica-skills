@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.1 (2026-09-05)
+
+Docs-only patch. No behavior changes.
+
+### Fixed
+- Stale "forge/check" wording in README
+- Removed outdated pre-publish disclaimer
+- Clarified pre-1.0 skill ids in CONTEXT.md
+- Corrected skill-attribution cells in docs/STATE_MACHINE.md
+
+### Changed
+- README rewritten in Simplified Technical English with a three-step Quickstart
+- Historical design docs moved to docs/archive/ with an index
+- docs/VALIDATION.md now points at npm run check instead of mirroring its output
+- Quickstart tutorial moved to examples/ and linked from First run
+- CI release workflow validates only; publish is a manual maintainer step
+
 ## 1.0.0 (2026-09-05)
 
 First stable public release.
