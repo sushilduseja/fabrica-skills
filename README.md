@@ -14,7 +14,6 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 
 - An autonomous orchestrator that runs skills without an agent
 - A hosted build service
-- A guarantee that `npx @latest` works before the package is published to npm
 
 ## What You Get
 

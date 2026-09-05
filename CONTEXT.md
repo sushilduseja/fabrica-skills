@@ -19,6 +19,8 @@ The product surface is the skill set itself. This is not a runtime, SaaS, queue 
 
 ## Architectural Decisions (ADR Log)
 
+> Note: ADRs below predate the 1.0.0 skill rename. `fab-intake` = `fab-spec`, `fab-trace` = `fab-fix` (see skills/manifest.json for the current id list).
+
 ### ADR-001: Spec-first implementation approach
 **Date:** 2026-05-18
 **Decision:** Finalize the PRD before implementing skills. Approach A from CEO review.
