@@ -151,7 +151,7 @@ All 118 tests:
 | Validator | Gate | What it enforces |
 |---|---|---|
 | `validateFabLaunchGate` | review | `external_deploy` kind requires prior human approval; `container_build` must invoke Docker; `complete` status requires a launch verification entry |
-| `validateFabSignalGate` | full | Every non-null decision must have a `resolved_at` timestamp — no auto-populated decisions |
+| `validateFabSignalGate` | full | Every non-null decision must have a `resolved_at` timestamp: no auto-populated decisions |
 | `validateFabCheckGate` | auto | A stage with `quality_score < 6` must not be `done` (any sub-threshold axis blocks) |
 | `validateFabPulseGate` | auto | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` (no invented display values) |
 | `validateNextActionGate` | (next_action) | `fab-integrate` requires all `app_stages` done; `fab-verify` requires `status === "verifying"` |

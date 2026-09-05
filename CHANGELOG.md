@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0 (2026-09-05)
+
+First stable public release.
+
+### Added
+- npm registry as primary distribution channel
+- Version-consistency enforcement across package.json, manifest.json, plugin.json
+- Lifecycle-script guard in CI release pipeline
+
+### Fixed
+- Removed prepack script that triggered EALLOWSCRIPTS on git-dep installs
+- Version drift between package.json, skills/manifest.json, .claude-plugin/plugin.json
+
 ## 0.3.0
 
 ### Breaking

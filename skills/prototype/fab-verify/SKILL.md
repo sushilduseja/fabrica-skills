@@ -8,6 +8,8 @@ default_gate: review
 overridable: false
 ---
 
+# fab-verify
+
 ## Job
 
 Run a pre-launch checklist and local verification. No external deploy in MVP.

@@ -19,7 +19,7 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 ## What You Get
 
 - 14 skills, each stored as a self-contained `SKILL.md` (13 `fab-*` pipeline skills plus standalone `fabrica-code-review`).
-- A canonical skill manifest at `skills/manifest.json` — the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
+- A canonical skill manifest at `skills/manifest.json`: the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
 - A spec-first workflow: idea -> product spec -> blueprint -> scaffold -> implementation -> quality check -> integration -> local launch.
 - Stack-agnostic scaffolding guidance. Skills must derive runtimes, services, commands, files, and verification steps from the blueprint rather than hardcoding Python, Node, React, FastAPI, Docker, or any sample app.
 - A durable run state file: `fabrica.run.json`.
@@ -302,14 +302,20 @@ fabrica-skills/
   CONTEXT.md             Domain vocabulary + ADRs
   CONTRIBUTING.md        Contributor workflow
   AGENTS.md              Agent discovery config
+  bin/                   CLI entry point (fabrica-skills)
   docs/STATE_MACHINE.md  Visual state machine + common command pathways
+  docs/examples/         Checked-in sample spec and blueprint
+  examples/              Canonical run-object template
   skills/manifest.json   Canonical inventory
   skills/core/*/         Core MVP skills (+ errors.json each)
   skills/prototype/*/    Full-pipeline skills (+ errors.json each)
-  docs/examples/         Checked-in sample spec and blueprint
-  scripts/               link-skills, sync-manifest, validate-run
+  skills/standalone/*/   Standalone skills (+ errors.json each)
+  skills/shared/         Shared run-object schema notes
+  scripts/               Validators, manifest sync, installer CLIs
   schemas/               run-object.schema.json
   test/fixtures/         valid + invalid run objects for CI
+  .github/               CI workflows
+  .claude-plugin/        Claude Code plugin manifest
 ```
 
 ## Example Docs

@@ -8,6 +8,8 @@ default_gate: auto
 overridable: true
 ---
 
+# fab-handoff
+
 ## Job
 
 Produce `docs/handoff.md` so a fresh session can resume without asking what happened before.

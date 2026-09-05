@@ -107,7 +107,7 @@ below has at least one dated execution with a recorded result.
 
 | Item | Last executed | Result |
 |---|---|---|
-| Node 16.7 floor pin | — (pending) | pending |
-| Concurrent install race | — (pending) | pending |
-| Windows junction install run | — (pending) | pending |
-| macOS/Linux symlink install run | — (pending) | pending |
+| Node 16.7 floor pin | (pending) | pending |
+| Concurrent install race | (pending) | pending |
+| Windows junction install run | (pending) | pending |
+| macOS/Linux symlink install run | (pending) | pending |

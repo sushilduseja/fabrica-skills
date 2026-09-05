@@ -8,6 +8,8 @@ default_gate: auto
 overridable: true
 ---
 
+# fab-fix
+
 ## Job
 
 Fix a failing app stage by identifying root cause, applying the smallest viable fix, and preventing recurrence.

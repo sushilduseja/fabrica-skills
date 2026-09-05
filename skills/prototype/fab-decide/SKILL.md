@@ -8,6 +8,8 @@ default_gate: full
 overridable: false
 ---
 
+# fab-decide
+
 ## Job
 
 Present a decision to the operator and record the outcome in `human_decisions`.

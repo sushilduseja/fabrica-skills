@@ -1,6 +1,6 @@
 # Agent-Executed Manual Tests
 
-Behavioral specs with no executable enforcement — they are carried out by an AI
+Behavioral specs with no executable enforcement. They are carried out by an AI
 agent reading the markdown skills in `.skills/`. Run these by hand and record the
 observed output against the expected output at each step. Use a disposable clone.
 
@@ -42,20 +42,20 @@ Pass when: steps 3 and 4 hold. Record the agent's reported root cause.
 2. Expected: `docs/handoff.md` is written by temp-file-then-rename (no leftover
    `docs/.tmp*` files), states the run status in one line, lists completed steps,
    app stages, artifacts, verifications, decisions, and blockers, and includes the
-   exact `next_action` as copyable text — not executed.
+   exact `next_action` as copyable text (not executed).
 3. Cold-session test: start a brand-new agent pointed at the same checkout and
    give it only `docs/handoff.md` (not this conversation). Ask it to resume.
    Expected: it continues from `next_action` without asking what happened.
 4. Confirm `/fab-handoff` modified no run-object field (`fabrica.run.json`
    unchanged; it is read-only for run state by design).
 
-Pass when: steps 2–4 hold.
+Pass when: steps 2 through 4 hold.
 
 ## C. Partial-run interruption and resume (plan item 31)
 
 1. During a `/fab-build` implementation, interrupt the agent mid-write.
-2. Expected: `fabrica.run.json` is either the pre-run state or fully written —
-   never truncated half-JSON. Run `node scripts/validate-run.mjs fabrica.run.json`
+2. Expected: `fabrica.run.json` is either the pre-run state or fully written
+   (never truncated half-JSON). Run `node scripts/validate-run.mjs fabrica.run.json`
    and confirm it either validates or reports a clear, parseable error (never a
    stack trace).
 3. If interrupted during a `/fab-handoff` write: `docs/handoff.md` is either the
@@ -63,7 +63,7 @@ Pass when: steps 2–4 hold.
 4. Resume with a fresh session using the handoff; expect continuity from the last
    completed step.
 
-Pass when: steps 2–4 hold. Record the interruption point.
+Pass when: steps 2 through 4 hold. Record the interruption point.
 
 ## D. fab-status rendering across precision states (plan item 33)
 
@@ -81,7 +81,7 @@ confirm the run object is valid, then run `/fab-status`.
 3. `costs.precision = "measured"` with numeric token counts.
    Expected: COST panel shows exact figures; downgrading precision back to
    `unknown` without clearing the numbers is rejected by the validator (already
-   covered by the automated suite) — the agent must clear numerics on downgrade.
+   covered by the automated suite). The agent must clear numerics on downgrade.
 
 Pass when: the rendered dashboard matches the expected panel for each state and
 no file was modified by `/fab-status` (it is read-only).
@@ -100,7 +100,7 @@ below has at least one dated execution with a recorded result.
 
 | Item | Last executed | Result |
 |---|---|---|
-| fab-fix recovery loop | — (pending) | pending |
-| Cold-session handoff resumability | — (pending) | pending |
-| Kill-mid-fab-build recovery | — (pending) | pending |
-| fab-status rendering across precision states | — (pending) | pending |
+| fab-fix recovery loop | (pending) | pending |
+| Cold-session handoff resumability | (pending) | pending |
+| Kill-mid-fab-build recovery | (pending) | pending |
+| fab-status rendering across precision states | (pending) | pending |

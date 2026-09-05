@@ -8,6 +8,8 @@ default_gate: checkpoint
 overridable: true
 ---
 
+# fab-integrate
+
 ## Job
 
 Wire completed app stages into a working end-to-end pipeline and write `docs/integration.md`.

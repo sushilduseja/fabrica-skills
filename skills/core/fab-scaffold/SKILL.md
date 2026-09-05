@@ -8,6 +8,8 @@ default_gate: auto
 overridable: true
 ---
 
+# fab-scaffold
+
 ## Job
 
 Scaffold the app project directory, runtime/service skeletons, dependency manifests, test harnesses, and cross-platform commands from the blueprint.

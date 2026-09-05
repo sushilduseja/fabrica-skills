@@ -8,6 +8,8 @@ default_gate: auto
 overridable: true
 ---
 
+# fab-build
+
 ## Job
 
 Build working implementation and focused tests for one named app stage.

@@ -1,4 +1,4 @@
-# fabrica-skills — Agent Rules
+# fabrica-skills: Agent Rules
 
 ## Skill Discovery
 
@@ -78,12 +78,12 @@ Skills use a standardized error taxonomy in `last_error`:
 - An object: `{ "type": "<error_type>", "message": "<human-readable detail>" }`
 
 Error types (canonical source: `schemas/run-object.schema.json`):
-- `missing_input` — Required input not provided
-- `invalid_state` — Run object in unexpected state
-- `gate_blocked` — Operator did not approve gate
-- `validation_failed` — Run object write failed schema validation
-- `prerequisite_missing` — Skill prerequisite not satisfied
-- `external_failure` — External service or command failed
+- `missing_input`: Required input not provided
+- `invalid_state`: Run object in unexpected state
+- `gate_blocked`: Operator did not approve gate
+- `validation_failed`: Run object write failed schema validation
+- `prerequisite_missing`: Skill prerequisite not satisfied
+- `external_failure`: External service or command failed
 
 
 

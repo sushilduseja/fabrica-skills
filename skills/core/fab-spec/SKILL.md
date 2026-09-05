@@ -8,6 +8,8 @@ default_gate: checkpoint
 overridable: true
 ---
 
+# fab-spec
+
 ## Job
 
 Turn a raw, unstructured product idea into `docs/spec.md` and an initialized `fabrica.run.json`.

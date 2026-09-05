@@ -8,6 +8,8 @@ default_gate: auto
 overridable: false
 ---
 
+# fab-status
+
 ## Job
 
 Show the operator the current run state in a single glance.

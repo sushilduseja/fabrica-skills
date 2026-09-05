@@ -1,4 +1,4 @@
-## Agent skills
+# Agent skills
 
 ### Issue tracker
 
@@ -10,7 +10,7 @@ Five canonical roles using default label strings: needs-triage, needs-info, read
 
 ### Domain docs
 
-Single-context layout — one `CONTEXT.md` at the repo root (ADR log inline). See `docs/agents/domain.md`.
+Single-context layout: one `CONTEXT.md` at the repo root (ADR log inline). See `docs/agents/domain.md`.
 
 
 

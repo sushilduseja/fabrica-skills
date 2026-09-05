@@ -1,4 +1,4 @@
-# fabrica-skills — Context
+# fabrica-skills: Context
 
 ## Domain Vocabulary
 
@@ -9,7 +9,7 @@
 | App stage | One buildable slice of the target app, defined by `fab-plan` |
 | Run object | `fabrica.run.json`, the durable state file for one run |
 | Gate | A pause point where the operator must approve before proceeding |
-| Fabrica | The factory metaphor — turning raw ideas into small apps through skills |
+| Fabrica | The factory metaphor: turning raw ideas into small apps through skills |
 
 ## First-Principles Factory Model
 
@@ -24,8 +24,8 @@ The product surface is the skill set itself. This is not a runtime, SaaS, queue 
 **Decision:** Finalize the PRD before implementing skills. Approach A from CEO review.
 **Rationale:** The PRD is 90% complete and this is a novel pattern. Getting the contract right before building prevents costly rework when the skill model proves different than expected.
 **Alternatives considered:**
-- B: Build Phase 0 immediately, let spec emerge (rejected — risk of building contradictory skills)
-- C: Hybrid — implement skeleton alongside PRD refinement (close second, deferred)
+- B: Build Phase 0 immediately, let spec emerge (rejected: risk of building contradictory skills)
+- C: Hybrid: implement skeleton alongside PRD refinement (close second, deferred)
 
 ### ADR-002: Selective expansion review posture
 **Date:** 2026-05-18
@@ -37,16 +37,16 @@ The product surface is the skill set itself. This is not a runtime, SaaS, queue 
 **Decision:** Each skill lists its prerequisites explicitly in a table format.
 **Rationale:** Simple, readable, and directly actionable by agents. Enables `fab-trace` to diagnose missing prerequisite failures automatically.
 **Alternatives considered:**
-- DAG with ASCII visualization (rejected — overkill for linear pipeline)
-- Implicit ordering through Trigger sections (rejected — easy to miss)
+- DAG with ASCII visualization (rejected: overkill for linear pipeline)
+- Implicit ordering through Trigger sections (rejected: easy to miss)
 
 ### ADR-004: Run object validation via JSON Schema
 **Date:** 2026-05-18
 **Decision:** JSON Schema file that skills reference in their specs.
 **Rationale:** Standard, machine-readable format. Can be enforced later if a runtime is added. Makes validation expectations explicit.
 **Alternatives considered:**
-- Validation rules embedded in each skill's behavior (rejected — harder to maintain consistency)
-- No validation schema (rejected — corrupted state causes cascading failures)
+- Validation rules embedded in each skill's behavior (rejected: harder to maintain consistency)
+- No validation schema (rejected: corrupted state causes cascading failures)
 
 ### ADR-005: Error taxonomy as simple enum
 **Date:** 2026-05-18
@@ -66,7 +66,7 @@ The product surface is the skill set itself. This is not a runtime, SaaS, queue 
 ### ADR-008: Partial spec handling for skipped intake questions
 **Date:** 2026-05-18
 **Decision:** `fab-intake` proceeds with partial specs, marks incomplete areas, and warns downstream skills.
-**Rationale:** Allows progress while flagging incomplete areas. Incomplete specs are worse than no specs — downstream skills must know what's missing.
+**Rationale:** Allows progress while flagging incomplete areas. Incomplete specs are worse than no specs. Downstream skills must know what's missing.
 
 ### ADR-009: Validation pass/fail criteria required
 **Date:** 2026-05-18
@@ -93,7 +93,7 @@ The product surface is the skill set itself. This is not a runtime, SaaS, queue 
 | Decision | Deferred To | Rationale |
 |----------|-------------|-----------|
 | Skill testing framework | Post-MVP | Testing markdown skills is fundamentally different from testing code; premature for MVP |
-| Skill versioning strategy | Post-MVP | "Successful problem" — defer until multiple skill versions exist |
+| Skill versioning strategy | Post-MVP | "Successful problem": defer until multiple skill versions exist |
 | Run history | Post-MVP | Premature until multiple runs exist; fab-retro already captures per-run improvements |
 
 ## Review Metadata

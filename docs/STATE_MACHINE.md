@@ -215,7 +215,7 @@ Beyond JSON Schema, the validator rejects:
 | Validator | What it enforces |
 |---|---|
 | `validateFabLaunchGate` | `external_deploy` kind requires prior human approval; `container_build` must invoke Docker; `complete` status requires a launch verification entry |
-| `validateFabSignalGate` | Every non-null decision must have a `resolved_at` timestamp — no auto-populated decisions |
+| `validateFabSignalGate` | Every non-null decision must have a `resolved_at` timestamp: no auto-populated decisions |
 | `validateFabCheckGate` | Stage with `quality_score < 6` must not be `done` |
 | `validateFabPulseGate` | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` |
 | `validateNextActionGate` | `fab-integrate` requires all `app_stages` done; `fab-verify` requires `status === "verifying"` |

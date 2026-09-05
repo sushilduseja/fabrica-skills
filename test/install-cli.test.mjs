@@ -65,7 +65,10 @@ test('project install creates .agents/skills/fab-spec/SKILL.md plus marker', () 
     const marker = readMarker(join(ctx.project, '.agents', 'skills', 'fab-spec', '.fabrica-managed.json'));
     assert.strictEqual(marker.managed_by, 'fabrica-skills');
     assert.strictEqual(marker.skill_id, 'fab-spec');
-    assert.strictEqual(marker.package_version, '0.3.0');
+    assert.strictEqual(
+      marker.package_version,
+      JSON.parse(readFileSync(join(ctx.pkg, 'package.json'), 'utf-8')).version,
+    );
     assert.strictEqual(marker.install_scope, 'project');
     assert(typeof marker.installed_at === 'string' && marker.installed_at.length > 0);
     assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 15);
@@ -139,10 +142,15 @@ test('global install writes under temp HOME with catalog copy', () => {
     const marker = readMarker(join(ctx.home, '.agents', 'skills', 'fab-spec', '.fabrica-managed.json'));
     assert.strictEqual(marker.managed_by, 'fabrica-skills');
     assert.strictEqual(marker.install_scope, 'global');
-    assert(existsSync(join(ctx.home, '.fabrica-skills', 'catalog', '0.3.0', 'skills', 'core', 'fab-spec', 'SKILL.md')));
+    const expectedVersion = JSON.parse(readFileSync(join(ctx.pkg, 'package.json'), 'utf-8')).version;
+    assert(
+      existsSync(
+        join(ctx.home, '.fabrica-skills', 'catalog', expectedVersion, 'skills', 'core', 'fab-spec', 'SKILL.md'),
+      ),
+    );
     assert.strictEqual(
-      readFileSync(join(ctx.home, '.fabrica-skills', 'catalog', '0.3.0', 'CURRENT'), 'utf-8'),
-      '0.3.0\n',
+      readFileSync(join(ctx.home, '.fabrica-skills', 'catalog', expectedVersion, 'CURRENT'), 'utf-8'),
+      `${expectedVersion}\n`,
     );
     assert(!existsSync(join(ctx.project, '.agents')), 'project dir must stay untouched on global install');
     assertNoStackTrace(result);

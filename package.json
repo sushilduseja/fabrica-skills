@@ -1,18 +1,31 @@
 {
   "name": "fabrica-skills",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "private": false,
   "allowScripts": {},
   "type": "module",
   "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
   "license": "MIT",
-  "keywords": ["ai-agents", "skills", "cli", "claude-code", "coding-assistant"],
+  "keywords": [
+    "ai-agents",
+    "skills",
+    "cli",
+    "claude-code",
+    "coding-assistant"
+  ],
   "homepage": "https://github.com/sushilduseja/fabrica-skills#readme",
-  "bugs": { "url": "https://github.com/sushilduseja/fabrica-skills/issues" },
-  "repository": { "type": "git", "url": "git+https://github.com/sushilduseja/fabrica-skills.git" },
-  "engines": { "node": ">=16.7" },
+  "bugs": {
+    "url": "https://github.com/sushilduseja/fabrica-skills/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sushilduseja/fabrica-skills.git"
+  },
+  "engines": {
+    "node": ">=16.7"
+  },
   "bin": {
-    "fabrica-skills": "./bin/fabrica-skills.mjs"
+    "fabrica-skills": "bin/fabrica-skills.mjs"
   },
   "files": [
     "bin/",
