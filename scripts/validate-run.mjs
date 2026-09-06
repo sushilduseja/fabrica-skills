@@ -15,7 +15,7 @@
  * validation succeeds.
  */
 import { existsSync, renameSync, writeFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { validateAllGates } from './_skill-gates.mjs';
 import { readJsonFile } from './_path-utils.mjs';

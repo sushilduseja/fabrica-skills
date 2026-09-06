@@ -404,7 +404,13 @@ function cmdInitRun({ pkgRoot, cwd, flags }) {
     fail(`Cannot write ${outPath}: ${err.message}`);
   }
   console.log(`[fabrica-skills] wrote ${outPath}`);
-  console.log('next: open this file after /fab-spec');
+  if (flags.auto) {
+    console.log(
+      'next: /fab-spec proceeds without approval through plan and integrate; /fab-verify and /fab-decide still stop for you',
+    );
+  } else {
+    console.log('next: open this file after /fab-spec');
+  }
 }
 
 function cmdValidate({ pkgRoot, flags }) {

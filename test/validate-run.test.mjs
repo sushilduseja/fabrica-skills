@@ -1213,4 +1213,12 @@ test('validate-run --commit without --stdin is rejected', () => {
   assertNoStackTrace(result);
 });
 
+test('validate-run rejects gate_levels.fab-verify set to auto (locked review gate)', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  candidate.gate_levels['fab-verify'] = 'auto';
+  const result = validateStdin(candidate);
+  assertFail(result, 'locked fab-verify gate set to auto unexpectedly passed');
+  assertNoStackTrace(result);
+});
+
 runAll();

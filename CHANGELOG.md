@@ -5,6 +5,14 @@
 ### Fixed
 - Harden path handling for Windows usernames containing spaces: added `assertWithinRoot` write-boundary guard (link/install targets), regression tests for space-containing home directories, and a repo self-scan forbidding shell-string path interpolation (the 8.3 short-name bug class). Audit found zero existing occurrences — all paths already use `path.join` and array-arg subprocess calls.
 
+## 1.1.1 (2026-09-06)
+
+### Fixed
+- `--auto` mode: skills resolve gates from `fabrica.run.json` `gate_levels` first; invocation `--auto` is equivalent, not required when levels are already auto
+- `fab-spec` does not re-prompt continue-vs-fresh when auto mode already applies (`gate_levels.fab-spec` auto and `next_action` `/fab-spec`)
+- README and QUICKSTART document that `--auto` also skips `fab-integrate`
+- `init-run --auto` prints next-step text that mentions verify/decide still stop
+
 ## 1.1.0 (2026-09-06)
 
 ### Added

@@ -36,7 +36,7 @@ You can override any slot. The agent uses your choice unless it conflicts with t
 
 By default, the agent stops and shows you the spec and the plan before it writes anything. You approve, then it continues.
 
-Add `--auto` to skip those two stops. The agent writes the spec and the plan without waiting, then shows you a short summary of what it assumed.
+Add `--auto` to skip the spec, plan, and integrate approval stops. The agent writes the spec, the plan, and the wiring without waiting, then shows you a short summary of what it assumed.
 
 ```
 npx fabrica-skills init-run --name my-app --auto

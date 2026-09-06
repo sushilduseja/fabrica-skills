@@ -422,6 +422,7 @@ test('init-run --auto resolves overridable checkpoints to auto, keeps locked gat
     const written = JSON.parse(readFileSync(out, 'utf-8'));
     assert.strictEqual(written.gate_levels['fab-spec'], 'auto');
     assert.strictEqual(written.gate_levels['fab-plan'], 'auto');
+    assert.strictEqual(written.gate_levels['fab-integrate'], 'auto');
     assert.strictEqual(written.gate_levels['fab-verify'], 'review');
     assert.strictEqual(written.gate_levels['fab-decide'], 'full');
     assert.strictEqual(written.gate_levels['fab-status'], 'auto');
@@ -469,6 +470,34 @@ test('status omits the run section when no run object exists', () => {
     const result = cli(ctx.pkg, ['status'], { cwd: ctx.project, home: ctx.home });
     assertPass(result, combined(result));
     assert(!combined(result).includes('run:'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run --auto success message names verify and decide as still stopping', () => {
+  const ctx = setup();
+  try {
+    const result = cli(ctx.pkg, ['init-run', '--auto'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    const out = combined(result);
+    assert(out.includes('/fab-verify'), out);
+    assert(out.includes('/fab-decide'), out);
+    assert(out.includes('still stop for you'), out);
+    assert(!out.includes('open this file'), out);
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run without --auto keeps the short next line', () => {
+  const ctx = setup();
+  try {
+    const result = cli(ctx.pkg, ['init-run'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('next: open this file after /fab-spec'), combined(result));
     assertNoStackTrace(result);
   } finally {
     teardown(ctx);

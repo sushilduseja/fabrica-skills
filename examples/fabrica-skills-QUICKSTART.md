@@ -71,7 +71,7 @@ After each step, read `next_action` in `fabrica.run.json`. Run that command next
 
 Stack: `/fab-spec` asks for frontend, backend, and database, one at a time. Leave any blank for the fixed defaults (React + Vite, FastAPI, SQLite).
 
-Speed: approve each checkpoint, or add `--auto` to skip the spec/plan stops. Copy this:
+Speed: approve each checkpoint, or add `--auto` to skip the spec, plan, and integrate stops. Copy this:
 
 ```
 npx fabrica-skills init-run --name taskflow --auto
