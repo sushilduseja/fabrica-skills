@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+- README and QUICKSTART lead with the zero-dependency install: `npx fabrica-skills@latest install`. No `package.json` changes, no local dependency. The `npm install -D` flow is documented as the pinned-version option for teams that want lockfile-held reproducibility.
+- README documents that `--global` copies skills only and does not add a `fabrica-skills` command to PATH; all CLI calls stay on `npx`.
+- All consumer-facing commands in README and QUICKSTART use the canonical `npx fabrica-skills@latest <command>` form.
+- Troubleshooting gains rows for the first-run npx approval prompt and for refreshing stale installed skills via `update`.
+
 ### Fixed
 - Harden path handling for Windows usernames containing spaces: added `assertWithinRoot` write-boundary guard (link/install targets), regression tests for space-containing home directories, and a repo self-scan forbidding shell-string path interpolation (the 8.3 short-name bug class). Audit found zero existing occurrences — all paths already use `path.join` and array-arg subprocess calls.
 

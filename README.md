@@ -6,15 +6,14 @@ This repository ships markdown skills only. It has no runtime, no hosted service
 
 ## Quickstart
 
-Run these three commands in order.
+Run these two commands in your project folder.
 
 ```
-npm install -D fabrica-skills
-npx fabrica-skills install
-npx fabrica-skills status
+npx fabrica-skills@latest install
+npx fabrica-skills@latest status
 ```
 
-The last command lists 14 installed skills. Your agent can now see them.
+The first command copies 14 skills into the skill folders your agent already reads: `.agents/`, `.claude/`, `.cursor/`, `.codex/`, `.opencode/`. It adds nothing to `package.json` and installs no dependency. The second command lists 14 installed skills. Your agent can now see them.
 
 ## Two choices you control
 
@@ -39,7 +38,7 @@ By default, the agent stops and shows you the spec and the plan before it writes
 Add `--auto` to skip the spec, plan, and integrate approval stops. The agent writes the spec, the plan, and the wiring without waiting, then shows you a short summary of what it assumed.
 
 ```
-npx fabrica-skills init-run --name my-app --auto
+npx fabrica-skills@latest init-run --name my-app --auto
 ```
 
 Two steps always stop for you, with or without `--auto`:
@@ -52,7 +51,7 @@ Two steps always stop for you, with or without `--auto`:
 Create a run file.
 
 ```
-npx fabrica-skills init-run --name my-app
+npx fabrica-skills@latest init-run --name my-app
 ```
 
 Ask your agent to start intake.
@@ -136,31 +135,43 @@ Full schema: `schemas/run-object.schema.json`. The validator checks every write 
 
 ## Other ways to install
 
-Skip the local dependency.
-```
-npx fabrica-skills@latest install
-```
+### Install once for every project on your machine
 
-Install once for every project on your machine.
 ```
 npx fabrica-skills@latest install --global
 ```
 
-Install from a local checkout of this repo.
+Skills go to your home folder, not the project folder. A global install resolves through `os.homedir()` to your real home directory: `C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS.
+
+`--global` copies skills only. It does not put a `fabrica-skills` command on your PATH. Always run the CLI through `npx`.
+
+### Pin the version for your team
+
+`@latest` moves. If your team wants the same skills on every machine, pin the package and let your lockfile hold the version:
+
+```
+npm install -D fabrica-skills
+npx fabrica-skills install
+```
+
+With the package in `node_modules`, `npx fabrica-skills` runs the pinned copy, not the registry. To change versions, change the dependency and re-run the install command.
+
+### Install from a local checkout of this repo
+
 ```
 node bin/fabrica-skills.mjs install --global
 ```
 
-A global install resolves through `os.homedir()` to your real home directory: `C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS.
+### Update
 
-Update.
 ```
 npx fabrica-skills@latest update
 ```
 
-Remove.
+### Remove
+
 ```
-npx fabrica-skills uninstall
+npx fabrica-skills@latest uninstall
 ```
 
 Release history: `CHANGELOG.md`.
@@ -169,6 +180,7 @@ Release history: `CHANGELOG.md`.
 
 - Git.
 - Node.js 16.7 or newer.
+- Network access for the first `npx` fetch. After that, the CLI comes from your local npm cache.
 - An AI coding agent that reads local markdown skill files.
 
 ## Repository layout
@@ -199,7 +211,9 @@ fabrica-skills/
 
 | Problem | Fix |
 |---|---|
-| `node` is not found | Install Node.js 16.7 or newer. Then run `npm run setup`. |
+| `node` is not found | Install Node.js 16.7 or newer. Then run the install command again. |
+| `npx` asks "Ok to proceed?" | Answer `y` once, or run `npx -y fabrica-skills@latest install`. |
+| Installed skills are older than the version you want | Run `npx fabrica-skills@latest update`, then `status` again. |
 | Your agent does not see the slash commands | Point it at `.skills/<skill-name>/SKILL.md`, or use `.claude-plugin/plugin.json` if your agent supports it. |
 | `fabrica.run.json` is missing | Run `/fab-spec`. It is the only starting point. |
 | A stage is blocked | Run `/fab-fix <stage-name>` with the failure output. |

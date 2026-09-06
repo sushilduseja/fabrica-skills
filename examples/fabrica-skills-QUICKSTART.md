@@ -25,17 +25,13 @@ Move into it.
 cd taskflow
 ```
 
-Install the package.
-
-```
-npm install -D fabrica-skills
-```
-
 Install the skills.
 
 ```
-npx fabrica-skills install
+npx fabrica-skills@latest install
 ```
+
+There is no separate package install. `npx` fetches the CLI from npm, and the installer copies the skills into the skill folders in this folder. Nothing is added to `package.json`.
 
 Expected outcome:
 
@@ -46,10 +42,15 @@ Expected outcome:
 Optional check that your agent sees the skills:
 
 ```
-npx fabrica-skills status
+npx fabrica-skills@latest status
 ```
 
 Expected outcome: `agents 14/14`, `claude 14/14`, `cursor 14/14`, `codex 14/14`, `opencode 14/14` under `harness`.
+
+Two variants:
+
+- Install for every project on your machine: add `--global`. Skills go to your home folder. The CLI itself never goes on your PATH; keep calling it through `npx`.
+- Your team wants one fixed version everywhere: run `npm install -D fabrica-skills` first. Your lockfile then pins the version, and `npx fabrica-skills install` runs that pinned copy.
 
 ## 2. Open the project in your agent
 
@@ -74,7 +75,7 @@ Stack: `/fab-spec` asks for frontend, backend, and database, one at a time. Leav
 Speed: approve each checkpoint, or add `--auto` to skip the spec, plan, and integrate stops. Copy this:
 
 ```
-npx fabrica-skills init-run --name taskflow --auto
+npx fabrica-skills@latest init-run --name taskflow --auto
 ```
 
 `--auto` never skips the pre-launch check or a decision only you can make. In `--auto` mode the agent emits no extra messages: the assumption summary and progress lines are the only narration.
@@ -170,7 +171,7 @@ Expected outcome: resumable session notes in `docs/handoff.md`, a retrospective 
 ## Clean up (optional)
 
 ```
-npx fabrica-skills uninstall
+npx fabrica-skills@latest uninstall
 ```
 
 Removes only the skill directories it installed. Your app code stays untouched.
