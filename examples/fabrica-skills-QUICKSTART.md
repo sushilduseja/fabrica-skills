@@ -68,6 +68,8 @@ Follow .agents/skills/fab-spec/SKILL.md
 
 After each step, read `next_action` in `fabrica.run.json`. Run that command next. Lost? Run `/fab-status`.
 
+Stage names are not fixed by this guide. After `/fab-plan` and `/fab-scaffold`, every `/fab-build`, `/fab-eval`, and `/fab-fix` argument must be the exact stage name from `next_action` or `app_stages` in `fabrica.run.json` (or the matching name in `docs/blueprint.md`).
+
 ### Two choices you control
 
 Stack: `/fab-spec` asks for frontend, backend, and database, one at a time. Leave any blank for the fixed defaults (React + Vite, FastAPI, SQLite).
@@ -97,7 +99,7 @@ Expected outcome: the agent asks a few questions, then records your stack answer
 /fab-plan
 ```
 
-Expected outcome: architecture, stack choice, and build stages (e.g. `task-crud-api`, `search-stats`, `web-dashboard`) in `docs/blueprint.md`, with each stack slot labeled operator-specified or default. `next_action` points to `/fab-scaffold`.
+Expected outcome: architecture, stack choice, and a build order of named stages in `docs/blueprint.md` and `fabrica.run.json` → `app_stages`. Stage names are chosen by the plan for *this* idea (for a TaskFlow-like board they *might* look like `task-crud-api`, `search-stats`, `web-dashboard` — those are examples only, not fixed names), with each stack slot labeled operator-specified or default. `next_action` points to `/fab-scaffold`.
 
 ### Step 3: Scaffold
 
@@ -109,25 +111,38 @@ Expected outcome: a project skeleton in your current folder: source directories,
 
 ### Step 4: Build and score each stage
 
-Repeat this pair once per stage from your blueprint, using the exact stage names:
+Do **not** invent stage names and do **not** copy sample names from this guide unless they match your run.
+
+1. Open `fabrica.run.json`.
+2. Read `next_action` (preferred). It is the exact command to run next, including the stage name when one is required (e.g. `/fab-build <stage>`).
+3. If you need the full list, use `app_stages[].name` and/or the stage list in `docs/blueprint.md`. Names must match **character-for-character**.
+
+Repeat this pair once per stage, using **only** those exact names:
+
+```
+/fab-build <exact-stage-name-from-next_action-or-app_stages>
+```
+
+```
+/fab-eval <same-exact-stage-name>
+```
+
+Example (only if your plan actually created this stage):
 
 ```
 /fab-build task-crud-api
-```
-
-```
 /fab-eval task-crud-api
 ```
 
-Expected outcome: `/fab-build` implements just that stage with focused tests and runs them. `/fab-eval` scores it 0 to 10 on five axes (spec fit, contract fit, tests, clarity, safety) and writes `docs/eval/<stage-name>.md`.
+Expected outcome: `/fab-build` implements just that stage with focused tests and runs them. `/fab-eval` scores it 0 to 10 on five axes and writes `docs/eval/<stage-name>.md`.
 
-If any axis scores below 6, the stage is blocked and `next_action` points to the fix loop:
+If any axis scores below 6, the stage is blocked and `next_action` points at the fix loop — run **that** command (do not guess the stage name):
 
 ```
-/fab-fix task-crud-api
+/fab-fix <exact-stage-name-from-next_action>
 ```
 
-Then re-run `/fab-eval`. Continue with the remaining stages.
+Then re-run `/fab-eval` with the same exact stage name. Continue until every planned stage is done, always following `next_action`.
 
 ### Step 5: Integrate
 
@@ -163,7 +178,7 @@ Expected outcome: resumable session notes in `docs/handoff.md`, a retrospective 
 
 | Situation | Do this |
 |---|---|
-| A stage is blocked (score < 6) | `/fab-fix <stage-name>`: paste the failing output with it |
+| A stage is blocked (score < 6) | `/fab-fix <stage-name>`: use the stage name from `next_action`, and paste the failing output with it |
 | Not sure where you are | `/fab-status`, or read `next_action` in `fabrica.run.json` |
 | Need to pause / resume later | `/fab-handoff`, then resume from `docs/handoff.md` next session |
 | Agent does not see `/fab-*` | Tell it: `Follow .agents/skills/<skill-name>/SKILL.md` |
