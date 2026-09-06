@@ -27,7 +27,7 @@ Visual state machine and command pathways: `docs/STATE_MACHINE.md`
 | `costs` | object | `{ precision: "unknown", tokens_in: "unknown", tokens_out: "unknown", api_calls: "unknown", estimated_usd: "unknown", budget_usd: null, by_step: {} }` |
 | `verifications` | array | Empty on creation |
 | `human_decisions` | array | Empty on creation |
-| `gate_levels` | object | Derived from `skills/manifest.json`: each active skill id maps to its `default_gate` |
+| `gate_levels` | object | Derived from `skills/manifest.json`: each active skill id maps to its `default_gate`, except `init-run --auto` resolves overridable `checkpoint` gates to `auto` |
 
 ## Fields updated by downstream skills
 

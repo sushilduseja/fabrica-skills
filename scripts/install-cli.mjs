@@ -15,6 +15,7 @@ import { homedir } from 'os';
 import { randomUUID } from 'crypto';
 import { spawnSync } from 'child_process';
 import { SKILL_ID_RE, SKILL_PATH_RE, lstatIfPresent, readJsonFile } from './_path-utils.mjs';
+import { resolveGateLevel } from './_skill-gates.mjs';
 
 export const HARNESS = {
   agents: {
@@ -69,6 +70,7 @@ function parseFlags(argv) {
     name: null,
     out: null,
     force: false,
+    auto: false,
     positional: [],
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -76,6 +78,7 @@ function parseFlags(argv) {
     if (a === '--global' || a === '-g') flags.global = true;
     else if (a === '--orphans') flags.orphans = true;
     else if (a === '--force') flags.force = true;
+    else if (a === '--auto') flags.auto = true;
     else if (a === '--name') {
       const value = argv[i + 1];
       if (!value || value.startsWith('-')) {
@@ -309,6 +312,27 @@ function cmdStatus({ pkgRoot, version, cwd, flags }) {
     }
     console.log(`  ${key}  ${present}/${manifestIds.length}  ${present === 0 ? '(not installed)' : root}`);
   }
+  const runPath = join(cwd, 'fabrica.run.json');
+  if (existsSync(runPath)) {
+    try {
+      const run = JSON.parse(readFileSync(runPath, 'utf8'));
+      const next = typeof run.next_action === 'string' ? run.next_action : '(none)';
+      const nextId = typeof run.next_action === 'string' ? run.next_action.slice(1).split(' ')[0] : null;
+      const gate = nextId && run.gate_levels ? run.gate_levels[nextId] : undefined;
+      const hint =
+        gate === 'auto'
+          ? ' (proceed without approval)'
+          : gate === 'checkpoint' || gate === 'review' || gate === 'full'
+            ? ' (approval required)'
+            : '';
+      console.log('run:');
+      console.log(`  name   ${run.name}`);
+      console.log(`  state  ${run.status} / ${run.current_step} -> ${next}`);
+      console.log(`  gate   ${nextId}: ${gate}${hint}`);
+    } catch {
+      console.log('run: (fabrica.run.json present but unparseable)');
+    }
+  }
 }
 
 function readRunObjectNamePattern(pkgRoot) {
@@ -334,7 +358,7 @@ function cmdInitRun({ pkgRoot, cwd, flags }) {
   const now = new Date().toISOString();
   const gate_levels = {};
   for (const skill of manifest.skills) {
-    gate_levels[skill.id] = skill.default_gate;
+    gate_levels[skill.id] = resolveGateLevel(skill.id, skill, flags.auto);
   }
   const runObject = {
     schema_version: '0.2',

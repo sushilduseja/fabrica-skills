@@ -52,7 +52,9 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
    npx fabrica-skills status
    ```
 
-   The command lists 14 installed skills.
+    The command lists 14 installed skills.
+
+Add `--auto` to `init-run` to skip the spec/plan approval checkpoints (`gate_levels` resolve to `auto` for overridable skills; `status` shows the next action and its gate). `fab-verify` (pre-launch check) and `fab-decide` (human decisions) always require approval regardless of this flag.
 
 ## Other install methods
 

@@ -2,6 +2,7 @@ import assert from 'assert';
 import { readFileSync } from 'fs';
 import { assertFail, assertNoStackTrace, combined, readJson, test, validateStdin, runAll } from './_harness.mjs';
 import {
+  resolveGateLevel,
   validateFabLaunchGate,
   validateFabSignalGate,
   validateFabCheckGate,
@@ -472,6 +473,69 @@ test('gate-enforced rules are documented in the corresponding SKILL.md guardrail
       assert(content.includes(kw), `SKILL.md for ${skill} must document the gate-enforced rule containing "${kw}"`);
     }
   }
+});
+
+/* ================================================================
+ *  --auto gate resolution (resolveGateLevel)
+ *  The flag downgrades overridable checkpoints only; locked skills
+ *  (overridable: false) keep their default gate regardless.
+ * ================================================================ */
+
+test('--auto gate config precondition: manifest gates match the documented contract', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const byId = Object.fromEntries(manifest.skills.map((s) => [s.id, s]));
+  assert.strictEqual(byId['fab-spec'].default_gate, 'checkpoint');
+  assert.strictEqual(byId['fab-spec'].overridable, true);
+  assert.strictEqual(byId['fab-plan'].default_gate, 'checkpoint');
+  assert.strictEqual(byId['fab-plan'].overridable, true);
+  assert.strictEqual(byId['fab-verify'].default_gate, 'review');
+  assert.strictEqual(byId['fab-verify'].overridable, false);
+  assert.strictEqual(byId['fab-decide'].default_gate, 'full');
+  assert.strictEqual(byId['fab-decide'].overridable, false);
+});
+
+test('--auto on fab-spec resolves checkpoint to auto', () => {
+  const entry = { default_gate: 'checkpoint', overridable: true };
+  assert.strictEqual(resolveGateLevel('fab-spec', entry, true), 'auto');
+});
+
+test('--auto on fab-plan resolves checkpoint to auto', () => {
+  const entry = { default_gate: 'checkpoint', overridable: true };
+  assert.strictEqual(resolveGateLevel('fab-plan', entry, true), 'auto');
+});
+
+test('--auto on fab-verify still resolves to review (locked)', () => {
+  const entry = { default_gate: 'review', overridable: false };
+  assert.strictEqual(resolveGateLevel('fab-verify', entry, true), 'review');
+});
+
+test('--auto on fab-decide still resolves to full (locked)', () => {
+  const entry = { default_gate: 'full', overridable: false };
+  assert.strictEqual(resolveGateLevel('fab-decide', entry, true), 'full');
+});
+
+test('no flag: fab-spec and fab-plan still resolve to checkpoint', () => {
+  const entry = { default_gate: 'checkpoint', overridable: true };
+  assert.strictEqual(resolveGateLevel('fab-spec', entry, false), 'checkpoint');
+  assert.strictEqual(resolveGateLevel('fab-plan', entry, false), 'checkpoint');
+});
+
+test('--auto never bypasses overridable:false, even for checkpoint defaults', () => {
+  const entry = { default_gate: 'checkpoint', overridable: false };
+  assert.strictEqual(resolveGateLevel('fab-status', entry, true), 'checkpoint');
+});
+
+test('--auto behavior is documented in the SKILL.md contract files', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  const read = (id) => readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
+
+  assert(read('fab-spec').includes('--auto'), 'fab-spec must document the --auto gate conditional');
+  assert(read('fab-spec').includes('Assumed from your idea'), 'fab-spec must document the assumption summary block');
+  assert(read('fab-plan').includes('--auto'), 'fab-plan must document the --auto gate conditional');
+  assert(read('fab-integrate').includes('--auto'), 'fab-integrate must document the --auto gate conditional');
+  assert(read('fab-build').includes('[fab-build] stage'), 'fab-build must document the progress narration line');
+  assert(read('fab-eval').includes('[fab-eval] stage'), 'fab-eval must document the progress narration line');
 });
 
 runAll();

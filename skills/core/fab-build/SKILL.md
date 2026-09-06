@@ -68,6 +68,7 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 10. If tests pass, update stage `status = "done"`, add relative artifact paths to the stage record, append a verification result, clear `last_error`, and set `next_action = "/fab-eval <stage>"`.
 11. Set `current_step = "fab-build"`, `current_app_stage` to the stage name, and bump `updated_at`.
 12. Validate the candidate run object before writing.
+13. Narrate progress with one line per stage using its 1-based position among `app_stages` (`<i>/<n>`): print `[fab-build] stage <i>/<n>: <stage> — running tests...` when the stage test command starts.
 
 Done.
 

@@ -61,6 +61,7 @@ One app stage has implementation and tests (`status = done` in run object).
 6. Update `quality_score` in the matching `app_stages` entry.
 7. Set `current_step = "fab-eval"`, bump `updated_at`, and set `next_action`: if blocked, `/fab-fix <stage>`; if passed, the next `/fab-build <stage>` or `/fab-integrate` command.
 8. Validate the candidate run object before writing.
+9. Narrate progress with one line per stage using its 1-based position among `app_stages` (`<i>/<n>`): print `[fab-eval] stage <i>/<n>: <stage> — score <average>/10, done` after scoring.
 
 Done.
 

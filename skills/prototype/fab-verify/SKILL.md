@@ -58,7 +58,7 @@ Integrated app ready for MVP verification (`status = verifying`, `docs/integrati
    - Integration verified
 2. Show checklist and require explicit approval before running any external, destructive, or network deploy action.
 3. Verify locally using the approved local run command or commands from the blueprint/package scripts. Branch by launch shape:
-   - Single process: start the process and run the declared smoke check.
+   - Single process: if the port is already held by a stale process from an earlier run, stop that process first; then start the process and run the declared smoke check.
    - CLI: run the CLI with deterministic sample input from the spec.
    - Multi-service local processes: start each required service on loopback and smoke the declared endpoints.
    - Containerized app: if Docker/container runtime is available, run the declared build/up command and smoke the published endpoints.

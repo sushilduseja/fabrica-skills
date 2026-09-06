@@ -413,4 +413,66 @@ test('init-run gate_levels keys match the manifest skill ids', () => {
   }
 });
 
+test('init-run --auto resolves overridable checkpoints to auto, keeps locked gates', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    const result = cli(ctx.pkg, ['init-run', '--auto'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    const written = JSON.parse(readFileSync(out, 'utf-8'));
+    assert.strictEqual(written.gate_levels['fab-spec'], 'auto');
+    assert.strictEqual(written.gate_levels['fab-plan'], 'auto');
+    assert.strictEqual(written.gate_levels['fab-verify'], 'review');
+    assert.strictEqual(written.gate_levels['fab-decide'], 'full');
+    assert.strictEqual(written.gate_levels['fab-status'], 'auto');
+    const check = run(['scripts/validate-run.mjs', out]);
+    assertPass(check, combined(check));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('status shows next action and auto gate when a run object exists', () => {
+  const ctx = setup();
+  try {
+    assertPass(cli(ctx.pkg, ['init-run', '--auto', '--name', 'demo'], { cwd: ctx.project, home: ctx.home }));
+    const result = cli(ctx.pkg, ['status'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    const out = combined(result);
+    assert(out.includes('run:'), out);
+    assert(out.includes('demo'), out);
+    assert(out.includes('/fab-spec'), out);
+    assert(out.includes('fab-spec: auto (proceed without approval)'), out);
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('status shows approval hint for checkpoint gates', () => {
+  const ctx = setup();
+  try {
+    assertPass(cli(ctx.pkg, ['init-run', '--name', 'demo'], { cwd: ctx.project, home: ctx.home }));
+    const result = cli(ctx.pkg, ['status'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('fab-spec: checkpoint (approval required)'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('status omits the run section when no run object exists', () => {
+  const ctx = setup();
+  try {
+    const result = cli(ctx.pkg, ['status'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(!combined(result).includes('run:'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
 runAll();
