@@ -38,6 +38,10 @@ By default, the agent stops and shows you the spec and the plan before it writes
 
 Add `--auto` to skip those two stops. The agent writes the spec and the plan without waiting, then shows you a short summary of what it assumed.
 
+```
+npx fabrica-skills init-run --name my-app --auto
+```
+
 Two steps always stop for you, with or without `--auto`:
 
 - The pre-launch check, before anything reaches a real user.
