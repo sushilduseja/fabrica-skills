@@ -20,6 +20,7 @@ import { fileURLToPath } from 'url';
 import { homedir } from 'os';
 import {
   assertInsideRoot,
+  assertWithinRoot,
   lstatIfPresent,
   readJsonFile,
   SKILL_ID_RE,
@@ -253,6 +254,11 @@ for (const { name: skillName } of targets) {
 
 for (const { name: skillName, source: skillPath } of targets) {
   const linkDest = join(targetDir, skillName);
+  try {
+    assertWithinRoot(linkDest, targetDir);
+  } catch (err) {
+    fail(err.message);
+  }
 
   try {
     if (isWindows) {

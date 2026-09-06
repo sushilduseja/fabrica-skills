@@ -14,7 +14,7 @@ import { dirname, isAbsolute, join, relative, sep } from 'path';
 import { homedir } from 'os';
 import { randomUUID } from 'crypto';
 import { spawnSync } from 'child_process';
-import { SKILL_ID_RE, SKILL_PATH_RE, lstatIfPresent, readJsonFile } from './_path-utils.mjs';
+import { SKILL_ID_RE, SKILL_PATH_RE, assertWithinRoot, lstatIfPresent, readJsonFile } from './_path-utils.mjs';
 import { resolveGateLevel } from './_skill-gates.mjs';
 
 export const HARNESS = {
@@ -177,6 +177,11 @@ function resolveHarnessRoots({ agents, global, cwd }) {
  */
 function ensureGlobalCatalog(pkgRoot, version) {
   const dest = join(homedir(), '.fabrica-skills', 'catalog', version);
+  try {
+    assertWithinRoot(dest, homedir());
+  } catch (err) {
+    fail(err.message);
+  }
   try {
     rmSync(dest, { recursive: true, force: true });
     mkdirSync(dest, { recursive: true });
@@ -389,6 +394,9 @@ function cmdInitRun({ pkgRoot, cwd, flags }) {
     gate_levels,
     preferred_stack: { frontend: null, backend: null, database: null },
   };
+  // NOTE: outPath is deliberately NOT root-guarded — it is an explicit
+  // operator choice (--out), not a derived install target. Guarding it
+  // against anything but CWD would break the documented feature.
   try {
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, `${JSON.stringify(runObject, null, 2)}\n`, 'utf8');

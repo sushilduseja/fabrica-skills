@@ -39,6 +39,25 @@ export function assertInsideRoot(root, label, absPath) {
 }
 
 /**
+ * Assert that a target path stays inside an allowed root directory.
+ *
+ * Unlike the other helpers in this module (which terminate the process),
+ * this function THROWS, so CLI entry points can convert the failure into
+ * their clean `fail()` message and unit tests can assert on it directly.
+ * The `sep` suffix check rejects sibling-prefix escapes (e.g. `/root-evil`
+ * is not inside `/root`).
+ * @param {string} targetPath Path about to be written.
+ * @param {string} allowedRoot Directory the write must stay inside.
+ */
+export function assertWithinRoot(targetPath, allowedRoot) {
+  const resolvedTarget = resolve(targetPath);
+  const resolvedRoot = resolve(allowedRoot);
+  if (resolvedTarget !== resolvedRoot && !resolvedTarget.startsWith(resolvedRoot + sep)) {
+    throw new Error(`Refusing write outside allowed root: ${resolvedTarget} is not under ${resolvedRoot}`);
+  }
+}
+
+/**
  * Assert that a repo-relative path is safe (no traversal, no absolute, forward slashes).
  * Optionally validate layout via a regex pattern. Terminates on failure.
  * @param {string} root Absolute path to the repository root.

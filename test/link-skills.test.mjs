@@ -1,10 +1,22 @@
 import assert from 'assert';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { assertWithinRoot } from '../scripts/_path-utils.mjs';
 import {
   copyRepoFixture,
   mutateJson,
+  root,
   run,
   test,
   assertPass,
@@ -373,6 +385,59 @@ test('link-skills creates alias entries pointing at the canonical skill source',
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }
+});
+
+test('assertWithinRoot allows nested paths including spaces, rejects escapes', () => {
+  const rootWithSpace = join(tmpdir(), 'fabrica home with space');
+  assertWithinRoot(join(rootWithSpace, '.fabrica-skills', '.skills', 'fab-spec'), rootWithSpace);
+  assertWithinRoot(rootWithSpace, rootWithSpace);
+  assert.throws(() => assertWithinRoot(join(rootWithSpace, '..', 'outside'), rootWithSpace), /outside allowed root/);
+  assert.throws(() => assertWithinRoot(`${rootWithSpace}-evil`, rootWithSpace), /outside allowed root/);
+});
+
+test('link-skills --global installs under a space-containing home with no short-name substitution', () => {
+  const temp = copyRepoFixture();
+  const spaceHome = join(tmpdir(), 'fabrica Test User');
+  mkdirSync(spaceHome, { recursive: true });
+  try {
+    const result = run(['scripts/link-skills.mjs', '--global'], {
+      cwd: temp,
+      env: { HOME: spaceHome, USERPROFILE: spaceHome },
+    });
+    assertPass(result, combined(result));
+    const out = combined(result);
+    assert(out.includes('GLOBAL'), out);
+    // The space in the home dir name must survive path resolution intact.
+    // (Any `~` elsewhere in the line comes from TMPDIR's own short-name
+    // prefix in this environment, not from substitution of our segment.)
+    assert(out.includes('fabrica Test User'), `home with space must survive intact: ${out}`);
+    assert(
+      out.includes(join(spaceHome, '.fabrica-skills', '.skills')),
+      `install must land under the exact space-containing home: ${out}`,
+    );
+    assert(existsSync(join(spaceHome, '.fabrica-skills', '.skills', 'fab-spec', 'SKILL.md')));
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+    rmSync(spaceHome, { recursive: true, force: true });
+  }
+});
+
+test('repo contains no shell-string path interpolation (8.3 short-name bug class)', () => {
+  const roots = [join(root, 'scripts'), join(root, 'bin')];
+  const forbidden = ['execSync(', 'exec(`', 'shell:', 'cmd /c', 'cmd.exe', '%USERPROFILE%', '%HOMEPATH%', '%HOME%'];
+  const offenders = [];
+  for (const dir of roots) {
+    for (const entry of readdirSync(dir)) {
+      if (!entry.endsWith('.mjs')) continue;
+      const content = readFileSync(join(dir, entry), 'utf8');
+      for (const token of forbidden) {
+        if (content.includes(token)) offenders.push(`${entry}: ${token}`);
+      }
+      if (/spawnSync\(\s*['"`]/.test(content)) offenders.push(`${entry}: spawn with string command`);
+    }
+  }
+  assert.deepStrictEqual(offenders, [], `shell-string path interpolation found: ${offenders.join('; ')}`);
 });
 
 runAll();

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Harden path handling for Windows usernames containing spaces: added `assertWithinRoot` write-boundary guard (link/install targets), regression tests for space-containing home directories, and a repo self-scan forbidding shell-string path interpolation (the 8.3 short-name bug class). Audit found zero existing occurrences — all paths already use `path.join` and array-arg subprocess calls.
+
 ## 1.1.0 (2026-09-06)
 
 ### Added
