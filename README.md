@@ -58,7 +58,9 @@ Ask your agent to start intake.
 
 ```
 /fab-spec
-Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
+Idea: TaskFlow — a local-first team task board. Tasks in three columns
+(todo / doing / done) with move, title + notes, text search, and a small
+live stats panel. One local server, web UI, no external services.
 ```
 
 The agent shows you a field called `next_action` after each step. Run that command next. Repeat until the run finishes.
