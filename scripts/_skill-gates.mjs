@@ -232,9 +232,10 @@ export function validateCostPrecisionGate(run) {
  *
  * `--auto` is an explicit opt-in override: it downgrades overridable
  * `checkpoint` gates (fab-spec, fab-plan) to `auto` so approval waits are
- * skipped. Skills with `overridable: false` (fab-verify, fab-decide,
- * fab-status) always keep their manifest `default_gate` — the flag can
- * never bypass a hard stop.
+ * skipped. Non-overridable skills always keep their manifest `default_gate`
+ * under `--auto` (`fab-status` is `overridable: false` with
+ * `default_gate: "auto"`, so the flag changes nothing there). The locked
+ * approval stops are `fab-verify` (`review`) and `fab-decide` (`full`).
  *
  * @param {string} skillId — manifest skill id (used only for error context)
  * @param {{default_gate: string, overridable: boolean}} manifestEntry

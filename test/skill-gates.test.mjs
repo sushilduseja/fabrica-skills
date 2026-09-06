@@ -554,9 +554,27 @@ test('checkpoint skills document the no-yield rule for auto gates', () => {
   for (const id of ['fab-spec', 'fab-plan', 'fab-integrate']) {
     const content = readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
     assert(content.includes('do not end the agent turn at this step'), `${id} must document the no-yield rule`);
-    assert(content.includes('continue directly to `next_action`'), `${id} must point at next_action`);
+    assert(content.includes('continue to `next_action`'), `${id} must point at next_action`);
     assert(content.includes('the only narration'), `${id} must forbid intermediate narration in auto mode`);
+    assert(
+      content.includes('equivalent to `gate_levels` already being `auto`'),
+      `${id} must document Policy A (persisted levels win)`,
+    );
   }
+});
+
+test('fab-spec auto-continues without asking continue-vs-fresh', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  const content = readFileSync(`${pathById['fab-spec']}/SKILL.md`, 'utf-8');
+  assert(
+    content.includes('continue the existing run without asking continue-vs-fresh'),
+    'fab-spec must document auto-continue when levels say auto',
+  );
+  assert(
+    content.includes('When the resolved gate is `auto`'),
+    'fab-spec assumption summary must trigger on resolved gate, not prompt text',
+  );
 });
 
 test('fab-scaffold requires one consolidated root README', () => {
