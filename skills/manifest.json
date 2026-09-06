@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "repo_version": "1.1.1",
+  "repo_version": "1.1.2",
       "description": "Canonical skill inventory for fabrica-skills. Every structural fact about the factory lives here. Note: `read_only` means read-only with respect to run-object fields. Some read-only skills (fab-retro, fab-handoff) write filesystem artifacts outside the run object.",
   "skills": [
     {

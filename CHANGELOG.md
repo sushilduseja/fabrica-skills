@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.2 (2026-09-06)
 
 ### Changed
 - README and QUICKSTART lead with the zero-dependency install: `npx fabrica-skills@latest install`. No `package.json` changes, no local dependency. The `npm install -D` flow is documented as the pinned-version option for teams that want lockfile-held reproducibility.
