@@ -1,369 +1,216 @@
-# fabrica-skills [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sushilduseja/fabrica-skills)
+# fabrica-skills
 
-Agent-readable markdown skills for turning a rough product idea into a small local app prototype.
+Turn a rough product idea into a small, working local app. An AI coding agent does the work. You approve the key decisions, or skip approval with one flag.
 
-This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool, or agent orchestrator. You install the skills. Your AI coding agent follows the skills. You approve each `checkpoint`, `review`, and `full` gate. With `--auto`, `auto` gates proceed without stopping.
+This repository ships markdown skills only. It has no runtime, no hosted service, no deploy tool. Your coding agent reads the skills and follows them.
 
-## What this is
+## Quickstart
 
-- Markdown skills your coding agent follows
-- A CLI to install those skills into agent skill directories
-- A JSON Schema + validator for optional `fabrica.run.json` run state
+Run these three commands in order.
 
-## What this is not
+```
+npm install -D fabrica-skills
+npx fabrica-skills install
+npx fabrica-skills status
+```
 
-- An autonomous orchestrator that runs skills without an agent
-- A hosted build service
+The last command lists 14 installed skills. Your agent can now see them.
 
-## What You Get
+## Two choices you control
 
-- 14 skills. Each skill is one self-contained `SKILL.md` file. The count covers 13 `fab-*` pipeline skills plus standalone `fabrica-code-review`.
-- A canonical skill manifest lives at `skills/manifest.json`. It is the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
-- The workflow is spec-first. It runs from idea to product spec to blueprint to scaffold to implementation to quality check to integration to launch.
-- Scaffolding guidance derives runtimes, services, commands, files, and verification steps from the blueprint. `/fab-spec` offers fixed pinned defaults for the three stack slots (React + Vite, FastAPI, SQLite); you may override any slot. Skills never hardcode Docker or any sample app.
-- The durable run state file is `fabrica.run.json`.
-- A JSON Schema validates run state. It lives at `schemas/run-object.schema.json`.
-- Prototype behavior is local-first. External deploy stays deferred. It needs your explicit approval.
-- Docker and container verification are supported when the blueprint calls for them. Never report static Docker checks as runtime Docker verification.
+### Choose your stack
+
+`/fab-spec` asks for your frontend, backend, and database, one at a time. Answer each, or leave any blank.
+
+A blank slot gets a fast, production-grade default:
+
+| Slot | Default |
+|---|---|
+| Frontend | React + Vite |
+| Backend | FastAPI |
+| Database | SQLite |
+
+You can override any slot. The agent uses your choice unless it conflicts with the spec, and explains why if it does.
+
+### Choose your speed: approve each step, or run on auto
+
+By default, the agent stops and shows you the spec and the plan before it writes anything. You approve, then it continues.
+
+Add `--auto` to skip those two stops. The agent writes the spec and the plan without waiting, then shows you a short summary of what it assumed.
+
+Two steps always stop for you, with or without `--auto`:
+
+- The pre-launch check, before anything reaches a real user.
+- Any decision the agent cannot make for you.
+
+## First run
+
+Create a run file.
+
+```
+npx fabrica-skills init-run --name my-app
+```
+
+Ask your agent to start intake.
+
+```
+/fab-spec
+Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
+```
+
+The agent shows you a field called `next_action` after each step. Run that command next. Repeat until the run finishes.
+
+For a full walkthrough from idea to running app, see [examples/fabrica-skills-QUICKSTART.md](https://github.com/sushilduseja/fabrica-skills/blob/main/examples/fabrica-skills-QUICKSTART.md).
+
+## How a run flows
+
+```
+Phase 0: Spec and plan
+  /fab-spec -> /fab-plan
+  Produces: docs/spec.md, docs/blueprint.md, fabrica.run.json
+
+Phase 1: Build one slice at a time
+  /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
+  Repeat build and eval until every stage is done.
+
+Phase 2: Connect and verify
+  /fab-integrate -> /fab-verify -> /fab-handoff -> /fab-retro
+  Use as needed: /fab-fix <stage>, /fab-decide, /fab-status
+```
+
+Full diagram: [docs/STATE_MACHINE.md](https://github.com/sushilduseja/fabrica-skills/blob/main/docs/STATE_MACHINE.md).
+
+## Every skill, one line each
+
+| Skill | Phase | Stops for approval? | Does this |
+|---|---|---|---|
+| `/fab-spec` | 0 | Yes, unless `--auto` | Turns your idea into a spec. |
+| `/fab-plan` | 0 | Yes, unless `--auto` | Turns the spec into an architecture and a build order. |
+| `/fab-scaffold` | 1 | No | Builds the project skeleton. |
+| `/fab-build` | 1 | No | Implements one stage. |
+| `/fab-eval` | 1 | No | Scores one stage on quality. |
+| `/fab-status` | 1 | No | Shows the current run state. |
+| `/fab-handoff` | 1 | No | Writes a resumable handoff note. |
+| `/fab-fix` | 2 | No | Diagnoses and fixes a failing stage. |
+| `/fab-integrate` | 2 | Yes, unless `--auto` | Connects finished stages into one flow. |
+| `/fab-verify` | 2 | Always | Runs the pre-launch check. |
+| `/fab-decide` | 2 | Always | Records a decision only you can make. |
+| `/fab-pr-review` | 2 | No | Reviews a pull request. |
+| `/fab-retro` | 2 | No | Scores the finished run. |
+| `/fab-code-review` | 2 | No | Reviews changes since a fixed git point. |
+
+The review skill installs under the name `fabrica-code-review`. Run it as `/fab-code-review`.
+
+## What each stop means
+
+| Stop type | What happens |
+|---|---|
+| `auto` | The agent proceeds. It does not wait for you. |
+| `checkpoint` | The agent shows you the result first. You approve before it writes anything. |
+| `review` | The agent runs local checks freely. It asks before any external or destructive action. |
+| `full` | The agent asks before it starts, and again after it finishes. |
+
+## The run file
+
+Every run keeps its state in one file: `fabrica.run.json`.
+
+| Field | Holds |
+|---|---|
+| `status` | Where the run stands right now. |
+| `current_step` | The skill running now. |
+| `current_app_stage` | The stage being worked on. |
+| `next_action` | The exact command to run next. |
+| `last_error` | The last error, or `null`. |
+| `app_stages` | Every stage: status, files, quality score. |
+| `preferred_stack` | Your frontend, backend, and database choice. |
+| `gate_levels` | The resolved stop type for each skill. |
+| `costs` | Token and dollar cost, when known. |
+| `verifications` | Every test and launch result. |
+| `human_decisions` | Every decision you recorded. |
+
+Full schema: `schemas/run-object.schema.json`. The validator checks every write against it before saving: `scripts/validate-run.mjs`.
+
+## Other ways to install
+
+Skip the local dependency.
+```
+npx fabrica-skills@latest install
+```
+
+Install once for every project on your machine.
+```
+npx fabrica-skills@latest install --global
+```
+
+Install from a local checkout of this repo.
+```
+node bin/fabrica-skills.mjs install --global
+```
+
+A global install resolves through `os.homedir()` to your real home directory: `C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS.
+
+Update.
+```
+npx fabrica-skills@latest update
+```
+
+Remove.
+```
+npx fabrica-skills uninstall
+```
+
+Release history: `CHANGELOG.md`.
 
 ## Requirements
 
 - Git.
-- Node.js 16.7+.
+- Node.js 16.7 or newer.
 - An AI coding agent that reads local markdown skill files.
 
-## Quickstart
+## Repository layout
 
-1. Install the package.
-
-   ```bash
-   npm install -D fabrica-skills
-   ```
-
-2. Install the skills into your project.
-
-   ```bash
-   npx fabrica-skills install
-   ```
-
-3. Confirm the install.
-
-   ```bash
-   npx fabrica-skills status
-   ```
-
-    The command lists 14 installed skills.
-
-Add `--auto` to `init-run` to skip the spec/plan approval checkpoints (`gate_levels` resolve to `auto` for overridable skills; `status` shows the next action and its gate). `fab-verify` (pre-launch check) and `fab-decide` (human decisions) always require approval regardless of this flag.
-
-## Other install methods
-
-Install without a local dependency. Run this command:
-
-```bash
-npx fabrica-skills@latest install
 ```
-
-Install for every repo on the machine (global install). Run this command:
-
-```bash
-npx fabrica-skills@latest install --global
-```
-
-Install from a local checkout. Run this command from the repo root:
-
-```bash
-node bin/fabrica-skills.mjs install --global
-```
-
-Global roots resolve through `os.homedir()` (`C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS).
-
-Upgrade the skills. Run this command:
-
-```bash
-npx fabrica-skills@latest update
-```
-
-Remove the skills. Run this command:
-
-```bash
-npx fabrica-skills uninstall
-```
-
-See CHANGELOG.md for release history.
-
-## First run
-
-Create a valid run object. Run this command:
-
-```bash
-npx fabrica-skills init-run --name my-app
-```
-
-Then ask your coding agent to run intake:
-
-```text
-/fab-spec
-Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
-```
-
-Then follow `next_action` in `fabrica.run.json`.
-
-For a complete worked example from zero to running app, see [examples/fabrica-skills-QUICKSTART.md](examples/fabrica-skills-QUICKSTART.md).
-
-## Skill walkthrough
-
-### 1. Open your project in your AI coding agent
-
-Confirm the agent sees the installed skills.
-
-### 2. Run intake
-
-Send this to the agent:
-
-```text
-/fab-spec
-Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
-```
-
-The agent asks targeted questions, then stack preferences one at a time. In default mode it then shows a spec for approval. With `--auto` it writes the spec and prints an assumption summary instead.
-
-`/fab-spec` asks for frontend, backend, and database preferences one at a time. Leave any blank to use fast, production-grade defaults: React + Vite, FastAPI, and SQLite.
-
-Approve only when the spec is specific enough for a stranger to build. The skill writes:
-
-- `docs/spec.md`
-- `fabrica.run.json`
-- `next_action: "/fab-plan"`
-
-### 3. Create the blueprint
-
-Send:
-
-```text
-/fab-plan
-```
-
-The agent proposes architecture, stack, app stages, and build order. In default mode, approve only when the plan is small and testable. With `--auto` the agent proceeds and labels each stack slot operator-specified or default. The skill writes:
-
-- `docs/blueprint.md`
-- app stages in `fabrica.run.json`
-- `next_action: "/fab-scaffold"`
-
-### 4. Scaffold the app
-
-Send:
-
-```text
-/fab-scaffold
-```
-
-The skill scaffolds inside the current project root. In a source checkout of `fabrica-skills` itself, the skill keeps the contributor behavior. It creates a sibling app directory:
-
-```text
-../<app-name>/
-```
-
-Expected files include:
-
-- `fabrica.run.json`
-- `docs/spec.md`
-- `docs/blueprint.md`
-- app stubs
-- tests folder
-- dependency files such as `pyproject.toml`, `requirements.txt`, `Makefile`, or `package.json`
-- one root `README.md` (never per-service files)
-- `.env.example` when the app needs environment variables
-
-In a source checkout, `/fab-scaffold` copies `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the generated app directory. After `/fab-scaffold`, the app-directory copy is canonical. The source-repo copies are runtime outputs only and are ignored by git.
-
-### 5. Build one stage
-
-Use the exact stage name from `fabrica.run.json` or `docs/blueprint.md`.
-
-```text
-/fab-build <stage-name>
-```
-
-The skill implements only that stage. It adds focused tests. It runs the narrowest useful test command. It updates `fabrica.run.json`.
-
-### 6. Check quality
-
-```text
-/fab-eval <stage-name>
-```
-
-The skill writes:
-
-```text
-docs/eval/<stage-name>.md
-```
-
-It scores the stage from 0 to 10 on spec fit, contract fit, tests, clarity, and safety. Any axis below 6 blocks the stage. It sets the next action to `/fab-fix <stage-name>`.
-
-### 7. Continue from the run state
-
-Use `next_action` in `fabrica.run.json` as the source of truth. For the full visual state machine and common command pathways, see [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md).
-
-Useful commands:
-
-```text
-/fab-status
-/fab-handoff
-```
-
-- `/fab-status` shows pipeline, quality, cost, and next action. Pass `--mode=details` for per-step cost breakdown.
-- `/fab-handoff` writes a resumable handoff at `docs/handoff.md`.
-
-## Workflow
-
-Visual state machine and pathway reference: [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md).
-
-```text
-Phase 0: Spec and blueprint
-  /fab-spec -> /fab-plan
-  Output: docs/spec.md, docs/blueprint.md, fabrica.run.json
-
-Phase 1: One or more vertical slices
-  /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
-  Repeat build/eval until required stages are done.
-  Output: scaffolded app, tests, quality scores, next_action
-
-Phase 2: Integrated local prototype
-  /fab-integrate -> /fab-verify -> /fab-handoff -> /fab-retro
-  Recovery and decision commands as needed: /fab-fix <stage|integration>, /fab-decide, /fab-status
-  Output: local end-to-end verification, launch evidence, decisions, handoff, retrospective
-```
-
-## Skill Inventory
-
-| Skill | Phase | Default gate | Job |
-|---|---:|---|---|
-| `/fab-spec` | 0 | checkpoint | Convert a rough idea into a spec and initialize the run object. |
-| `/fab-plan` | 0 | checkpoint | Convert a spec into app architecture and a build order. |
-| `/fab-scaffold` | 1 | auto | Scaffold the app project skeleton and first-stage contracts. |
-| `/fab-build` | 1 | auto | Implement one named app stage against the blueprint. |
-| `/fab-eval` | 1 | auto | Evaluate one app stage against quality criteria. |
-| `/fab-status` | 1 | auto | Render the current run state as a terminal dashboard. |
-| `/fab-handoff` | 1 | auto | Write a resumable handoff document. |
-| `/fab-fix` | 2 | auto | Diagnose a failing stage and apply the smallest viable fix. |
-| `/fab-integrate` | 2 | checkpoint | Connect completed stages into an end-to-end flow. |
-| `/fab-verify` | 2 | review | Run a pre-launch checklist and verify the app locally. |
-| `/fab-decide` | 2 | full | Capture a human decision. |
-| `/fab-pr-review` | 2 | auto | Review a GitHub pull request with an evidence-backed verdict. |
-| `/fab-retro` | 2 | auto | Score the run and identify process improvements. |
-| `/fab-code-review` | 2 | auto | Review changes since a fixed git point on Standards and Spec axes. |
-
-Plain-language aliases:
-
-| Skill | Means |
-|---|---|
-| `/fab-spec` | collect requirements and write the spec |
-| `/fab-plan` | design the architecture and build stages |
-| `/fab-scaffold` | scaffold the project skeleton |
-| `/fab-build` | implement one stage |
-| `/fab-eval` | evaluate one stage |
-| `/fab-status` | show status |
-| `/fab-handoff` | write handoff notes |
-| `/fab-fix` | debug a failure |
-| `/fab-integrate` | integrate stages |
-| `/fab-verify` | verify local launch |
-| `/fab-decide` | record a human decision |
-| `/fab-pr-review` | review a pull request |
-| `/fab-retro` | write the retrospective |
-| `/fab-code-review` | review a diff since a fixed point |
-
-The review skill installs as `fabrica-code-review`. Run it as `/fab-code-review`.
-
-Gate meanings:
-
-| Gate | Meaning |
-|---|---|
-| `auto` | The agent proceeds without pausing and without ending its turn. |
-| `checkpoint` | The agent must show the result or plan before writing. |
-| `review` | Local checks may run; external, destructive, or deploy actions need approval. The stop message has three parts: Done, Waiting on, If hold. |
-| `full` | The agent needs approval before starting and confirmation after completion. |
-
-## Run State
-
-Every run is tracked in `fabrica.run.json`.
-
-Important fields:
-
-- `status`: current lifecycle state; see [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md).
-- `current_step`: current `fab-*` skill.
-- `current_app_stage`: active app stage.
-- `next_action`: exact command to run next.
-- `last_error`: structured error or `null`.
-- `app_stages`: stage status, artifacts, notes, and quality score.
-- `preferred_stack`: frontend/backend/database choice with fixed defaults.
-- `gate_levels`: resolved gate per skill.
-- `costs`: measured, estimated, or `unknown`.
-- `verifications`: test and launch results.
-- `human_decisions`: decisions recorded by `/fab-decide`.
-
-The schema is in `schemas/run-object.schema.json`. Post-schema semantic checks live in `scripts/validate-run.mjs`. Skills validate state before writing.
-
-## Repository Layout
-
-```text
 fabrica-skills/
-  CLAUDE.md              Agent rules
-  CONTEXT.md             Domain vocabulary + ADRs
-  CONTRIBUTING.md        Contributor workflow
-  AGENTS.md              Agent discovery config
   bin/                   CLI entry point (fabrica-skills)
-  docs/STATE_MACHINE.md  Visual state machine + common command pathways
-  docs/examples/         Checked-in sample spec and blueprint
-  examples/              Canonical run-object template
-  skills/manifest.json   Canonical inventory
-  skills/core/*/         Core MVP skills (+ errors.json each)
-  skills/prototype/*/    Full-pipeline skills (+ errors.json each)
-  skills/standalone/*/   Standalone skills (+ errors.json each)
+  skills/manifest.json   Canonical skill inventory
+  skills/core/*/         Core skills
+  skills/prototype/*/    Full-pipeline skills
+  skills/standalone/*/   Standalone skills
   skills/shared/         Shared run-object schema notes
   scripts/               Validators, manifest sync, installer CLIs
   schemas/               run-object.schema.json
-  test/fixtures/         valid + invalid run objects for CI
+  docs/STATE_MACHINE.md  Visual state machine and command pathways
+  docs/examples/         Sample spec and blueprint
+  examples/              Canonical run-object template
+  test/fixtures/         Valid and invalid run objects for CI
   .github/               CI workflows
   .claude-plugin/        Claude Code plugin manifest
+  CLAUDE.md              Agent rules
+  CONTEXT.md             Domain vocabulary and design decisions
+  CONTRIBUTING.md        Contributor workflow
+  AGENTS.md              Agent discovery config
 ```
-
-## Example Docs
-
-Checked-in examples live under:
-
-```text
-docs/examples/spec.md
-docs/examples/blueprint.md
-```
-
-The live run paths are:
-
-```text
-docs/spec.md
-docs/blueprint.md
-```
-
-Those live paths are generated by `/fab-spec` and `/fab-plan`. Git ignores those paths.
-
-`docs/VALIDATION.md` points at the executable validation evidence (`npm run check`).
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `node` is not found | Install Node.js 16.7+. Then rerun `npm run setup`. |
-| Slash command is not found | Point your agent at `.skills/<skill-name>/SKILL.md` or use the `.claude-plugin/plugin.json` manifest if supported. |
-| `fabrica.run.json` is missing | Start with `/fab-spec`. It is the only entry-point skill. |
+| `node` is not found | Install Node.js 16.7 or newer. Then run `npm run setup`. |
+| Your agent does not see the slash commands | Point it at `.skills/<skill-name>/SKILL.md`, or use `.claude-plugin/plugin.json` if your agent supports it. |
+| `fabrica.run.json` is missing | Run `/fab-spec`. It is the only starting point. |
 | A stage is blocked | Run `/fab-fix <stage-name>` with the failure output. |
-| Cost shows `unknown` | This is expected when token or API spend has not been measured. |
-| External deploy is requested | Stop unless you explicitly want it. MVP launch verification is local-first. |
+| Cost shows `unknown` | Expected. This means spend has not been measured yet. |
+| The agent wants to deploy externally | Stop, unless you want this. This tool builds local prototypes first. |
 
-## Non-Goals
+## What this is not
 
-- No app code lives in this repository.
-- No hosted service or control plane.
-- No hidden automatic skill chaining.
-- No multi-agent scheduler.
-- No production deploy provider matrix.
-- No exact token metering unless the agent/provider exposes it cleanly.
+- Not an orchestrator that runs skills without an agent.
+- Not a hosted build service.
+- Does not add app code to this repository.
+- Does not run a hidden chain of skills on its own.
+- Does not manage multiple agents at once.
+- Does not measure exact token cost unless your agent or provider reports it.
+
+## License
+
+MIT. See `LICENSE`.
