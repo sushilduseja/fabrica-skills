@@ -8,9 +8,14 @@
  * Usage:
  *   node scripts/validate-run.mjs <path-to-fabrica.run.json>
  *   node scripts/validate-run.mjs --stdin < candidate.json
+ *   node scripts/validate-run.mjs --stdin --commit <target-path> < candidate.json
+ *
+ * --commit atomically replaces <target-path> with the validated stdin bytes
+ * (temp file + rename in the target directory). Nothing is written unless
+ * validation succeeds.
  */
-import { existsSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, renameSync, writeFileSync } from 'fs';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { validateAllGates } from './_skill-gates.mjs';
 import { readJsonFile } from './_path-utils.mjs';
@@ -49,8 +54,8 @@ function fail(msg) {
 }
 
 /**
- * Read a complete JSON object from stdin.
- * @returns {Promise<any>}
+ * Read complete stdin bytes as text plus the parsed JSON object.
+ * @returns {Promise<{raw: string, instance: any}>}
  */
 async function readStdinJson() {
   const chunks = [];
@@ -62,15 +67,32 @@ async function readStdinJson() {
     fail(`Cannot read stdin: ${err.message}`);
   }
 
-  const input = Buffer.concat(chunks).toString('utf-8');
-  if (input.trim().length === 0) {
+  const raw = Buffer.concat(chunks).toString('utf-8');
+  if (raw.trim().length === 0) {
     fail('No JSON received on stdin');
   }
 
   try {
-    return JSON.parse(input);
+    return { raw, instance: JSON.parse(raw) };
   } catch (err) {
     fail(`Invalid JSON from stdin: ${err.message}`);
+  }
+}
+
+/**
+ * Atomically replace targetPath with content (temp file + rename in the
+ * target directory, so readers never see a partial write).
+ * @param {string} targetPath
+ * @param {string} content
+ */
+function atomicWrite(targetPath, content) {
+  const absoluteTarget = resolve(process.cwd(), targetPath);
+  const tmpPath = `${absoluteTarget}.${process.pid}.tmp`;
+  try {
+    writeFileSync(tmpPath, content, 'utf8');
+    renameSync(tmpPath, absoluteTarget);
+  } catch (err) {
+    fail(`Cannot commit to ${targetPath}: ${err.message}`);
   }
 }
 
@@ -93,18 +115,36 @@ async function loadAjv() {
  * and semantic invariants, then exits 0 on success or 1 on failure.
  */
 async function main() {
-  const args = process.argv.slice(2);
+  const rawArgs = process.argv.slice(2);
+  const commitFlag = rawArgs.indexOf('--commit');
+  let commitPath = null;
+  const args = [];
+  for (let i = 0; i < rawArgs.length; i += 1) {
+    if (i === commitFlag) {
+      commitPath = rawArgs[i + 1];
+      if (!commitPath || commitPath.startsWith('-')) {
+        fail('Usage: node scripts/validate-run.mjs [--stdin [--commit <target-path>] | <path-to-fabrica.run.json>]');
+      }
+      i += 1;
+    } else {
+      args.push(rawArgs[i]);
+    }
+  }
   const stdinMode = args.includes('--stdin');
   const pathArgs = args.filter((arg) => arg !== '--stdin');
   if ((stdinMode && pathArgs.length > 0) || (!stdinMode && pathArgs.length !== 1) || args.length > 2) {
     fail('Usage: node scripts/validate-run.mjs [--stdin | <path-to-fabrica.run.json>]');
   }
+  if (commitPath && !stdinMode) {
+    fail('--commit requires --stdin (it commits validated stdin bytes)');
+  }
 
   let instance;
   let inputLabel;
+  let stdinRaw = null;
 
   if (stdinMode) {
-    instance = await readStdinJson();
+    ({ raw: stdinRaw, instance } = await readStdinJson());
     inputLabel = 'stdin';
   } else {
     const targetPath = pathArgs[0];
@@ -254,6 +294,10 @@ async function main() {
   }
 
   console.log(`[validate-run] OK — run object from ${inputLabel} is valid`);
+  if (commitPath) {
+    atomicWrite(commitPath, stdinRaw);
+    console.log(`[validate-run] committed to ${commitPath}`);
+  }
 }
 
 const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);

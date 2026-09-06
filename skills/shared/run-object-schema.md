@@ -28,6 +28,7 @@ Visual state machine and command pathways: `docs/STATE_MACHINE.md`
 | `verifications` | array | Empty on creation |
 | `human_decisions` | array | Empty on creation |
 | `gate_levels` | object | Derived from `skills/manifest.json`: each active skill id maps to its `default_gate`, except `init-run --auto` resolves overridable `checkpoint` gates to `auto` |
+| `preferred_stack` | object | `{ frontend: null, backend: null, database: null }` on creation unless operator specifies a slot |
 
 ## Fields updated by downstream skills
 
@@ -38,6 +39,7 @@ Visual state machine and command pathways: `docs/STATE_MACHINE.md`
 - `next_action` — set by every writer skill and used as the primary workflow pointer.
 - `last_error` — set on failure by writer skills that own the field.
 - `spec_path` — set by `fab-spec`.
+- `preferred_stack` — set by `fab-spec`; read (never modified) by `fab-plan`.
 - `blueprint_path` — set by `fab-plan`.
 - `app_stages` — populated by `fab-plan`; updated by `fab-scaffold`, `fab-build`, `fab-eval`, and `fab-fix`.
 - `costs` — initialized by `fab-spec`; values remain `unknown` unless measured or estimated evidence exists.
@@ -65,7 +67,7 @@ Canonical source: `skills/manifest.json` (`writes_fields` per skill). Each field
 
 | Field | Owning skills |
 |---|---|
-| `schema_version`, `id`, `name`, `created_at`, `spec_path`, `costs`, `gate_levels` | `fab-spec` (creation only) |
+| `schema_version`, `id`, `name`, `created_at`, `spec_path`, `costs`, `gate_levels`, `preferred_stack` | `fab-spec` (creation only) |
 | `experiment_phase` | `fab-spec`, `fab-integrate` |
 | `updated_at`, `current_step`, `next_action` | Writer skills |
 | `status` | `fab-spec`, `fab-plan`, `fab-scaffold`, `fab-integrate`, `fab-verify` |
@@ -117,4 +119,12 @@ For candidate writes:
 
 ```bash
 node scripts/validate-run.mjs --stdin < candidate.json
+```
+
+To validate and atomically replace the run file in one step (temp file +
+rename in the target directory; nothing is written unless validation
+succeeds):
+
+```bash
+node scripts/validate-run.mjs --stdin --commit path/to/fabrica.run.json < candidate.json
 ```

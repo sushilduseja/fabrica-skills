@@ -128,6 +128,8 @@ Idea: Build a local CLI that accepts pasted invoice text and returns normalized 
 
 The agent asks targeted questions. Then the agent shows a spec for approval.
 
+`/fab-spec` asks for frontend, backend, and database preferences one at a time. Leave any blank to use fast, production-grade defaults: React + Vite, FastAPI, and SQLite.
+
 Approve only when the spec is specific enough for a stranger to build. The skill writes:
 
 - `docs/spec.md`

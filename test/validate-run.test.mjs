@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { rmSync, writeFileSync, mkdtempSync } from 'fs';
+import { existsSync, readFileSync, rmSync, writeFileSync, mkdtempSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { STATUS_PHASE_MATRIX } from '../scripts/validate-run.mjs';
@@ -1136,6 +1136,81 @@ test('validate-run STATUS_PHASE_MATRIX covers exactly the schema status enum', (
     const phases = STATUS_PHASE_MATRIX[status];
     assert(Array.isArray(phases) && phases.length > 0, `status "${status}" must map to a non-empty phase list`);
   }
+});
+
+/* ================================================================
+ *  preferred_stack (sequential stack prompting in fab-spec)
+ * ================================================================ */
+
+test('validate-run accepts explicit preferred_stack values', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  candidate.preferred_stack = { frontend: 'React + Vite', backend: 'Django', database: 'SQLite' };
+  const result = validateStdin(candidate);
+  assertPass(result, combined(result));
+});
+
+test('validate-run accepts all-null preferred_stack (no-preference case)', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  assert.deepStrictEqual(candidate.preferred_stack, { frontend: null, backend: null, database: null });
+  const result = validateStdin(candidate);
+  assertPass(result, combined(result));
+});
+
+test('validate-run rejects a run object missing preferred_stack', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  delete candidate.preferred_stack;
+  const result = validateStdin(candidate);
+  assertFail(result, 'missing preferred_stack unexpectedly passed');
+  assert(combined(result).includes('must have required property'), combined(result));
+});
+
+test('validate-run rejects preferred_stack with an unexpected key', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  candidate.preferred_stack = { frontend: null, backend: null, database: null, queue: 'redis' };
+  const result = validateStdin(candidate);
+  assertFail(result, 'preferred_stack with extra key unexpectedly passed');
+  assert(combined(result).includes('additional properties'), combined(result));
+});
+
+test('validate-run --commit writes validated stdin to the target atomically', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'validate-commit-'));
+  try {
+    const out = join(dir, 'fabrica.run.json');
+    const candidate = readJson('test/fixtures/valid-run.json');
+    const result = run(['scripts/validate-run.mjs', '--stdin', '--commit', out], {
+      input: JSON.stringify(candidate),
+    });
+    assertPass(result, combined(result));
+    assert(combined(result).includes(`committed to ${out}`), combined(result));
+    assert.deepStrictEqual(JSON.parse(readFileSync(out, 'utf8')), candidate);
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('validate-run --commit writes nothing when validation fails', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'validate-commit-'));
+  try {
+    const out = join(dir, 'fabrica.run.json');
+    const candidate = readJson('test/fixtures/valid-run.json');
+    delete candidate.preferred_stack;
+    const result = run(['scripts/validate-run.mjs', '--stdin', '--commit', out], {
+      input: JSON.stringify(candidate),
+    });
+    assertFail(result);
+    assert(!existsSync(out), 'target must not be created when validation fails');
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('validate-run --commit without --stdin is rejected', () => {
+  const result = run(['scripts/validate-run.mjs', 'test/fixtures/valid-run.json', '--commit', 'out.json']);
+  assertFail(result);
+  assert(combined(result).includes('--commit requires --stdin'), combined(result));
+  assertNoStackTrace(result);
 });
 
 runAll();

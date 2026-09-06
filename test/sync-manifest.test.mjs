@@ -226,4 +226,10 @@ test('sync-manifest rejects version drift across package/manifest/plugin', () =>
   assertPass(clean, combined(clean));
 });
 
+test('preferred_stack is owned only by fab-spec', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const owners = manifest.skills.filter((s) => (s.writes_fields || []).includes('preferred_stack')).map((s) => s.id);
+  assert.deepStrictEqual(owners, ['fab-spec']);
+});
+
 runAll();

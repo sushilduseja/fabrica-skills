@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 (2026-09-06)
+
+### Added
+- Sequential frontend/backend/database stack prompting in fab-spec, with fast pinned defaults (React + Vite, FastAPI, SQLite) when left blank
+- preferred_stack field in run object schema, respected per-slot by fab-plan
+
 ## 1.0.1 (2026-09-05)
 
 Docs-only patch. No behavior changes.

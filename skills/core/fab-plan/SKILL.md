@@ -46,7 +46,10 @@ Confirmed spec exists (`docs/spec.md` present, `status = designing` in run objec
 ## Behavior
 
 1. Derive minimal app components from first principles: input boundary, transformation core, output boundary, persistence only if necessary.
-2. Preserve the operator's explicitly requested stack unless it is unsafe, unavailable, or contradicts the spec. If changing the requested stack, state the reason.
+2. For each of frontend, backend, database independently, read `preferred_stack.<slot>` from the run object:
+   - If explicitly set by the operator (not a default fill-in), use it unless unsafe, unavailable, or contradicts the spec. State the reason if overridden.
+   - If it holds a fixed default value from fab-spec (React+Vite / FastAPI or Express / SQLite), confirm it is still appropriate given the full spec content. If the spec's requirements clearly contradict a default (e.g. spec requires a relational multi-user production database), override it and state the reason. Otherwise keep the default as-is with no extra justification needed, since it was already resolved at intake.
+   Do not treat "used the default" and "operator explicitly chose this" the same way when explaining architecture decisions to the operator — label which is which in the blueprint output.
 3. Define a stack-agnostic service plan:
    - service name
    - runtime/language/framework
@@ -74,7 +77,7 @@ Confirmed spec exists (`docs/spec.md` present, `status = designing` in run objec
     - trust boundaries, authentication/authorization decisions per service
     - sensitive data handled and how it is protected (environment-only secrets, nothing sensitive in code, logs, or error messages)
     - service plan
-    - chosen stack and rationale
+    - chosen stack and rationale, labeling each of frontend/backend/database as "operator-specified" or "default (confirmed suitable)" or "default (overridden, reason: ...)"
     - local commands
     - container commands when applicable
     - app stages

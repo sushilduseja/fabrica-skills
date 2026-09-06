@@ -38,5 +38,10 @@
     "fab-decide": "full",
     "fab-retro": "auto",
     "not-a-skill": "auto"
+  },
+  "preferred_stack": {
+    "frontend": null,
+    "backend": null,
+    "database": null
   }
 }

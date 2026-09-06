@@ -39,5 +39,10 @@
     "fab-pr-review": "auto",
     "fab-retro": "auto",
     "fabrica-code-review": "auto"
+  },
+  "preferred_stack": {
+    "frontend": null,
+    "backend": null,
+    "database": null
   }
 }

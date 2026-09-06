@@ -44,11 +44,18 @@ None (entry point).
 ## Behavior
 
 1. Ask 5-7 targeted questions covering: user, problem, core job, input, output, AI role, success metric, non-goals.
+1a. Immediately after core intake questions, ask stack preference one slot at a time, in this exact order: frontend, then backend, then database. Each is a single prompt. A blank answer advances immediately to the next slot — do not re-prompt or ask for confirmation on a blank answer.
+1b. For any slot left blank, apply the fixed default:
+    - frontend: React + Vite
+    - backend: FastAPI, unless the spec's problem/core-job answers explicitly signal a JS/Node-only constraint (e.g. operator names Node.js, Express, or a JS-only requirement) — in that case default to Express instead
+    - database: SQLite
+   Never default to "latest" or an unpinned version for any of these. Use the current stable major version at time of scaffold.
+1c. Record the resolved values (explicit or defaulted) in `preferred_stack`, using `null` only for a slot that was left blank AND has no applicable default (not expected to occur given step 1b, but schema must tolerate it for forward compatibility).
 2. Refuse vague user or core job answers; push until the app can be tested by a stranger.
 3. If the operator skips or refuses a question, proceed only with explicit warning: mark the unanswered section as `INCOMPLETE: <section>` in the spec, and add a warning note at the top of `docs/spec.md` listing missing areas.
-4. Write `docs/spec.md` with sections: Overview, Users, Jobs, Inputs, Outputs, AI Role, Success Criteria, Non-Goals.
+4. Write `docs/spec.md` with sections: Overview (including resolved preferred_stack: frontend/backend/database), Users, Jobs, Inputs, Outputs, AI Role, Success Criteria, Non-Goals.
 5. Create `fabrica.run.json` if missing with every required schema field from `skills/shared/run-object-schema.md`.
-6. Set `current_step = "fab-spec"`, `status = "designing"`, `experiment_phase = "phase_0_spec"`, `spec_path = "docs/spec.md"`, `blueprint_path = null`, and `next_action = "/fab-plan"`.
+6. Set `current_step = "fab-spec"`, `status = "designing"`, `experiment_phase = "phase_0_spec"`, `spec_path = "docs/spec.md"`, `blueprint_path = null`, `next_action = "/fab-plan"`, and `preferred_stack = { frontend, backend, database }` from step 1c.
 7. Validate the candidate run object before writing.
 8. When invoked with `--auto`, after writing, print an assumption summary block to console output (ephemeral — do not store it in `fabrica.run.json`):
 

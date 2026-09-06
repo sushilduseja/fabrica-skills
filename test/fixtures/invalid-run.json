@@ -46,5 +46,10 @@
     "fab-verify": "review",
     "fab-decide": "full",
     "fab-retro": "auto"
+  },
+  "preferred_stack": {
+    "frontend": null,
+    "backend": null,
+    "database": null
   }
 }

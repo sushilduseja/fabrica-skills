@@ -86,12 +86,26 @@ confirm the run object is valid, then run `/fab-status`.
 Pass when: the rendered dashboard matches the expected panel for each state and
 no file was modified by `/fab-status` (it is read-only).
 
+## E. Sequential stack prompting with fixed defaults
+
+Run `/fab-spec` end to end. When asked for stack preferences one slot at a
+time, leave frontend blank, explicitly answer backend as "Django", and leave
+database blank.
+
+Pass when: `docs/spec.md` and `fabrica.run.json` show
+`frontend: React+Vite (default)`, `backend: Django (operator-specified)`,
+`database: SQLite (default)`. Then run `/fab-plan` and confirm
+`docs/blueprint.md` labels each slot per the plan labeling requirement
+("operator-specified" vs "default (confirmed suitable)" vs
+"default (overridden, reason: ...)").
+
 ## Status
 
 - [ ] A. fab-fix loop
 - [ ] B. cold-session handoff
 - [ ] C. partial-run interruption
 - [ ] D. fab-status three states
+- [x] E. sequential stack prompting (executed 2026-09-06 — pass)
 
 ## Execution Tracking
 
@@ -104,3 +118,4 @@ below has at least one dated execution with a recorded result.
 | Cold-session handoff resumability | (pending) | pending |
 | Kill-mid-fab-build recovery | (pending) | pending |
 | fab-status rendering across precision states | (pending) | pending |
+| Sequential stack prompting with fixed defaults | 2026-09-06 | pass (blank/Django/blank → React+Vite default, Django operator-specified, SQLite default; blueprint labels verified) |

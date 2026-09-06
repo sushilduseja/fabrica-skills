@@ -387,6 +387,7 @@ function cmdInitRun({ pkgRoot, cwd, flags }) {
     verifications: [],
     human_decisions: [],
     gate_levels,
+    preferred_stack: { frontend: null, backend: null, database: null },
   };
   try {
     mkdirSync(dirname(outPath), { recursive: true });

@@ -21,7 +21,8 @@
     "costs",
     "verifications",
     "human_decisions",
-    "gate_levels"
+    "gate_levels",
+    "preferred_stack"
   ],
   "properties": {
     "schema_version": {
@@ -545,6 +546,35 @@
           "full"
         ]
       }
+    },
+    "preferred_stack": {
+      "type": "object",
+      "properties": {
+        "frontend": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "backend": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "database": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "frontend",
+        "backend",
+        "database"
+      ],
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

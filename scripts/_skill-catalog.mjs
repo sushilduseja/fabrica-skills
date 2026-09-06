@@ -63,6 +63,7 @@ export const RUN_OBJECT_FIELDS = [
   'verifications',
   'human_decisions',
   'gate_levels',
+  'preferred_stack',
 ];
 
 /**
