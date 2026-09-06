@@ -1,8 +1,14 @@
 # fabrica-skills
 
+[![npm version](https://img.shields.io/npm/v/fabrica-skills.svg)](https://www.npmjs.com/package/fabrica-skills) [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sushilduseja/fabrica-skills)
+
 Turn a rough product idea into a small, working local app. An AI coding agent does the work. You approve the key decisions, or skip approval with one flag.
 
 This repository ships markdown skills only. It has no runtime, no hosted service, no deploy tool. Your coding agent reads the skills and follows them.
+
+## Documentation
+
+[DeepWiki](https://deepwiki.com/sushilduseja/fabrica-skills/): AI-generated documentation and codebase exploration.
 
 ## Quickstart
 
