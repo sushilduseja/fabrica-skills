@@ -214,9 +214,9 @@ fabrica-skills/
 | `node` is not found | Install Node.js 16.7 or newer. Then run the install command again. |
 | `npx` asks "Ok to proceed?" | Answer `y` once, or run `npx -y fabrica-skills@latest install`. |
 | Installed skills are older than the version you want | Run `npx fabrica-skills@latest update`, then `status` again. |
-| Your agent does not see the slash commands | Point it at `.skills/<skill-name>/SKILL.md`, or use `.claude-plugin/plugin.json` if your agent supports it. |
-| `fabrica.run.json` is missing | Run `/fab-spec`. It is the only starting point. |
-| A stage is blocked | Run `/fab-fix <stage-name>` with the failure output. |
+| Your agent does not see the slash commands | Point it at a real install path, e.g. `.agents/skills/fab-spec/SKILL.md` or `.claude/skills/fab-spec/SKILL.md` (also `.cursor/skills`, `.codex/skills`, `.opencode/skills`). Or use `.claude-plugin/plugin.json` if your agent supports it. Run `npx fabrica-skills@latest status` to confirm 14/14. |
+| `fabrica.run.json` is missing | Prefer `npx fabrica-skills@latest init-run --name <slug>` (add `--auto` to skip spec/plan/integrate stops). Or start with `/fab-spec`, which can create the file. `/fab-spec` remains the only skill entry point. |
+| A stage is blocked | Run the exact command in `next_action` (usually `/fab-fix <stage>`). Stage names come from `next_action` or `app_stages` in `fabrica.run.json` (or `docs/blueprint.md`) — character-for-character. Do not invent names or copy sample names from docs unless they match your run. Paste the failing output with the command. |
 | Cost shows `unknown` | Expected. This means spend has not been measured yet. |
 | The agent wants to deploy externally | Stop, unless you want this. This tool builds local prototypes first. |
 
