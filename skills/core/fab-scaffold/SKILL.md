@@ -39,6 +39,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
 - Toolchain-local config boundaries where needed
 - `.env.example` for required environment variables
 - Cross-platform commands for install, test, run, lint, and container verification where applicable
+- One consolidated root `README.md` for the whole app (never per-service files)
 - Updated app-directory `fabrica.run.json`
 
 ## Execution Guardrails
@@ -91,7 +92,8 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
     - lint
     - build, if applicable
     - container build/check/up/down, if applicable
-20. Update the copied app-directory run object:
+20. Write one consolidated root `README.md` covering the whole app: what it is, stack per service, how to run every service, how to test, environment overrides, and project layout. Do not write per-service READMEs. Delete or replace framework boilerplate READMEs (e.g. Vite's) so exactly one README remains.
+21. Update the copied app-directory run object:
     - `current_step = "fab-scaffold"`
     - `status = "forging"`
     - `experiment_phase = "phase_1_slice"`
@@ -99,7 +101,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
     - `current_app_stage = "<first-stage-name>"`
     - `next_action = "/fab-build <first-stage-name>"`
     - bump `updated_at`
-21. Validate the candidate run object before writing it to the app project root `fabrica.run.json`.
+22. Validate the candidate run object before writing it to the app project root `fabrica.run.json`.
 
 Done.
 

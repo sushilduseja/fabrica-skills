@@ -71,6 +71,7 @@ Integrated app ready for MVP verification (`status = verifying`, `docs/integrati
 9. Missing required env vars produce: "Missing required env var: X. See .env.example".
 10. If pre-launch checklist fails, set `last_error = { "type": "gate_blocked", "message": "Pre-launch checklist failed: <details>" }`, set `next_action = "/fab-verify"`, and halt.
 11. Set `current_step = "fab-verify"`, bump `updated_at`, append verification, and validate the candidate run object before writing.
+12. When stopping for operator approval, emit the stop message in exactly three terse parts, in order: Done (one line per completed verification with pass/fail), Waiting on (the single decision required: approve `complete` or hold), If hold (what failure or missing input is needed). No other prose.
 
 Done.
 

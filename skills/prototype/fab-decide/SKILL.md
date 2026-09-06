@@ -46,7 +46,7 @@ A human decision is needed.
 
 1. State the decision needed in one sentence.
 2. Present two or three meaningful options with concrete tradeoffs.
-3. Wait for operator input.
+3. Wait for operator input. Frame the ask in three terse parts, in order: Done (current state in one line), Waiting on (the single decision, stated as its options), If hold (what happens if deferred). No other prose.
 4. Record decision, rationale, timestamp (`triggered_at` and `resolved_at`), and resumed next action.
 5. Update `current_step = "fab-decide"`, `next_action` to reflect the decision outcome, and bump `updated_at`.
 6. If operator does not respond within a reasonable window, keep decision pending (do not auto-decide).

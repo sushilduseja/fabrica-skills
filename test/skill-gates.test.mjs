@@ -538,4 +538,33 @@ test('--auto behavior is documented in the SKILL.md contract files', () => {
   assert(read('fab-eval').includes('[fab-eval] stage'), 'fab-eval must document the progress narration line');
 });
 
+test('locked gates document the terse stop-message format', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  for (const id of ['fab-verify', 'fab-decide']) {
+    const content = readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
+    assert(content.includes('Waiting on'), `${id} must specify the Waiting on stop-message part`);
+    assert(content.includes('No other prose'), `${id} must forbid extra prose in the stop message`);
+  }
+});
+
+test('checkpoint skills document the no-yield rule for auto gates', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  for (const id of ['fab-spec', 'fab-plan', 'fab-integrate']) {
+    const content = readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
+    assert(content.includes('do not end the agent turn at this step'), `${id} must document the no-yield rule`);
+    assert(content.includes('continue directly to `next_action`'), `${id} must point at next_action`);
+    assert(content.includes('the only narration'), `${id} must forbid intermediate narration in auto mode`);
+  }
+});
+
+test('fab-scaffold requires one consolidated root README', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  const content = readFileSync(`${pathById['fab-scaffold']}/SKILL.md`, 'utf-8');
+  assert(content.includes('consolidated root `README.md`'), 'fab-scaffold must require a consolidated root README');
+  assert(content.includes('Do not write per-service READMEs'), 'fab-scaffold must forbid per-service READMEs');
+});
+
 runAll();
