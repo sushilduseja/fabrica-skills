@@ -1,12 +1,12 @@
 # fabrica-skills: Quickstart
 
-From zero to a running local app in one sitting. fabrica-skills gives your AI coding agent a set of markdown skills that take a rough idea all the way to a tested, locally-running prototype. You send short prompts and approve at checkpoints; the agent does the work.
+From zero to a running local app in one sitting. fabrica-skills gives your AI coding agent a set of markdown skills that take a rough idea all the way to a tested, locally-running prototype. You send short prompts; the agent does the work. With `--auto`, the agent skips the spec/plan checkpoints and stops only where approval is mandatory.
 
 ## What you need
 
 - Git and Node.js 16.7+
 - An AI coding agent that can read local markdown files (Claude Code, Cursor, Codex, OpenCode, …)
-- ~10 minutes of your attention per stage
+- ~10 minutes of your attention per stage in default mode. In `--auto` mode, no attention until verification.
 
 The example below builds **TaskFlow**, a local team task board, a small but complete full-stack app (API + database + web UI). Swap in your own idea at Step 1 and everything else works the same.
 
@@ -43,7 +43,7 @@ Follow .agents/skills/fab-spec/SKILL.md
 
 ## 3. Run the pipeline
 
-Send these prompts one at a time. Approve each checkpoint when you like what you see.
+Send these prompts one at a time. In default mode, approve each checkpoint when you like what you see. Add `--auto` to `init-run` or to a skill prompt to skip that skill's approval checkpoint: the agent then proceeds through `auto` gates without stopping and halts only at `review`/`full` gates.
 
 The full pipeline:
 
@@ -65,7 +65,7 @@ Idea: TaskFlow, a local-first team task board. Tasks live in three columns
 and a small live stats panel. One local server, web UI, no external services.
 ```
 
-**Expected outcome:** the agent asks a few clarifying questions, then shows a short spec for approval. After you approve: `docs/spec.md` is written, `fabrica.run.json` is created, and `next_action` points to `/fab-plan`.
+**Expected outcome:** the agent asks a few clarifying questions, then stack preferences one slot at a time (frontend, backend, database). Leave any blank for the fixed defaults (React + Vite, FastAPI, SQLite). In `--auto` mode it prints an assumption summary instead of waiting. After you approve (or immediately in `--auto`): `docs/spec.md` is written, `fabrica.run.json` is created with `preferred_stack`, and `next_action` points to `/fab-plan`.
 
 ### Step 2: Blueprint
 
@@ -73,7 +73,7 @@ and a small live stats panel. One local server, web UI, no external services.
 /fab-plan
 ```
 
-**Expected outcome:** architecture, stack choice, and 3 build stages (e.g. `task-crud-api`, `search-stats`, `web-dashboard`) written to `docs/blueprint.md`. Approve when the plan feels small and testable. `next_action` points to `/fab-scaffold`.
+**Expected outcome:** architecture, stack choice, and 3 build stages (e.g. `task-crud-api`, `search-stats`, `web-dashboard`) written to `docs/blueprint.md`, with each stack slot labeled operator-specified or default. Approve when the plan feels small and testable. `next_action` points to `/fab-scaffold`.
 
 ### Step 3: Scaffold
 
@@ -81,7 +81,7 @@ and a small live stats panel. One local server, web UI, no external services.
 /fab-scaffold
 ```
 
-**Expected outcome:** a project skeleton in your current folder: source directories, a tests folder, `package.json`, `README.md`, `.env.example`. The run object now tracks the stages.
+**Expected outcome:** a project skeleton in your current folder: source directories, a tests folder, dependency files, one root `README.md`, and `.env.example` when the app needs environment variables. The run object now tracks the stages.
 
 ### Step 4: Build and score each stage
 
@@ -119,7 +119,7 @@ If any axis scores below 6, the stage is blocked and `next_action` will point to
 /fab-verify
 ```
 
-**Expected outcome:** the app starts locally (e.g. `npm start` → http://127.0.0.1:3000) and the agent verifies it end-to-end in a real browser before declaring the launch verified. Anything external or destructive requires your explicit approval first.
+**Expected outcome:** the app starts locally (e.g. `npm start` → http://127.0.0.1:3000) and the agent smokes it over loopback (real process boot, HTTP checks) before declaring the launch verified. Anything external or destructive requires your explicit approval first. In `--auto` mode the agent still stops here: the stop message has three parts (Done, Waiting on, If hold).
 
 ### Step 7: Wrap up
 

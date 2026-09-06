@@ -2,7 +2,7 @@
 
 Agent-readable markdown skills for turning a rough product idea into a small local app prototype.
 
-This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool, or agent orchestrator. You install the skills. Your AI coding agent follows the skills. You approve each gate.
+This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool, or agent orchestrator. You install the skills. Your AI coding agent follows the skills. You approve each `checkpoint`, `review`, and `full` gate. With `--auto`, `auto` gates proceed without stopping.
 
 ## What this is
 
@@ -20,7 +20,7 @@ This is a skills-only repository. It is not a runtime, SaaS, queue, deploy tool,
 - 14 skills. Each skill is one self-contained `SKILL.md` file. The count covers 13 `fab-*` pipeline skills plus standalone `fabrica-code-review`.
 - A canonical skill manifest lives at `skills/manifest.json`. It is the single source of truth for skill inventory, dependencies, gate defaults, and plugin discovery.
 - The workflow is spec-first. It runs from idea to product spec to blueprint to scaffold to implementation to quality check to integration to launch.
-- Scaffolding guidance is stack-agnostic. Skills derive runtimes, services, commands, files, and verification steps from the blueprint. Skills never hardcode Python, Node, React, FastAPI, Docker, or any sample app.
+- Scaffolding guidance derives runtimes, services, commands, files, and verification steps from the blueprint. `/fab-spec` offers fixed pinned defaults for the three stack slots (React + Vite, FastAPI, SQLite); you may override any slot. Skills never hardcode Docker or any sample app.
 - The durable run state file is `fabrica.run.json`.
 - A JSON Schema validates run state. It lives at `schemas/run-object.schema.json`.
 - Prototype behavior is local-first. External deploy stays deferred. It needs your explicit approval.
@@ -126,7 +126,7 @@ Send this to the agent:
 Idea: Build a local CLI that accepts pasted invoice text and returns normalized JSON.
 ```
 
-The agent asks targeted questions. Then the agent shows a spec for approval.
+The agent asks targeted questions, then stack preferences one at a time. In default mode it then shows a spec for approval. With `--auto` it writes the spec and prints an assumption summary instead.
 
 `/fab-spec` asks for frontend, backend, and database preferences one at a time. Leave any blank to use fast, production-grade defaults: React + Vite, FastAPI, and SQLite.
 
@@ -144,9 +144,7 @@ Send:
 /fab-plan
 ```
 
-The agent proposes architecture, stack, app stages, and build order.
-
-Approve only when the plan is small and testable. The skill writes:
+The agent proposes architecture, stack, app stages, and build order. In default mode, approve only when the plan is small and testable. With `--auto` the agent proceeds and labels each stack slot operator-specified or default. The skill writes:
 
 - `docs/blueprint.md`
 - app stages in `fabrica.run.json`
@@ -174,6 +172,7 @@ Expected files include:
 - app stubs
 - tests folder
 - dependency files such as `pyproject.toml`, `requirements.txt`, `Makefile`, or `package.json`
+- one root `README.md` (never per-service files)
 - `.env.example` when the app needs environment variables
 
 In a source checkout, `/fab-scaffold` copies `fabrica.run.json`, `docs/spec.md`, and `docs/blueprint.md` into the generated app directory. After `/fab-scaffold`, the app-directory copy is canonical. The source-repo copies are runtime outputs only and are ignored by git.
@@ -280,9 +279,9 @@ Gate meanings:
 
 | Gate | Meaning |
 |---|---|
-| `auto` | The agent may proceed without pausing. |
+| `auto` | The agent proceeds without pausing and without ending its turn. |
 | `checkpoint` | The agent must show the result or plan before writing. |
-| `review` | Local checks may run; external, destructive, or deploy actions need approval. |
+| `review` | Local checks may run; external, destructive, or deploy actions need approval. The stop message has three parts: Done, Waiting on, If hold. |
 | `full` | The agent needs approval before starting and confirmation after completion. |
 
 ## Run State
@@ -297,6 +296,8 @@ Important fields:
 - `next_action`: exact command to run next.
 - `last_error`: structured error or `null`.
 - `app_stages`: stage status, artifacts, notes, and quality score.
+- `preferred_stack`: frontend/backend/database choice with fixed defaults.
+- `gate_levels`: resolved gate per skill.
 - `costs`: measured, estimated, or `unknown`.
 - `verifications`: test and launch results.
 - `human_decisions`: decisions recorded by `/fab-decide`.
