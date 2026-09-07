@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.4 — 2026-09-07
+
+### Fixed
+- Release tagging gap: v1.1.3 tag sat off the main line rather than on it; v1.1.4 tag is placed on main so tag, npm package, and main agree (verified published 1.1.3 tarball content identical to its tag: 47/47 shipped files)
+- LICENSE line-ending normalization (.gitattributes)
+
+### Added
+- UV-first Python scaffolds with no-activate fallback (UV used when present or after one explicit install yes; otherwise .venv + path-qualified python; never activate; never silent remote installers)
+
 ## 1.1.3 (2026-09-06)
 
 ### Changed
