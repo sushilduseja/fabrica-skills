@@ -171,6 +171,11 @@ function preflightSkill(skill) {
   return { skillName, skillPath, aliases };
 }
 
+/**
+ * @param {string} linkDest
+ * @param {string} skillName
+ * @returns {void}
+ */
 function removeExistingManagedSkill(linkDest, skillName) {
   const stat = statIfPresent(linkDest);
   if (!stat) return;
@@ -195,6 +200,12 @@ function removeExistingManagedSkill(linkDest, skillName) {
   }
 }
 
+/**
+ * @param {string} skillPath
+ * @param {string} linkDest
+ * @param {string} skillName
+ * @returns {void}
+ */
 function copySkill(skillPath, linkDest, skillName) {
   try {
     cpSync(skillPath, linkDest, {

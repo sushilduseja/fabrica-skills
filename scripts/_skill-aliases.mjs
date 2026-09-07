@@ -6,6 +6,7 @@
  * warning). Writers must only document canonical ids.
  */
 
+/** @type {Record<string, string>} */
 export const SKILL_ALIASES = {
   'fab-intake': 'fab-spec',
   'fab-blueprint': 'fab-plan',

@@ -52,7 +52,8 @@ function error(msg) {
  * @param {string} label Human-readable label for error messages.
  */
 function writeJSONAtomic(path, data, label) {
-  const tmpPath = resolve(dirname(path), `.${toRepoRelative(root, path).replaceAll('/', '-')}.${process.pid}.tmp`);
+  const relPath = /** @type {any} */ (toRepoRelative(root, path));
+  const tmpPath = resolve(dirname(path), `.${relPath.replaceAll('/', '-')}.${process.pid}.tmp`);
   try {
     writeFileSync(tmpPath, stringifyJson(data), { encoding: 'utf-8', flag: 'wx' });
     renameSync(tmpPath, path);

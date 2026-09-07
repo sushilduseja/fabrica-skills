@@ -13,6 +13,10 @@
 import { invokesDockerCommand } from './_verification-kind.mjs';
 
 /**
+ * @typedef {Record<string, any>} RunObject
+ */
+
+/**
  * Validate fab-verify (review gate) invariants.
  *
  * Key contracts:
@@ -20,7 +24,7 @@ import { invokesDockerCommand } from './_verification-kind.mjs';
  *   - container_build kind must invoke Docker
  *   - complete status requires a launch verification when current_step is fab-verify
  *
- * @param {Object} run — parsed fabrica.run.json
+ * @param {RunObject} run — parsed fabrica.run.json
  * @returns {string[]}
  */
 export function validateFabLaunchGate(run) {
@@ -64,7 +68,7 @@ export function validateFabLaunchGate(run) {
  *     (no auto-deciding)
  *   - A pending decision (null decision) must not be silently resolved
  *
- * @param {Object} run — parsed fabrica.run.json
+ * @param {RunObject} run — parsed fabrica.run.json
  * @returns {string[]}
  */
 export function validateFabSignalGate(run) {
@@ -90,7 +94,7 @@ export function validateFabSignalGate(run) {
  *     (per-axis gating — any sub-threshold axis blocks regardless of average)
  *   - An empty/unscored stage should not be "done"
  *
- * @param {Object} run — parsed fabrica.run.json
+ * @param {RunObject} run — parsed fabrica.run.json
  * @returns {string[]}
  */
 export function validateFabCheckGate(run) {
@@ -118,7 +122,7 @@ export function validateFabCheckGate(run) {
  * Since there is no rendering code, this validates cost-data integrity:
  * if precision is "unknown", all numeric cost fields must also be "unknown".
  *
- * @param {Object} run — parsed fabrica.run.json
+ * @param {RunObject} run — parsed fabrica.run.json
  * @returns {string[]}
  */
 export function validateFabPulseGate(run) {
@@ -149,7 +153,7 @@ export function validateFabPulseGate(run) {
  * skills/manifest.json remains the documented dependency record per ADR-003;
  * it is not evaluated here.
  *
- * @param {Object} run — parsed fabrica.run.json
+ * @param {RunObject} run — parsed fabrica.run.json
  * @returns {string[]}
  */
 export function validateNextActionGate(run) {
@@ -182,7 +186,7 @@ export function validateNextActionGate(run) {
  * Key contracts:
  *   - resolved_at must not be earlier than triggered_at
  *
- * @param {Object} run — parsed fabrica.run.json
+ * @param {RunObject} run — parsed fabrica.run.json
  * @returns {string[]}
  */
 export function validateTimestampOrderGate(run) {
@@ -211,7 +215,7 @@ export function validateTimestampOrderGate(run) {
  *     must not retain stale numeric values (checked by validateFabPulseGate)
  *   - precision must be one of: "unknown", "estimated", "measured"
  *
- * @param {Object} run — parsed fabrica.run.json
+ * @param {RunObject} run — parsed fabrica.run.json
  * @returns {string[]}
  */
 export function validateCostPrecisionGate(run) {
@@ -254,7 +258,7 @@ export function resolveGateLevel(skillId, manifestEntry, autoMode) {
 
 /**
  * Run all gate validators against a run object.
- * @param {Object} run
+ * @param {RunObject} run
  * @returns {string[]} all gate violations found
  */
 export function validateAllGates(run) {

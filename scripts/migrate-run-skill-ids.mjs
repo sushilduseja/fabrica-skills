@@ -19,6 +19,7 @@ import { SKILL_ALIASES, isDeprecatedSkillId } from './_skill-aliases.mjs';
 /**
  * Log a migration error and exit.
  * @param {string} msg
+ * @returns {never}
  */
 function fail(msg) {
   console.error(`[migrate-run-skill-ids] ERROR: ${msg}`);
@@ -28,7 +29,7 @@ function fail(msg) {
 /**
  * Rewrite deprecated Skill ids in a run object to canonical ids.
  * Mutates the input object. Leaves app_stages[].name unchanged.
- * @param {object} run Parsed run object.
+ * @param {Record<string, any>} run Parsed run object.
  * @returns {number} Count of rewritten ids.
  */
 export function migrateRunObject(run) {

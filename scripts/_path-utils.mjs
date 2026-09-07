@@ -124,6 +124,7 @@ export function assertDirectoryNotSymlink(label, absPath) {
  * Read and parse a JSON file. Terminates on failure.
  * @param {string} path Absolute path to the file.
  * @param {string} label Human-readable label for error messages.
+ * @param {string} [prefix] Optional prefix for error messages.
  * @returns {any}
  */
 export function readJsonFile(path, label, prefix = '[gstack]') {
@@ -143,6 +144,8 @@ export function readJsonFile(path, label, prefix = '[gstack]') {
 /**
  * Log an error and exit the process.
  * @param {string} msg
+ * @param {string} [prefix] Optional prefix for error messages.
+ * @returns {never}
  */
 export function errorExit(msg, prefix = '[gstack]') {
   console.error(`${prefix} ERROR: ${msg}`);

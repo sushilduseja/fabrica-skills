@@ -67,9 +67,34 @@ export const RUN_OBJECT_FIELDS = [
 ];
 
 /**
+ * @typedef {Object} ManifestSkill
+ * @property {string} id
+ * @property {string} path
+ * @property {string} category
+ * @property {number} phase
+ * @property {string} description
+ * @property {string} default_gate
+ * @property {boolean} overridable
+ * @property {string[]} prerequisites
+ * @property {string[]} blocks
+ * @property {boolean} read_only
+ * @property {string[]} [writes_fields]
+ * @property {string} error_metadata_path
+ * @property {string[]} [aliases]
+ */
+
+/**
+ * @typedef {Object} Manifest
+ * @property {string} schema_version
+ * @property {string} repo_version
+ * @property {string} [description]
+ * @property {ManifestSkill[]} skills
+ */
+
+/**
  * Check the Skill catalog at a repository root.
  * @param {string} root Absolute path to the repository root.
- * @returns {{manifest: any, schema: any, validErrorTypes: string[], skillIds: string[]}}
+ * @returns {{manifest: Manifest, schema: any, validErrorTypes: string[], skillIds: string[]}}
  * @throws {Error} The first catalog diagnostic.
  */
 export function checkSkillCatalog(root) {
