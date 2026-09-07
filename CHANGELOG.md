@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 (2026-09-06)
+
+### Changed
+- Version bump to 1.1.3. `skills/manifest.json` reformatted (multi-line arrays) with no semantic changes — same 14 skills, gates, and field ownership. Drift check passes.
+
 ## 1.1.2 (2026-09-06)
 
 ### Changed

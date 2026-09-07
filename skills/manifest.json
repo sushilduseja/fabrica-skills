@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "repo_version": "1.1.2",
-      "description": "Canonical skill inventory for fabrica-skills. Every structural fact about the factory lives here. Note: `read_only` means read-only with respect to run-object fields. Some read-only skills (fab-retro, fab-handoff) write filesystem artifacts outside the run object.",
+  "repo_version": "1.1.3",
+  "description": "Canonical skill inventory for fabrica-skills. Every structural fact about the factory lives here. Note: `read_only` means read-only with respect to run-object fields. Some read-only skills (fab-retro, fab-handoff) write filesystem artifacts outside the run object.",
   "skills": [
     {
       "id": "fab-spec",
@@ -12,9 +12,31 @@
       "default_gate": "checkpoint",
       "overridable": true,
       "prerequisites": [],
-      "blocks": ["fab-plan"],
+      "blocks": [
+        "fab-plan"
+      ],
       "read_only": false,
-      "writes_fields": ["schema_version", "id", "name", "experiment_phase", "created_at", "updated_at", "status", "current_step", "current_app_stage", "next_action", "last_error", "spec_path", "blueprint_path", "app_stages", "costs", "verifications", "human_decisions", "gate_levels", "preferred_stack"],
+      "writes_fields": [
+        "schema_version",
+        "id",
+        "name",
+        "experiment_phase",
+        "created_at",
+        "updated_at",
+        "status",
+        "current_step",
+        "current_app_stage",
+        "next_action",
+        "last_error",
+        "spec_path",
+        "blueprint_path",
+        "app_stages",
+        "costs",
+        "verifications",
+        "human_decisions",
+        "gate_levels",
+        "preferred_stack"
+      ],
       "error_metadata_path": "skills/core/fab-spec/errors.json"
     },
     {
@@ -25,10 +47,21 @@
       "description": "Convert a spec into app architecture and a build order.",
       "default_gate": "checkpoint",
       "overridable": true,
-      "prerequisites": ["fab-spec"],
-      "blocks": ["fab-scaffold"],
+      "prerequisites": [
+        "fab-spec"
+      ],
+      "blocks": [
+        "fab-scaffold"
+      ],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "status", "next_action", "blueprint_path", "app_stages"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "status",
+        "next_action",
+        "blueprint_path",
+        "app_stages"
+      ],
       "error_metadata_path": "skills/core/fab-plan/errors.json"
     },
     {
@@ -39,10 +72,21 @@
       "description": "Scaffold the app project skeleton and first-stage contracts.",
       "default_gate": "auto",
       "overridable": true,
-      "prerequisites": ["fab-plan"],
-      "blocks": ["fab-build"],
+      "prerequisites": [
+        "fab-plan"
+      ],
+      "blocks": [
+        "fab-build"
+      ],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "current_app_stage", "status", "next_action", "app_stages"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "current_app_stage",
+        "status",
+        "next_action",
+        "app_stages"
+      ],
       "error_metadata_path": "skills/core/fab-scaffold/errors.json"
     },
     {
@@ -53,10 +97,22 @@
       "description": "Implement one named app stage against the blueprint.",
       "default_gate": "auto",
       "overridable": true,
-      "prerequisites": ["fab-scaffold"],
-      "blocks": ["fab-eval", "fab-fix"],
+      "prerequisites": [
+        "fab-scaffold"
+      ],
+      "blocks": [
+        "fab-eval",
+        "fab-fix"
+      ],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "next_action", "last_error", "app_stages", "verifications"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "next_action",
+        "last_error",
+        "app_stages",
+        "verifications"
+      ],
       "error_metadata_path": "skills/core/fab-build/errors.json"
     },
     {
@@ -67,10 +123,21 @@
       "description": "Evaluate one app stage against quality criteria.",
       "default_gate": "auto",
       "overridable": true,
-      "prerequisites": ["fab-build"],
-      "blocks": ["fab-integrate", "fab-fix"],
+      "prerequisites": [
+        "fab-build"
+      ],
+      "blocks": [
+        "fab-integrate",
+        "fab-fix"
+      ],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "next_action", "last_error", "app_stages"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "next_action",
+        "last_error",
+        "app_stages"
+      ],
       "error_metadata_path": "skills/core/fab-eval/errors.json"
     },
     {
@@ -109,10 +176,22 @@
       "description": "Diagnose a failing stage and apply the smallest viable fix.",
       "default_gate": "auto",
       "overridable": true,
-      "prerequisites": ["fab-build", "fab-eval"],
-      "blocks": ["fab-decide"],
+      "prerequisites": [
+        "fab-build",
+        "fab-eval"
+      ],
+      "blocks": [
+        "fab-decide"
+      ],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "next_action", "last_error", "app_stages", "verifications"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "next_action",
+        "last_error",
+        "app_stages",
+        "verifications"
+      ],
       "error_metadata_path": "skills/prototype/fab-fix/errors.json"
     },
     {
@@ -123,10 +202,22 @@
       "description": "Connect completed stages into an end-to-end flow.",
       "default_gate": "checkpoint",
       "overridable": true,
-      "prerequisites": ["fab-eval"],
-      "blocks": ["fab-verify"],
+      "prerequisites": [
+        "fab-eval"
+      ],
+      "blocks": [
+        "fab-verify"
+      ],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "experiment_phase", "status", "next_action", "last_error", "verifications"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "experiment_phase",
+        "status",
+        "next_action",
+        "last_error",
+        "verifications"
+      ],
       "error_metadata_path": "skills/prototype/fab-integrate/errors.json"
     },
     {
@@ -137,10 +228,19 @@
       "description": "Run a pre-launch checklist and verify the app locally.",
       "default_gate": "review",
       "overridable": false,
-      "prerequisites": ["fab-integrate"],
+      "prerequisites": [
+        "fab-integrate"
+      ],
       "blocks": [],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "status", "next_action", "last_error", "verifications"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "status",
+        "next_action",
+        "last_error",
+        "verifications"
+      ],
       "error_metadata_path": "skills/prototype/fab-verify/errors.json"
     },
     {
@@ -151,10 +251,17 @@
       "description": "Capture a human decision.",
       "default_gate": "full",
       "overridable": false,
-      "prerequisites": ["fab-fix"],
+      "prerequisites": [
+        "fab-fix"
+      ],
       "blocks": [],
       "read_only": false,
-      "writes_fields": ["updated_at", "current_step", "next_action", "human_decisions"],
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "next_action",
+        "human_decisions"
+      ],
       "error_metadata_path": "skills/prototype/fab-decide/errors.json"
     },
     {
@@ -195,13 +302,12 @@
       "overridable": true,
       "prerequisites": [],
       "blocks": [],
-      "aliases": ["fab-code-review"],
+      "aliases": [
+        "fab-code-review"
+      ],
       "read_only": true,
       "writes_fields": [],
       "error_metadata_path": "skills/standalone/fabrica-code-review/errors.json"
     }
   ]
 }
-
-
-
