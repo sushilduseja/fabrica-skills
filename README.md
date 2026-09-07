@@ -191,6 +191,8 @@ Release history: `CHANGELOG.md`.
 - Network access for the first `npx` fetch. After that, the CLI comes from your local npm cache.
 - An AI coding agent that reads local markdown skill files.
 
+Python backends: scaffolds prefer [uv](https://github.com/astral-sh/uv) and `uv run` (no venv activation). If `uv` is missing, the agent installs it for you. If install is impossible, it falls back to `.venv` + path-qualified `python -m pip` (still no activate).
+
 ## Repository layout
 
 ```

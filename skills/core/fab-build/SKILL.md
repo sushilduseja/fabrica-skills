@@ -56,7 +56,7 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 4. Write tests covering: happy path, one realistic failure, one edge case.
 5. For generated dependency manifests, pin versions or version ranges compatible with the generated config. Avoid `latest` unless the explicit stage goal is dependency-upgrade testing.
 6. For generated containerized apps, make local development work without root-owned or container-only absolute paths. Use environment variables so Docker paths like `/data/app.db` do not break non-container imports or tests.
-7. Run the narrowest approved test command for the stage.
+7. Run the narrowest approved test command for the stage. For Python stages with UV available, prefix with `uv run` (e.g. `uv run pytest`); never use venv activation.
 8. Map the test command to `verifications[].kind`:
    - language-level unit tests such as `pytest`, `vitest`, `jest`, `go test`, `cargo test`, `mvn test`, `gradle test`, or equivalent → `unit`
    - multi-endpoint, multi-service, persistence, or round-trip tests → `integration`

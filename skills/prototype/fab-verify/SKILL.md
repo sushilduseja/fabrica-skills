@@ -51,13 +51,13 @@ Integrated app ready for MVP verification (`status = verifying`, `docs/integrati
 ## Behavior
 
 1. Run pre-launch checklist:
-   - Package installed in editable/local mode using the blueprint-approved install command
-   - Tests pass
+    - Package installed in editable/local mode using the blueprint-approved install command (for Python apps this means `uv sync`; if `uv` is missing, install it per the scaffold rule and re-check, unless the UV-unavailable fallback is already recorded)
+    - Tests pass
    - Env vars documented in `.env.example`
    - No committed secrets
    - Integration verified
 2. Show checklist and require explicit approval before running any external, destructive, or network deploy action.
-3. Verify locally using the approved local run command or commands from the blueprint/package scripts. Branch by launch shape:
+3. Verify locally using the approved local run command or commands from the blueprint/package scripts (for Python apps, prefer `uv run …`). Branch by launch shape:
    - Single process: if the port is already held by a stale process from an earlier run, stop that process first; then start the process and run the declared smoke check.
    - CLI: run the CLI with deterministic sample input from the spec.
    - Multi-service local processes: start each required service on loopback and smoke the declared endpoints.
