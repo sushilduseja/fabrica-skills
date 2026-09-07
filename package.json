@@ -50,7 +50,8 @@
     "test": "node test/validate-run.test.mjs && node test/sync-manifest.test.mjs && node test/link-skills.test.mjs && node test/skill-gates.test.mjs && node test/verification-kind.test.mjs && node test/docs.test.mjs && node test/install-cli.test.mjs && node test/migrate-run-skill-ids.test.mjs",
     "lint": "eslint --ext .js,.mjs scripts/ test/ bin/ && prettier --check scripts/ test/ bin/",
     "lint:fix": "eslint --ext .js,.mjs --fix scripts/ test/ bin/ && prettier --write scripts/ test/ bin/",
-    "check": "npm run validate && npm test && npm run lint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run validate && npm test && npm run lint && npm run typecheck",
     "setup": "npm run validate && node scripts/link-skills.mjs"
   },
   "dependencies": {
@@ -58,7 +59,9 @@
     "ajv-formats": "^3.0.0"
   },
   "devDependencies": {
+    "@types/node": "^26.4.1",
     "eslint": "^8.57.1",
-    "prettier": "^3.4.2"
+    "prettier": "^3.4.2",
+    "typescript": "7.0.2"
   }
 }

@@ -47,6 +47,7 @@ export const STATUS_PHASE_MATRIX = {
 /**
  * Log a validation error and exit.
  * @param {string} msg
+ * @returns {never}
  */
 function fail(msg) {
   console.error(`[validate-run] ERROR: ${msg}`);
@@ -99,7 +100,7 @@ function atomicWrite(targetPath, content) {
 /**
  * Dynamically import ajv and ajv-formats. Provides a clear error if
  * dependencies are missing.
- * @returns {Promise<{Ajv: Function, addFormats: Function}>}
+ * @returns {Promise<{Ajv: any, addFormats: any}>}
  */
 async function loadAjv() {
   try {

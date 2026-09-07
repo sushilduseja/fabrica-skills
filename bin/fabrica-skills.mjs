@@ -17,6 +17,7 @@ import { readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(__dirname, '..');
+/** @type {{ version: string, [key: string]: any }} */
 let pkg;
 try {
   pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'));

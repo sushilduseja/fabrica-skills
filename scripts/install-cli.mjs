@@ -61,6 +61,23 @@ function warn(msg) {
   console.error(`[fabrica-skills] WARN: ${msg}`);
 }
 
+/**
+ * @typedef {Object} CliFlags
+ * @property {boolean} global
+ * @property {boolean} orphans
+ * @property {string[] | null} agents
+ * @property {string | null} migrateRun
+ * @property {string | null} name
+ * @property {string | null} out
+ * @property {boolean} force
+ * @property {boolean} auto
+ * @property {string[]} positional
+ */
+
+/**
+ * @param {string[]} argv
+ * @returns {CliFlags}
+ */
 function parseFlags(argv) {
   const flags = {
     global: false,
@@ -115,13 +132,21 @@ function parseFlags(argv) {
   return flags;
 }
 
-// Project install: use package skills/ as source (pkgRoot/skills)
-// Global install: copy skills tree to ~/.fabrica-skills/catalog/<version>/ then link from there
+/**
+ * Project install: use package skills/ as source (pkgRoot/skills)
+ * Global install: copy skills tree to ~/.fabrica-skills/catalog/<version>/ then link from there
+ * @param {{ global: boolean, pkgRoot: string, version: string }} params
+ * @returns {string}
+ */
 function catalogRoot({ global, pkgRoot, version }) {
   if (!global) return join(pkgRoot, 'skills');
   return join(homedir(), '.fabrica-skills', 'catalog', version, 'skills');
 }
 
+/**
+ * @param {string} pkgRoot
+ * @returns {any}
+ */
 function loadManifest(pkgRoot) {
   const manifestPath = join(pkgRoot, 'skills/manifest.json');
   const manifest = readJsonFile(manifestPath, 'skills/manifest.json', '[fabrica-skills]');
@@ -131,6 +156,11 @@ function loadManifest(pkgRoot) {
   return manifest;
 }
 
+/**
+ * @param {string} skillDir
+ * @param {{ skillId: string, version: string, scope: string }} meta
+ * @returns {void}
+ */
 function writeMarker(skillDir, { skillId, version, scope }) {
   writeFileSync(
     join(skillDir, MANAGED_FILENAME),
@@ -148,6 +178,10 @@ function writeMarker(skillDir, { skillId, version, scope }) {
   );
 }
 
+/**
+ * @param {string} skillDir
+ * @returns {any}
+ */
 function readMarker(skillDir) {
   const p = join(skillDir, MANAGED_FILENAME);
   if (!existsSync(p)) return null;
@@ -160,6 +194,8 @@ function readMarker(skillDir) {
 
 /**
  * Resolve requested agent keys to harness roots for a scope.
+ * @param {{ agents: string[] | null, global: boolean, cwd: string }} params
+ * @returns {Array<{ key: string, root: string }>}
  */
 function resolveHarnessRoots({ agents, global, cwd }) {
   const keys = agents || DEFAULT_AGENTS;
@@ -174,6 +210,9 @@ function resolveHarnessRoots({ agents, global, cwd }) {
 
 /**
  * Copy the packaged skills tree into the versioned global catalog and record CURRENT.
+ * @param {string} pkgRoot
+ * @param {string} version
+ * @returns {string}
  */
 function ensureGlobalCatalog(pkgRoot, version) {
   const dest = join(homedir(), '.fabrica-skills', 'catalog', version);
@@ -194,6 +233,10 @@ function ensureGlobalCatalog(pkgRoot, version) {
   return dest;
 }
 
+/**
+ * @param {{ sourceSkillDir: string, destSkillDir: string, harnessRoot: string, skillId: string, version: string, scope: string }} params
+ * @returns {'installed' | 'skipped'}
+ */
 function installSkillProjection({ sourceSkillDir, destSkillDir, harnessRoot, skillId, version, scope }) {
   if (!SKILL_ID_RE.test(skillId || '')) {
     fail(`Refusing to install skill with invalid id: ${skillId}`);
@@ -228,6 +271,10 @@ function installSkillProjection({ sourceSkillDir, destSkillDir, harnessRoot, ski
   return 'installed';
 }
 
+/**
+ * @param {{ manifest: any, catalog: string, roots: Array<{ key: string, root: string }>, version: string, scope: string }} params
+ * @returns {number}
+ */
 function projectAllSkills({ manifest, catalog, roots, version, scope }) {
   let skipped = 0;
   for (const skill of manifest.skills) {
@@ -270,6 +317,10 @@ function projectAllSkills({ manifest, catalog, roots, version, scope }) {
   return skipped;
 }
 
+/**
+ * @param {{ pkgRoot: string, version: string, cwd: string, flags: CliFlags, verb: string }} params
+ * @returns {void}
+ */
 function cmdInstallOrUpdate({ pkgRoot, version, cwd, flags, verb }) {
   const scope = flags.global ? 'global' : 'project';
   if (flags.global) ensureGlobalCatalog(pkgRoot, version);
@@ -280,6 +331,10 @@ function cmdInstallOrUpdate({ pkgRoot, version, cwd, flags, verb }) {
   console.log(`[fabrica-skills] ${verb} ${manifest.skills.length} skills × ${roots.length} harness roots (${scope})`);
 }
 
+/**
+ * @param {{ pkgRoot: string, cwd: string, flags: CliFlags }} params
+ * @returns {void}
+ */
 function cmdUninstall({ pkgRoot, cwd, flags }) {
   const scope = flags.global ? 'global' : 'project';
   const manifestIds = new Set(loadManifest(pkgRoot).skills.map((s) => s.id));
@@ -299,6 +354,10 @@ function cmdUninstall({ pkgRoot, cwd, flags }) {
   console.log(`[fabrica-skills] uninstalled ${removed} skills (${scope})`);
 }
 
+/**
+ * @param {{ pkgRoot: string, version: string, cwd: string, flags: CliFlags }} params
+ * @returns {void}
+ */
 function cmdStatus({ pkgRoot, version, cwd, flags }) {
   const scope = flags.global ? 'global' : 'project';
   const manifestIds = loadManifest(pkgRoot).skills.map((s) => s.id);
@@ -340,6 +399,10 @@ function cmdStatus({ pkgRoot, version, cwd, flags }) {
   }
 }
 
+/**
+ * @param {string} pkgRoot
+ * @returns {RegExp}
+ */
 function readRunObjectNamePattern(pkgRoot) {
   const schemaPath = join(pkgRoot, 'schemas/run-object.schema.json');
   const schema = readJsonFile(schemaPath, 'schemas/run-object.schema.json', '[fabrica-skills]');
@@ -350,6 +413,10 @@ function readRunObjectNamePattern(pkgRoot) {
   return new RegExp(pattern);
 }
 
+/**
+ * @param {{ pkgRoot: string, cwd: string, flags: CliFlags }} params
+ * @returns {void}
+ */
 function cmdInitRun({ pkgRoot, cwd, flags }) {
   const name = flags.name || 'app';
   if (!readRunObjectNamePattern(pkgRoot).test(name)) {
@@ -361,6 +428,7 @@ function cmdInitRun({ pkgRoot, cwd, flags }) {
   }
   const manifest = loadManifest(pkgRoot);
   const now = new Date().toISOString();
+  /** @type {Record<string, string>} */
   const gate_levels = {};
   for (const skill of manifest.skills) {
     gate_levels[skill.id] = resolveGateLevel(skill.id, skill, flags.auto);
@@ -413,6 +481,10 @@ function cmdInitRun({ pkgRoot, cwd, flags }) {
   }
 }
 
+/**
+ * @param {{ pkgRoot: string, flags: CliFlags }} params
+ * @returns {never}
+ */
 function cmdValidate({ pkgRoot, flags }) {
   if (flags.migrateRun) {
     const result = spawnSync(
