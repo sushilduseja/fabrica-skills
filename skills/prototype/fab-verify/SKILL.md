@@ -51,7 +51,7 @@ Integrated app ready for MVP verification (`status = verifying`, `docs/integrati
 ## Behavior
 
 1. Run pre-launch checklist:
-    - Package installed in editable/local mode using the blueprint-approved install command (for Python apps this means `uv sync`; if `uv` is missing, install it per the scaffold rule and re-check, unless the UV-unavailable fallback is already recorded)
+    - Package installed in editable/local mode using the blueprint-approved install command (for Python apps this means `uv sync`; if `uv` is missing, apply the scaffold ask-once rule — prompt for install approval, or under gate `auto` fall back immediately without prompting)
     - Tests pass
    - Env vars documented in `.env.example`
    - No committed secrets
