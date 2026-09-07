@@ -53,6 +53,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
 7. Write generated files through temporary files and atomic renames where possible.
 8. Validate the full candidate run object with `node <fabrica-skills>/scripts/validate-run.mjs --stdin` before replacing the app-directory `fabrica.run.json`.
 9. Generated app code must not contain hardcoded secrets, credentials, tokens, or private keys. All secrets come from environment variables documented in `.env.example`.
+10. For Python backends, resolve the Python runner before writing any install/run command: run `uv --version`. If UV is present, use it for all commands (`uv sync`, `uv run ...`) and never require venv activation. If UV is missing, stop and ask the operator one clear question — install UV with the official installer for the OS (macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`; Windows: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`) so the project can use `uv run`? On explicit yes only, run the matching installer, re-run `uv --version` to confirm success, then continue. On no — or whenever the operator cannot approve, including resolved gate `auto` — use the fallback immediately without retrying: `.venv` with the path-qualified interpreter (`.venv/bin/python -m ...`; Windows: `.venv\Scripts\python.exe -m ...`) and record "UV unavailable or declined; using .venv + path-qualified python (no activate)" in the blueprint/README. Never run a remote installer silently.
 
 ## Behavior
 
@@ -71,6 +72,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
     - Return safe error messages without stack traces, paths, or secrets in user-facing output.
     - Ship closed by default: no debug endpoints, no admin backdoors, no permissive CORS; enforce the blueprint's authentication and authorization decisions on every route, defaulting to deny.
 12. For each service, add the dependency manifest specified by the blueprint. Examples include but are not limited to `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, `Gemfile`, or `composer.json`.
+    - For Python backends, prefer UV-managed `pyproject.toml`; run `uv lock` / `uv sync` when network is available. If the blueprint mandates `requirements.txt` only, still prefer `uv pip install -r requirements.txt` + `uv run` when UV exists. Never document `source .venv/bin/activate` (or `.venv\Scripts\activate`) as a required step.
 13. Pin dependency versions or version ranges when generating manifests. Do not use `latest` unless the blueprint explicitly says this is an upgrade-compatibility experiment.
 14. Add toolchain-local config boundaries when the selected stack needs them for a clean first build or to avoid parent-project config bleed. Examples: `tsconfig.json`, Vite env type shims, local PostCSS config, `pyproject.toml`, `pytest.ini`, `go.work`, `.npmrc`, or equivalent stack-specific boundaries.
 15. Write `.env.example` only for required environment variables.
@@ -92,7 +94,7 @@ Blueprint confirmed (`status = framing` in run object, `docs/blueprint.md` exist
     - lint
     - build, if applicable
     - container build/check/up/down, if applicable
-20. Write one consolidated root `README.md` covering the whole app: what it is, stack per service, how to run every service, how to test, environment overrides, and project layout. Do not write per-service READMEs. Delete or replace framework boilerplate READMEs (e.g. Vite's) so exactly one README remains.
+20. Write one consolidated root `README.md` covering the whole app: what it is, stack per service, how to run every service, how to test, environment overrides, and project layout. Document Python commands as `uv sync` / `uv run` on the happy path (path-qualified `.venv` interpreter only where the UV fallback was recorded). Do not write per-service READMEs. Delete or replace framework boilerplate READMEs (e.g. Vite's) so exactly one README remains.
 21. Update the copied app-directory run object:
     - `current_step = "fab-scaffold"`
     - `status = "forging"`

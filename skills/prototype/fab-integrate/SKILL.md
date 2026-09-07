@@ -50,7 +50,7 @@ Required app stages are done and checked (`status = done` for all required stage
 
 1. Wire only the app stages needed for the canonical happy path.
 2. Add one integration test from raw input to expected output.
-3. Run the approved integration test command and record result.
+3. Run the approved integration test command and record result. For Python services with UV available, wrap with `uv run`; never use venv activation.
 4. If integration fails, set `last_error = { "type": "external_failure", "message": "Integration test failed" }`, set `next_action = "/fab-fix integration"`, and stop. Wiring is done; routing to the diagnostic skill is complete.
 5. Write `docs/integration.md` describing the wired flow and how to run it.
 6. Update `current_step = "fab-integrate"`, `status = "verifying"`, `next_action = "/fab-verify"`, append verification, and clear `last_error` only if integration passes.

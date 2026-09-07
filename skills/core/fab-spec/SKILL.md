@@ -49,7 +49,7 @@ None (entry point).
     - frontend: React + Vite
     - backend: FastAPI, unless the spec's problem/core-job answers explicitly signal a JS/Node-only constraint (e.g. operator names Node.js, Express, or a JS-only requirement) — in that case default to Express instead
     - database: SQLite
-   Never default to "latest" or an unpinned version for any of these. Use the current stable major version at time of scaffold.
+   Never default to "latest" or an unpinned version for any of these. Use the current stable major version at time of scaffold. Implementation packaging for Python backends defaults to UV (`uv run`); pip/venv without activation is fallback only.
 1c. Record the resolved values (explicit or defaulted) in `preferred_stack`, using `null` only for a slot that was left blank AND has no applicable default (not expected to occur given step 1b, but schema must tolerate it for forward compatibility).
 2. Refuse vague user or core job answers; push until the app can be tested by a stranger.
 3. If the operator skips or refuses a question, proceed only with explicit warning: mark the unanswered section as `INCOMPLETE: <section>` in the spec, and add a warning note at the top of `docs/spec.md` listing missing areas.

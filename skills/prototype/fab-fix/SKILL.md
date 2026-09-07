@@ -52,7 +52,7 @@ A stage is blocked, failing, or has a supplied error.
 2. Read `last_error.type` from the run object. Load the failing skill's `errors.json` (path from `skills/manifest.json`). Find the matching error type and apply its `diagnosis` and `rescue_action`. If no match, fall back to: "Unrecognized error type. Run the failing skill again and observe output."
 3. Apply the smallest fix that addresses the root cause.
 4. Add or update a regression test if the failure can be reproduced locally.
-5. Run the narrowest relevant approved test command.
+5. Run the narrowest relevant approved test command. For Python stages with UV available, prefix with `uv run`; do not invent activate steps when fixing failures.
 6. If fix resolves: update stage `status = "done"`, clear `last_error`, append verification, and set `next_action` to resume.
 7. If fix does not resolve: re-analyze root cause, try once more. If still failing, set `next_action = "/fab-decide"` to request operator help and keep a clear `last_error`.
 8. Set `current_step = "fab-fix"`, bump `updated_at`, and validate the candidate run object before writing.
