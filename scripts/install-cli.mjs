@@ -180,7 +180,7 @@ function writeMarker(skillDir, { skillId, version, scope }) {
 
 /**
  * @param {string} skillDir
- * @returns {any}
+ * @returns {{ managed_by: string, skill_id: string, package_version: string, install_scope: string, installed_at: string } | null}
  */
 function readMarker(skillDir) {
   const p = join(skillDir, MANAGED_FILENAME);

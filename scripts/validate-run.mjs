@@ -101,6 +101,9 @@ function atomicWrite(targetPath, content) {
  * Dynamically import ajv and ajv-formats. Provides a clear error if
  * dependencies are missing.
  * @returns {Promise<{Ajv: any, addFormats: any}>}
+ * Note: kept as `any` — ajv and ajv-formats ship CJS types that tsc cannot
+ * match to a constructor signature when checkJs is active. Narrowing further
+ * causes TS2322. Revisit if ajv ships ESM types in a future version.
  */
 async function loadAjv() {
   try {
