@@ -596,7 +596,7 @@ function cmdInitExistingRun({ pkgRoot, cwd, flags }) {
       origin: 'existing',
       project_root: projectRoot,
       profile_path: profilePath,
-      baseline: captureBaseline(cwd),
+      baseline: captureBaseline(join(cwd, projectRoot)),
     },
   };
   // NOTE: same exemption as init-run — outPath is an explicit operator choice.
