@@ -1293,4 +1293,29 @@ test('validate-run rejects an unknown project_context property', () => {
   assertFail(result, 'unknown context property unexpectedly passed');
 });
 
+test('validate-run gate_levels migrate: 14-key run fails without --migrate', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  delete candidate.gate_levels['fab-discover'];
+  delete candidate.gate_levels['fab-adopt'];
+  const result = run(['scripts/validate-run.mjs', '--stdin'], { input: JSON.stringify(candidate) });
+  assertFail(result, '14-key run should fail without --migrate');
+  assert(combined(result).includes('fab-discover'), combined(result));
+});
+
+test('validate-run gate_levels migrate: 14-key run passes with --migrate', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  delete candidate.gate_levels['fab-discover'];
+  delete candidate.gate_levels['fab-adopt'];
+  const result = run(['scripts/validate-run.mjs', '--migrate', '--stdin'], { input: JSON.stringify(candidate) });
+  assertPass(result, combined(result));
+  assert(combined(result).includes('migrate: filled 2'), combined(result));
+});
+
+test('validate-run gate_levels migrate: full 16-key run unchanged', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  const result = run(['scripts/validate-run.mjs', '--migrate', '--stdin'], { input: JSON.stringify(candidate) });
+  assertPass(result, combined(result));
+  assert(!combined(result).includes('migrate: filled'), combined(result));
+});
+
 runAll();

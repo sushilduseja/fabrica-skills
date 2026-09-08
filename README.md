@@ -76,18 +76,18 @@ For a full walkthrough from idea to running app, see [examples/fabrica-skills-QU
 ## How a run flows
 
 ```
-Phase 0: Spec and plan
-  /fab-spec -> /fab-plan
-  Produces: docs/spec.md, docs/blueprint.md, fabrica.run.json
+New project:
+  /fab-spec -> /fab-plan -> /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
+  Repeat build/eval → /fab-integrate -> /fab-verify -> /fab-handoff -> /fab-retro
 
-Phase 1: Build one slice at a time
-  /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
-  Repeat build and eval until every stage is done.
+Existing project (init-existing-run):
+  init-existing-run -> /fab-discover -> /fab-spec -> /fab-plan -> /fab-adopt
+  -> /fab-build <stage> -> /fab-eval <stage> -> /fab-integrate -> /fab-verify
 
-Phase 2: Connect and verify
-  /fab-integrate -> /fab-verify -> /fab-handoff -> /fab-retro
-  Use as needed: /fab-fix <stage>, /fab-decide, /fab-status
+Use as needed: /fab-fix <stage>, /fab-decide, /fab-status
 ```
+
+New and existing share build, eval, integrate, and verify. New uses `docs/spec.md` and `/fab-scaffold`; existing uses `docs/fabrica/` and `/fab-adopt` (see `docs/STATE_MACHINE.md`).
 
 Full diagram: [docs/STATE_MACHINE.md](https://github.com/sushilduseja/fabrica-skills/blob/main/docs/STATE_MACHINE.md).
 
@@ -106,7 +106,9 @@ Then follow the existing-project flow: `/fab-discover` (read-only inspection →
 | Skill | Phase | Stops for approval? | Does this |
 |---|---|---|---|
 | `/fab-spec` | 0 | Yes, unless `--auto` | Turns your idea into a spec. |
+| `/fab-discover` | 0 | No | Surveys an existing repo → `docs/fabrica/project-profile.md`. |
 | `/fab-plan` | 0 | Yes, unless `--auto` | Turns the spec into an architecture and a build order. |
+| `/fab-adopt` | 1 | Yes, unless `--auto` | Registers an existing repo (never scaffolds). |
 | `/fab-scaffold` | 1 | No | Builds the project skeleton. |
 | `/fab-build` | 1 | No | Implements one stage. |
 | `/fab-eval` | 1 | No | Scores one stage on quality. |
@@ -120,7 +122,7 @@ Then follow the existing-project flow: `/fab-discover` (read-only inspection →
 | `/fab-retro` | 2 | No | Scores the finished run. |
 | `/fab-code-review` | 2 | No | Reviews changes since a fixed git point. |
 
-The review skill installs under the name `fabrica-code-review`. Run it as `/fab-code-review`.
+The review skill installs under the name `fabrica-code-review`. Run it as `/fab-code-review`. Install creates 16 skills plus the `fab-code-review` alias directory (same content as `fabrica-code-review`); `status` reports 16/16; disk may show 17 dirs per harness.
 
 ## What each stop means
 

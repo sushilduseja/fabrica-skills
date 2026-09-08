@@ -3,17 +3,7 @@ import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } f
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  copyRepoFixture,
-  root,
-  run,
-  test,
-  assertPass,
-  combined,
-  assertNoStackTrace,
-  validateStdin,
-  runAll,
-} from './_harness.mjs';
+import { copyRepoFixture, root, run, test, assertPass, combined, validateStdin, runAll } from './_harness.mjs';
 
 function makeLegacyApp({ git = false } = {}) {
   const dir = join(tmpdir(), `fabrica-legacy-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
@@ -161,7 +151,7 @@ test('existing-project spec/blueprint paths are Fabrica-owned and guarded', () =
   try {
     const out = join(dir, 'fabrica.run.json');
     assertPass(pkgBin(['init-existing-run', '--name', 'legacy-app', '--out', out], dir));
-    const runObject = JSON.parse(readFileSync(out, 'utf-8'));
+    assert(JSON.parse(readFileSync(out, 'utf-8')).project_context.origin === 'existing');
 
     // fab-spec guardrail 7: profile required; fab-scaffold must refuse existing runs
     const specSkill = readFileSync(join(root, 'skills/core/fab-spec/SKILL.md'), 'utf-8');
