@@ -69,6 +69,8 @@ function warn(msg) {
  * @property {string | null} migrateRun
  * @property {string | null} name
  * @property {string | null} out
+ * @property {string | null} root
+ * @property {string | null} profile
  * @property {boolean} force
  * @property {boolean} auto
  * @property {string[]} positional
@@ -86,6 +88,8 @@ function parseFlags(argv) {
     migrateRun: null,
     name: null,
     out: null,
+    root: null,
+    profile: null,
     force: false,
     auto: false,
     positional: [],
@@ -109,6 +113,20 @@ function parseFlags(argv) {
         throw new Error('--out requires a run-object path');
       }
       flags.out = value;
+      i += 1;
+    } else if (a === '--root') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('--root requires a repository-relative path');
+      }
+      flags.root = value;
+      i += 1;
+    } else if (a === '--profile') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('--profile requires a profile path');
+      }
+      flags.profile = value;
       i += 1;
     } else if (a === '--migrate-run') {
       const value = argv[i + 1];
@@ -482,6 +500,117 @@ function cmdInitRun({ pkgRoot, cwd, flags }) {
 }
 
 /**
+ * Capture the Git baseline of the target repository without modifying it.
+ * Returns nulls when the directory is not a Git checkout or Git is missing.
+ * @param {string} cwd Working directory (the existing project root).
+ * @returns {{ git_head: string | null, branch: string | null, worktree_clean: boolean, captured_at: string }}
+ */
+function captureBaseline(cwd) {
+  const git = (args) => {
+    try {
+      const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+      if (result.status !== 0 || typeof result.stdout !== 'string') return null;
+      return result.stdout.trim();
+    } catch {
+      return null;
+    }
+  };
+  const git_head = git(['rev-parse', 'HEAD']) || null;
+  const branch = git(['branch', '--show-current']) || null;
+  const statusOut = git(['status', '--porcelain']);
+  return {
+    git_head,
+    branch: branch === '' ? null : branch,
+    worktree_clean: statusOut === null ? false : statusOut === '',
+    captured_at: new Date().toISOString(),
+  };
+}
+
+/**
+ * Reject repository-relative paths that escape (absolute or `..` segments).
+ * @param {string} value
+ * @param {string} flag
+ * @returns {void}
+ */
+function assertRepoRelativePath(value, flag) {
+  if (isAbsolute(value) || value.split(/[\\/]/).some((seg) => seg === '..')) {
+    fail(`Invalid ${flag} "${value}": must be a repository-relative path without ".."`);
+  }
+}
+
+/**
+ * Initialize a run object for explicit existing-project mode.
+ * Creates run state only; never inspects, adopts, or modifies application source.
+ * @param {{ pkgRoot: string, cwd: string, flags: CliFlags }} params
+ * @returns {void}
+ */
+function cmdInitExistingRun({ pkgRoot, cwd, flags }) {
+  const name = flags.name || 'app';
+  if (!readRunObjectNamePattern(pkgRoot).test(name)) {
+    fail(`Invalid --name "${name}": must be a lowercase slug (letters, digits, ., _, -)`);
+  }
+  const projectRoot = flags.root || '.';
+  assertRepoRelativePath(projectRoot, '--root');
+  const profilePath = flags.profile || 'docs/fabrica/project-profile.md';
+  assertRepoRelativePath(profilePath, '--profile');
+  const outPath = isAbsolute(flags.out || '') ? flags.out : join(cwd, flags.out || 'fabrica.run.json');
+  if (existsSync(outPath) && !flags.force) {
+    fail(`Refusing to overwrite existing ${outPath} (use --force to overwrite)`);
+  }
+  const manifest = loadManifest(pkgRoot);
+  const now = new Date().toISOString();
+  /** @type {Record<string, string>} */
+  const gate_levels = {};
+  for (const skill of manifest.skills) {
+    gate_levels[skill.id] = resolveGateLevel(skill.id, skill, flags.auto);
+  }
+  const runObject = {
+    schema_version: '0.2',
+    id: randomUUID(),
+    name,
+    experiment_phase: 'phase_0_spec',
+    created_at: now,
+    updated_at: now,
+    status: 'designing',
+    current_step: 'fab-discover',
+    current_app_stage: null,
+    next_action: '/fab-discover',
+    last_error: null,
+    spec_path: null,
+    blueprint_path: null,
+    app_stages: [],
+    costs: {
+      precision: 'unknown',
+      tokens_in: 'unknown',
+      tokens_out: 'unknown',
+      api_calls: 'unknown',
+      estimated_usd: 'unknown',
+      budget_usd: null,
+      by_step: {},
+    },
+    verifications: [],
+    human_decisions: [],
+    gate_levels,
+    preferred_stack: { frontend: null, backend: null, database: null },
+    project_context: {
+      origin: 'existing',
+      project_root: projectRoot,
+      profile_path: profilePath,
+      baseline: captureBaseline(cwd),
+    },
+  };
+  // NOTE: same exemption as init-run — outPath is an explicit operator choice.
+  try {
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, `${JSON.stringify(runObject, null, 2)}\n`, 'utf8');
+  } catch (err) {
+    fail(`Cannot write ${outPath}: ${err.message}`);
+  }
+  console.log(`[fabrica-skills] wrote ${outPath} (existing-project mode: ${projectRoot})`);
+  console.log('next: /fab-discover to record the project profile (read-only; modifies no application source)');
+}
+
+/**
  * @param {{ pkgRoot: string, flags: CliFlags }} params
  * @returns {never}
  */
@@ -506,7 +635,7 @@ function cmdValidate({ pkgRoot, flags }) {
 
 /**
  * Run the fabrica-skills CLI command.
- * @param {string} cmd install | update | uninstall | status | validate | init-run
+ * @param {string} cmd install | update | uninstall | status | validate | init-run | init-existing-run
  * @param {string[]} argv Flags and positionals after the command.
  * @param {{pkgRoot: string, version: string}} ctx Package context.
  */
@@ -538,8 +667,13 @@ export async function runCli(cmd, argv, ctx) {
     case 'init-run':
       cmdInitRun({ pkgRoot, cwd, flags });
       break;
+    case 'init-existing-run':
+      cmdInitExistingRun({ pkgRoot, cwd, flags });
+      break;
     default:
-      fail(`Unknown command: ${cmd} (expected install, update, uninstall, status, validate, or init-run)`);
+      fail(
+        `Unknown command: ${cmd} (expected install, update, uninstall, status, validate, init-run, or init-existing-run)`,
+      );
       break;
   }
 }

@@ -1221,4 +1221,76 @@ test('validate-run rejects gate_levels.fab-verify set to auto (locked review gat
   assertNoStackTrace(result);
 });
 
+/* ================================================================
+ *  project_context (existing-project mode; optional field)
+ * ================================================================ */
+
+function existingProjectRun() {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  candidate.project_context = {
+    origin: 'existing',
+    project_root: '.',
+    profile_path: 'docs/fabrica/project-profile.md',
+    baseline: {
+      git_head: 'abc1234',
+      branch: 'main',
+      worktree_clean: true,
+      captured_at: '2026-09-06T12:00:00Z',
+    },
+  };
+  return candidate;
+}
+
+test('validate-run accepts a valid existing-project context', () => {
+  const result = validateStdin(existingProjectRun());
+  assertPass(result, combined(result));
+});
+
+test('validate-run accepts a legacy run object without project_context', () => {
+  const candidate = readJson('test/fixtures/valid-run.json');
+  assert(!('project_context' in candidate), 'fixture must stay legacy-shaped');
+  const result = validateStdin(candidate);
+  assertPass(result, combined(result));
+});
+
+test('validate-run rejects an invalid project_context origin', () => {
+  const candidate = existingProjectRun();
+  candidate.project_context.origin = 'new';
+  const result = validateStdin(candidate);
+  assertFail(result, 'invalid origin unexpectedly passed');
+});
+
+test('validate-run rejects an invalid project_context baseline', () => {
+  const candidate = existingProjectRun();
+  candidate.project_context.baseline = {
+    git_head: 'abc1234',
+    branch: 'main',
+    worktree_clean: 'yes',
+    captured_at: 'not-a-timestamp',
+  };
+  const result = validateStdin(candidate);
+  assertFail(result, 'invalid baseline unexpectedly passed');
+});
+
+test('validate-run rejects an unsafe project_context profile path', () => {
+  const candidate = existingProjectRun();
+  candidate.project_context.profile_path = '../outside.md';
+  const result = validateStdin(candidate);
+  assertFail(result, 'unsafe profile path unexpectedly passed');
+});
+
+test('validate-run rejects an unsafe project_context project root', () => {
+  const candidate = existingProjectRun();
+  candidate.project_context.project_root = '../../..';
+  const result = validateStdin(candidate);
+  assertFail(result, 'unsafe project root unexpectedly passed');
+});
+
+test('validate-run rejects an unknown project_context property', () => {
+  const candidate = existingProjectRun();
+  candidate.project_context.surprise = true;
+  const result = validateStdin(candidate);
+  assertFail(result, 'unknown context property unexpectedly passed');
+});
+
 runAll();

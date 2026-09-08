@@ -8,12 +8,20 @@
       "path": "skills/core/fab-spec/SKILL.md"
     },
     {
+      "name": "fab-discover",
+      "path": "skills/core/fab-discover/SKILL.md"
+    },
+    {
       "name": "fab-plan",
       "path": "skills/core/fab-plan/SKILL.md"
     },
     {
       "name": "fab-scaffold",
       "path": "skills/core/fab-scaffold/SKILL.md"
+    },
+    {
+      "name": "fab-adopt",
+      "path": "skills/core/fab-adopt/SKILL.md"
     },
     {
       "name": "fab-build",

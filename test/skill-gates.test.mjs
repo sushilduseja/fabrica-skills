@@ -585,4 +585,27 @@ test('fab-scaffold requires one consolidated root README', () => {
   assert(content.includes('Do not write per-service READMEs'), 'fab-scaffold must forbid per-service READMEs');
 });
 
+test('existing-project conditionals are documented in SKILL.md guardrails', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  const read = (id) => readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
+
+  assert(
+    read('fab-discover').includes('docs/fabrica/project-profile.md'),
+    'fab-discover must document the profile path',
+  );
+  assert(read('fab-discover').includes('untrusted data'), 'fab-discover must document untrusted-data handling');
+  assert(read('fab-adopt').includes('never scaffold'), 'fab-adopt must prohibit scaffolding');
+  assert(read('fab-adopt').includes('baseline'), 'fab-adopt must document baseline recheck');
+  assert(read('fab-spec').includes('docs/fabrica/spec.md'), 'fab-spec must document the existing-project spec path');
+  assert(
+    read('fab-plan').includes('docs/fabrica/blueprint.md'),
+    'fab-plan must document the existing-project blueprint path',
+  );
+  assert(read('fab-scaffold').includes('/fab-adopt'), 'fab-scaffold must route existing runs to fab-adopt');
+  assert(read('fab-build').includes('allowed change paths'), 'fab-build must document write-scope confinement');
+  assert(read('fab-fix').includes('approved scope'), 'fab-fix must document scope confinement');
+  assert(read('fab-verify').includes('existing repository'), 'fab-verify must document existing-repo verification');
+});
+
 runAll();

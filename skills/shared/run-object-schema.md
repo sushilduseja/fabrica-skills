@@ -30,6 +30,17 @@ Visual state machine and command pathways: `docs/STATE_MACHINE.md`
 | `gate_levels` | object | Derived from `skills/manifest.json`: each active skill id maps to its `default_gate`, except `init-run --auto` resolves overridable `checkpoint` gates to `auto` |
 | `preferred_stack` | object | `{ frontend: null, backend: null, database: null }` on creation unless operator specifies a slot |
 
+## Optional existing-project field
+
+`project_context` is absent on new-project runs. `init-existing-run` sets it once for existing-project mode; no skill modifies it afterward:
+
+| Field | Type | Notes |
+|---|---|---|
+| `project_context.origin` | string | Always `"existing"` |
+| `project_context.project_root` | string | Repository-relative path (`.` or a safe subpath; no `..`, never absolute) |
+| `project_context.profile_path` | string | Fabrica-owned profile path matching `docs/fabrica/<name>.md` |
+| `project_context.baseline` | object | `{ git_head, branch, worktree_clean, captured_at }` captured at init; writers recheck it, never rewrite it |
+
 ## Fields updated by downstream skills
 
 - `experiment_phase` — advanced by `fab-integrate` to `phase_2_pipeline`.
@@ -77,6 +88,7 @@ Canonical source: `skills/manifest.json` (`writes_fields` per skill). Each field
 | `app_stages` | `fab-spec`, `fab-plan`, `fab-scaffold`, `fab-build`, `fab-eval`, `fab-fix` |
 | `verifications` | `fab-build`, `fab-integrate`, `fab-verify`, `fab-fix` |
 | `human_decisions` | `fab-spec`, `fab-decide` |
+| `project_context` | `init-existing-run` (creation only; skills read, never modify) |
 
 ## State machine summary
 

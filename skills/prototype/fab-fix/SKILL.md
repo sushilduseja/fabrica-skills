@@ -45,6 +45,7 @@ A stage is blocked, failing, or has a supplied error.
 4. Load the failing skill's `errors.json` using the path from the validated `skills/manifest.json`; reject manifest paths that are absolute or contain `..`.
 5. Apply only the smallest code/test change needed for the stated root cause. If implementation writes fail, do not mutate `fabrica.run.json`.
 6. Validate the full candidate run object with `node <fabrica-skills>/scripts/validate-run.mjs --stdin` before replacing `fabrica.run.json`; use a temp file and atomic rename.
+7. When `project_context.origin` is `existing`, keep fixes within the current approved scope; recheck baseline and allowed paths before writing; halt on baseline drift or dirty worktree without a recorded decision. Never turn error recovery into unrestricted refactoring. New-project behavior is unchanged.
 
 ## Behavior
 
