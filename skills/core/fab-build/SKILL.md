@@ -20,10 +20,10 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 
 ## Prerequisites
 
-- `fab-scaffold` complete
+- `fab-scaffold` complete (or `/fab-adopt` when `project_context.origin` is `existing`)
 - Named app stage exists in `app_stages`
-- `docs/blueprint.md` exists
-- `fabrica.run.json` exists and validates (read the app-directory copy after `/fab-scaffold` completes)
+- `docs/blueprint.md` exists (`docs/fabrica/blueprint.md` when `project_context.origin` is `existing`)
+- `fabrica.run.json` exists and validates (read the app-directory copy after `/fab-scaffold` or `/fab-adopt` completes)
 
 ## Input
 

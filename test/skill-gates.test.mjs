@@ -622,6 +622,28 @@ test('fab-discover guardrails enforce read-only inspection', () => {
   assert(adopt.includes('never scaffold') || adopt.includes('not scaffold'), 'fab-adopt must prohibit scaffolding');
 });
 
+test('P3 hardening: fab-build prerequisites and fab-discover gate', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  const buildPrereq = readFileSync(`${pathById['fab-build']}/SKILL.md`, 'utf-8');
+  assert(
+    buildPrereq.includes('/fab-adopt') && buildPrereq.includes('project_context.origin'),
+    'fab-build prerequisites must mention /fab-adopt when project_context.origin is existing',
+  );
+  assert(
+    buildPrereq.includes('docs/fabrica/blueprint.md'),
+    'fab-build prerequisites must note existing-project blueprint path',
+  );
+  const discoverEntry = manifest.skills.find((s) => s.id === 'fab-discover');
+  assert.strictEqual(discoverEntry.default_gate, 'auto', 'fab-discover gate is intentionally auto (read-only survey)');
+  assert.strictEqual(discoverEntry.overridable, true);
+  // Schema vs skill path: spec_path coupling stays in skill prose, not schema. Schema must allow both docs/spec.md and docs/fabrica/spec.md.
+  const schema = JSON.parse(readFileSync('schemas/run-object.schema.json', 'utf-8'));
+  const pattern = new RegExp(schema.properties.spec_path.pattern);
+  assert(pattern.test('docs/spec.md'), 'schema must allow docs/spec.md');
+  assert(pattern.test('docs/fabrica/spec.md'), 'schema must allow docs/fabrica/spec.md');
+});
+
 test('STATE_MACHINE documents both new-project and existing-project pathways', () => {
   const content = readFileSync('docs/STATE_MACHINE.md', 'utf-8');
   assert(content.includes('New project (greenfield)'), 'STATE_MACHINE must label the new-project pathway');
