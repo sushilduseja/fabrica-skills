@@ -585,4 +585,77 @@ test('fab-scaffold requires one consolidated root README', () => {
   assert(content.includes('Do not write per-service READMEs'), 'fab-scaffold must forbid per-service READMEs');
 });
 
+test('existing-project conditionals are documented in SKILL.md guardrails', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  const read = (id) => readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
+
+  assert(
+    read('fab-discover').includes('docs/fabrica/project-profile.md'),
+    'fab-discover must document the profile path',
+  );
+  assert(read('fab-discover').includes('untrusted data'), 'fab-discover must document untrusted-data handling');
+  assert(read('fab-adopt').includes('never scaffold'), 'fab-adopt must prohibit scaffolding');
+  assert(read('fab-adopt').includes('baseline'), 'fab-adopt must document baseline recheck');
+  assert(read('fab-spec').includes('docs/fabrica/spec.md'), 'fab-spec must document the existing-project spec path');
+  assert(
+    read('fab-plan').includes('docs/fabrica/blueprint.md'),
+    'fab-plan must document the existing-project blueprint path',
+  );
+  assert(read('fab-scaffold').includes('/fab-adopt'), 'fab-scaffold must route existing runs to fab-adopt');
+  assert(read('fab-build').includes('allowed change paths'), 'fab-build must document write-scope confinement');
+  assert(read('fab-fix').includes('approved scope'), 'fab-fix must document scope confinement');
+  assert(read('fab-verify').includes('existing repository'), 'fab-verify must document existing-repo verification');
+});
+
+test('fab-discover guardrails enforce read-only inspection', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  const discover = readFileSync(`${pathById['fab-discover']}/SKILL.md`, 'utf-8');
+  assert(discover.includes('not modify application source'), 'fab-discover must forbid modifying application source');
+  assert(discover.includes('Do not discover or persist secrets'), 'fab-discover must forbid persisting secrets');
+  assert(discover.includes('untrusted data'), 'fab-discover must treat repository files as untrusted data');
+  assert(discover.includes('docs/fabrica/project-profile.md'), 'fab-discover must name the profile path');
+  const adopt = readFileSync(`${pathById['fab-adopt']}/SKILL.md`, 'utf-8');
+  assert(adopt.includes('baseline'), 'fab-adopt must document baseline recheck');
+  assert(adopt.includes('dirty'), 'fab-adopt must document dirty-worktree handling');
+  assert(adopt.includes('never scaffold') || adopt.includes('not scaffold'), 'fab-adopt must prohibit scaffolding');
+});
+
+test('STATE_MACHINE documents both new-project and existing-project pathways', () => {
+  const content = readFileSync('docs/STATE_MACHINE.md', 'utf-8');
+  assert(content.includes('New project (greenfield)'), 'STATE_MACHINE must label the new-project pathway');
+  assert(content.includes('Existing project (opt-in'), 'STATE_MACHINE must document the existing-project pathway');
+  assert(content.includes('init-existing-run'), 'STATE_MACHINE must document init-existing-run');
+  assert(content.includes('/fab-discover'), 'STATE_MACHINE must include /fab-discover');
+  assert(content.includes('/fab-adopt'), 'STATE_MACHINE must include /fab-adopt');
+  assert(content.includes('project_context'), 'STATE_MACHINE must mention project_context');
+});
+
+test('existing-project negative conditions are documented', () => {
+  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
+  // overwrite-docs, out-of-scope, unapproved-command, baseline drift, secret handling
+  assert(
+    readFileSync(`${pathById['fab-spec']}/SKILL.md`, 'utf-8').includes('never overwrite existing project documents'),
+    'fab-spec must forbid overwriting existing project documents',
+  );
+  assert(
+    readFileSync(`${pathById['fab-build']}/SKILL.md`, 'utf-8').includes('allowed change paths'),
+    'fab-build must require allowed change paths',
+  );
+  assert(
+    readFileSync(`${pathById['fab-build']}/SKILL.md`, 'utf-8').includes('approved literal commands'),
+    'fab-build must require approved literal commands',
+  );
+  assert(
+    readFileSync(`${pathById['fab-adopt']}/SKILL.md`, 'utf-8').includes('baseline'),
+    'fab-adopt must check baseline drift',
+  );
+  assert(
+    readFileSync(`${pathById['fab-discover']}/SKILL.md`, 'utf-8').includes('Do not discover or persist secrets'),
+    'fab-discover must forbid secret persistence',
+  );
+});
+
 runAll();

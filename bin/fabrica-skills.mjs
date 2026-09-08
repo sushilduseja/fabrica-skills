@@ -8,6 +8,7 @@
  *   fabrica-skills status  [--global]
  *   fabrica-skills validate [path/to/fabrica.run.json]
  *   fabrica-skills init-run [--name <slug>] [--out <path>] [--force] [--auto]
+ *   fabrica-skills init-existing-run [--name <slug>] [--out <path>] [--force] [--auto] [--root <path>] [--profile <path>]
  *   fabrica-skills --version | --help
  */
 import { pathToFileURL } from 'url';
@@ -44,6 +45,7 @@ Usage:
   fabrica-skills status [--global]
   fabrica-skills validate [fabrica.run.json]
   fabrica-skills init-run [--name <slug>] [--out <path>] [--force] [--auto]
+  fabrica-skills init-existing-run [--name <slug>] [--out <path>] [--force] [--auto] [--root <path>] [--profile <path>]
 `);
   process.exit(cmd ? 0 : 1);
 }

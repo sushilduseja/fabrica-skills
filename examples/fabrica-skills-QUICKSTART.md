@@ -36,7 +36,7 @@ There is no separate package install. `npx` fetches the CLI from npm, and the in
 Expected outcome:
 
 ```
-[fabrica-skills] installed 14 skills × 5 harness roots (project)
+[fabrica-skills] installed 16 skills × 5 harness roots (project)
 ```
 
 Optional check that your agent sees the skills:
@@ -45,7 +45,7 @@ Optional check that your agent sees the skills:
 npx fabrica-skills@latest status
 ```
 
-Expected outcome: `agents 14/14`, `claude 14/14`, `cursor 14/14`, `codex 14/14`, `opencode 14/14` under `harness`.
+Expected outcome: `agents 16/16`, `claude 16/16`, `cursor 16/16`, `codex 16/16`, `opencode 16/16` under `harness`.
 
 Two variants:
 

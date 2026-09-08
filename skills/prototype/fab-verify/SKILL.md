@@ -47,6 +47,7 @@ Integrated app ready for MVP verification (`status = verifying`, `docs/integrati
 6. If a required launch or container verification cannot run, either keep status non-complete with a clear `external_failure`, or record an explicit human decision accepting a static-only fallback for the current environment.
 7. If the checklist or local verification fails, update only the run state needed to record a clear `last_error` and `next_action`; do not mark complete.
 8. Validate the full candidate run object with `node <fabrica-skills>/scripts/validate-run.mjs --stdin` before replacing `fabrica.run.json`; use a temp file and atomic rename.
+9. When `project_context.origin` is `existing`, verify against the existing repository using its own test/launch mechanisms from `docs/fabrica/blueprint.md`; recheck baseline before recording verification; never claim evidence not produced. New-project behavior is unchanged.
 
 ## Behavior
 
