@@ -24,6 +24,8 @@ Every writer skill must:
 
 ## Main happy path
 
+### New project (greenfield)
+
 ```mermaid
 flowchart TD
   Start([Raw idea]) --> Intake["/fab-spec"]
@@ -42,6 +44,28 @@ flowchart TD
   Launch --> Complete["status: complete\nnext_action: /fab-retro"]
   Complete --> Retro["/fab-retro"]
 ```
+
+### Existing project (opt-in via `init-existing-run`)
+
+```mermaid
+flowchart TD
+  ExistingStart([Existing repository + change goal]) --> ExistingInit["init-existing-run\nproject_context.origin=existing\nnext_action: /fab-discover"]
+  ExistingInit --> Discover["/fab-discover\nread-only inspection → docs/fabrica/project-profile.md"]
+  Discover --> ExistingSpec["/fab-spec\nwrites docs/fabrica/spec.md (requires profile)"]
+  ExistingSpec --> ExistingPlan["/fab-plan\nwrites docs/fabrica/blueprint.md (allowed paths + approved commands)"]
+  ExistingPlan --> Adopt["/fab-adopt\ncheckpoint gate: rechecks baseline + worktree\nno scaffold; activates first stage"]
+  Adopt --> Forge2["/fab-build <stage>\nconfined to allowed change paths; approved literal commands only"]
+  Forge2 --> Check2["/fab-eval <stage>\nscores against allowed paths + verification requirements"]
+  Check2 --> MoreExisting{"more pending stages?"}
+  MoreExisting -- yes --> Forge2
+  MoreExisting -- no --> Weave2["/fab-integrate\nwires approved stages within allowed paths"]
+  Weave2 --> Verifying2["integrated flow\nstatus: verifying\nphase: phase_2_pipeline"]
+  Verifying2 --> Launch2["/fab-verify\nverifies against existing test/launch mechanisms"]
+  Launch2 --> Complete2["status: complete\nnext_action: /fab-retro"]
+  Complete2 --> Retro2["/fab-retro"]
+```
+
+`next_action` remains the source of truth in both workflows. New-project runs never set `project_context`; existing-project runs carry it from `init-existing-run` onward (`project_root`, `profile_path`, `baseline`). `fab-scaffold` refuses existing-project runs and routes to `/fab-adopt`.
 
 ## Failure and recovery path
 
@@ -74,24 +98,24 @@ flowchart LR
 
 ## Status values
 
-| `status` | Meaning | Valid phases | Common setter |
-|---|---|---|---|
-| `designing` | Intake/spec work is in progress | `phase_0_spec` | `/fab-spec` |
-| `framing` | Blueprint exists and scaffold is next | `phase_0_spec` | `/fab-plan` |
-| `forging` | One or more app stages are being implemented | `phase_1_slice`, `phase_2_pipeline` | `/fab-scaffold` |
-| `checking` | Stage quality evaluation is in progress | `phase_1_slice`, `phase_2_pipeline` | none (valid but unused; no skill writes this status) |
-| `weaving` | Integration work is in progress | `phase_2_pipeline` | none (valid but unused; no skill writes this status) |
-| `verifying` | Integrated prototype is ready for launch verification | `phase_2_pipeline` | `/fab-integrate` |
-| `complete` | Local launch verification passed | `phase_2_pipeline` | `/fab-verify` |
-| `blocked` | Work cannot continue without diagnosis or decision | any phase | any writer skill |
-| `abandoned` | Operator intentionally stopped the run | any phase | operator decision |
+| `status`    | Meaning                                               | Valid phases                        | Common setter                                        |
+| ----------- | ----------------------------------------------------- | ----------------------------------- | ---------------------------------------------------- |
+| `designing` | Intake/spec work is in progress                       | `phase_0_spec`                      | `/fab-spec`                                          |
+| `framing`   | Blueprint exists and scaffold is next                 | `phase_0_spec`                      | `/fab-plan`                                          |
+| `forging`   | One or more app stages are being implemented          | `phase_1_slice`, `phase_2_pipeline` | `/fab-scaffold`                                      |
+| `checking`  | Stage quality evaluation is in progress               | `phase_1_slice`, `phase_2_pipeline` | none (valid but unused; no skill writes this status) |
+| `weaving`   | Integration work is in progress                       | `phase_2_pipeline`                  | none (valid but unused; no skill writes this status) |
+| `verifying` | Integrated prototype is ready for launch verification | `phase_2_pipeline`                  | `/fab-integrate`                                     |
+| `complete`  | Local launch verification passed                      | `phase_2_pipeline`                  | `/fab-verify`                                        |
+| `blocked`   | Work cannot continue without diagnosis or decision    | any phase                           | any writer skill                                     |
+| `abandoned` | Operator intentionally stopped the run                | any phase                           | operator decision                                    |
 
 ## Experiment phases
 
-| Phase | Purpose | Typical commands |
-|---|---|---|
-| `phase_0_spec` | Convert idea into spec and blueprint | `/fab-spec`, `/fab-plan` |
-| `phase_1_slice` | Build at least one vertical app slice | `/fab-scaffold`, `/fab-build <stage>`, `/fab-eval <stage>` |
+| Phase              | Purpose                                  | Typical commands                                                             |
+| ------------------ | ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `phase_0_spec`     | Convert idea into spec and blueprint     | `/fab-spec`, `/fab-plan`                                                     |
+| `phase_1_slice`    | Build at least one vertical app slice    | `/fab-scaffold`, `/fab-build <stage>`, `/fab-eval <stage>`                   |
 | `phase_2_pipeline` | Integrate, verify, launch, and summarize | `/fab-integrate`, `/fab-verify`, `/fab-decide`, `/fab-handoff`, `/fab-retro` |
 
 ## Common command pathways
@@ -108,6 +132,30 @@ flowchart LR
 /fab-verify
 /fab-retro
 ```
+
+### Existing project — change workflow
+
+Opt-in is explicit: `init-existing-run` creates run state with `project_context` (origin, project root, profile path, Git baseline). No application source is inspected or modified at init time.
+
+```text
+init-existing-run --name <slug> --root . --profile docs/fabrica/project-profile.md
+/fab-discover          # read-only inspection → docs/fabrica/project-profile.md (next_action: /fab-spec)
+/fab-spec              # writes docs/fabrica/spec.md (requires profile)
+/fab-plan              # writes docs/fabrica/blueprint.md (allowed change paths + approved literal commands)
+/fab-adopt             # checkpoint gate: rechecks baseline + worktree; no scaffold; activates first stage
+/fab-build <stage>     # confined to allowed change paths; approved literal commands only; rechecks baseline before writes
+/fab-eval <stage>      # scores against allowed paths + verification requirements
+/fab-integrate         # wires approved stages within allowed paths
+/fab-verify            # verifies against existing test/launch mechanisms
+/fab-retro
+```
+
+Rules for existing-project mode:
+
+- `/fab-scaffold` refuses existing-project runs with `prerequisite_missing` and routes to `/fab-adopt`.
+- `project_context` is set once at init and never modified by skills; `spec_path`/`blueprint_path` use `docs/fabrica/` for this mode.
+- Before any writer operation, the skill rechecks `project_root`, `baseline` (HEAD/branch/worktree), and allowed paths; it halts on drift or on a dirty worktree without a recorded human decision.
+- Every write stays inside the approved stage paths; every command is a literal approved by the blueprint.
 
 ### Generic multi-service pathway
 
@@ -212,21 +260,21 @@ Beyond JSON Schema, the validator rejects:
 
 `scripts/_skill-gates.mjs` implements executable gate contracts derived from each `SKILL.md`'s **Execution Guardrails** and **Behavior** sections. It is imported and called by `validate-run.mjs` via `validateAllGates()`:
 
-| Validator | What it enforces |
-|---|---|
-| `validateFabLaunchGate` | `external_deploy` kind requires prior human approval; `container_build` must invoke Docker; `complete` status requires a launch verification entry |
-| `validateFabSignalGate` | Every non-null decision must have a `resolved_at` timestamp: no auto-populated decisions |
-| `validateFabCheckGate` | Stage with `quality_score < 6` must not be `done` |
-| `validateFabPulseGate` | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown` |
-| `validateNextActionGate` | `fab-integrate` requires all `app_stages` done; `fab-verify` requires `status === "verifying"` |
-| `validateTimestampOrderGate` | `human_decisions[].resolved_at` must not be earlier than `triggered_at` |
-| `validateCostPrecisionGate` | `costs.precision` must be one of: `unknown`, `estimated`, `measured` |
+| Validator                    | What it enforces                                                                                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `validateFabLaunchGate`      | `external_deploy` kind requires prior human approval; `container_build` must invoke Docker; `complete` status requires a launch verification entry |
+| `validateFabSignalGate`      | Every non-null decision must have a `resolved_at` timestamp: no auto-populated decisions                                                           |
+| `validateFabCheckGate`       | Stage with `quality_score < 6` must not be `done`                                                                                                  |
+| `validateFabPulseGate`       | When `costs.precision` is `unknown`, all numeric cost fields must also be `unknown`                                                                |
+| `validateNextActionGate`     | `fab-integrate` requires all `app_stages` done; `fab-verify` requires `status === "verifying"`                                                     |
+| `validateTimestampOrderGate` | `human_decisions[].resolved_at` must not be earlier than `triggered_at`                                                                            |
+| `validateCostPrecisionGate`  | `costs.precision` must be one of: `unknown`, `estimated`, `measured`                                                                               |
 
 ## Gate summary
 
-| Gate | Meaning |
-|---|---|
-| `auto` | Agent may proceed without pausing, while still validating state before writes. |
-| `checkpoint` | Agent must show the plan or result before file mutation. |
-| `review` | Local checks may run; external, destructive, or deploy actions need approval. |
-| `full` | Agent needs approval before start and confirmation after completion. |
+| Gate         | Meaning                                                                        |
+| ------------ | ------------------------------------------------------------------------------ |
+| `auto`       | Agent may proceed without pausing, while still validating state before writes. |
+| `checkpoint` | Agent must show the plan or result before file mutation.                       |
+| `review`     | Local checks may run; external, destructive, or deploy actions need approval.  |
+| `full`       | Agent needs approval before start and confirmation after completion.           |

@@ -156,4 +156,117 @@ test('legacy new-project init output has no project_context', () => {
   }
 });
 
+test('existing-project spec/blueprint paths are Fabrica-owned and guarded', () => {
+  const dir = makeLegacyApp();
+  try {
+    const out = join(dir, 'fabrica.run.json');
+    assertPass(pkgBin(['init-existing-run', '--name', 'legacy-app', '--out', out], dir));
+    const runObject = JSON.parse(readFileSync(out, 'utf-8'));
+
+    // fab-spec guardrail 7: profile required; fab-scaffold must refuse existing runs
+    const specSkill = readFileSync(join(root, 'skills/core/fab-spec/SKILL.md'), 'utf-8');
+    assert(specSkill.includes('docs/fabrica/spec.md'), 'spec must document fabrica-owned spec path');
+    const planSkill = readFileSync(join(root, 'skills/core/fab-plan/SKILL.md'), 'utf-8');
+    assert(planSkill.includes('docs/fabrica/blueprint.md'), 'plan must document fabrica-owned blueprint path');
+    const scaffoldSkill = readFileSync(join(root, 'skills/core/fab-scaffold/SKILL.md'), 'utf-8');
+    assert(scaffoldSkill.includes('/fab-adopt'), 'scaffold must route existing runs to adopt');
+
+    // fab-discover safety: read-only, no secrets, profile path
+    const discoverSkill = readFileSync(join(root, 'skills/core/fab-discover/SKILL.md'), 'utf-8');
+    assert(discoverSkill.includes('not modify application source'));
+    assert(discoverSkill.includes('Do not discover or persist secrets'));
+
+    // fab-adopt safety: baseline, dirty worktree, no scaffold
+    const adoptSkill = readFileSync(join(root, 'skills/core/fab-adopt/SKILL.md'), 'utf-8');
+    assert(adoptSkill.includes('baseline'));
+    assert(adoptSkill.includes('never scaffold') || adoptSkill.includes('not scaffold'));
+
+    // Spec must not overwrite existing project docs — guardrail text present
+    assert(specSkill.includes('never overwrite existing project documents'));
+
+    // Write-scope and command guardrails on execution skills
+    const buildSkill = readFileSync(join(root, 'skills/core/fab-build/SKILL.md'), 'utf-8');
+    assert(buildSkill.includes('allowed change paths'));
+    assert(buildSkill.includes('approved literal commands'));
+    assert(buildSkill.includes('recheck') && buildSkill.includes('baseline'));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('existing-project e2e fixture workflow stays in-memory valid end to end', () => {
+  const dir = makeLegacyApp({ git: true });
+  try {
+    const out = join(dir, 'fabrica.run.json');
+    assertPass(pkgBin(['init-existing-run', '--name', 'legacy-app', '--out', out], dir));
+    let runObject = JSON.parse(readFileSync(out, 'utf-8'));
+
+    // /fab-discover → /fab-spec (profile would be written to docs/fabrica/project-profile.md)
+    runObject = { ...runObject, current_step: 'fab-discover', next_action: '/fab-spec' };
+    assertPass(validateStdin(runObject), 'discover update must validate');
+
+    // /fab-spec writes docs/fabrica/spec.md
+    runObject = {
+      ...runObject,
+      current_step: 'fab-spec',
+      spec_path: 'docs/fabrica/spec.md',
+      next_action: '/fab-plan',
+      preferred_stack: { frontend: null, backend: null, database: null },
+    };
+    assertPass(validateStdin(runObject), 'existing spec update must validate');
+
+    // /fab-plan writes docs/fabrica/blueprint.md with allowed paths
+    runObject = {
+      ...runObject,
+      current_step: 'fab-plan',
+      blueprint_path: 'docs/fabrica/blueprint.md',
+      next_action: '/fab-adopt',
+      app_stages: [
+        { name: 'auth-fix', purpose: 'Fix auth', status: 'pending', quality_score: null, artifacts: [], notes: null },
+      ],
+    };
+    assertPass(validateStdin(runObject), 'existing plan update must validate');
+
+    // /fab-adopt activates first stage
+    runObject = {
+      ...runObject,
+      current_step: 'fab-adopt',
+      current_app_stage: 'auth-fix',
+      next_action: '/fab-build auth-fix',
+      app_stages: [{ ...runObject.app_stages[0], status: 'active' }],
+    };
+    assertPass(validateStdin(runObject), 'adopt activation must validate');
+
+    // /fab-build → done
+    runObject = {
+      ...runObject,
+      current_step: 'fab-build',
+      app_stages: [{ ...runObject.app_stages[0], status: 'done', quality_score: 8, artifacts: ['src/index.js'] }],
+      next_action: '/fab-eval auth-fix',
+    };
+    assertPass(validateStdin(runObject), 'build done must validate');
+    assert.strictEqual(runObject.app_stages[0].artifacts[0], 'src/index.js');
+
+    // /fab-eval → /fab-integrate (no scaffold in existing-project mode)
+    runObject = {
+      ...runObject,
+      current_step: 'fab-eval',
+      next_action: '/fab-integrate',
+    };
+    assertPass(validateStdin(runObject), 'eval must validate');
+
+    // /fab-integrate → /fab-verify
+    runObject = {
+      ...runObject,
+      current_step: 'fab-integrate',
+      status: 'verifying',
+      experiment_phase: 'phase_2_pipeline',
+      next_action: '/fab-verify',
+    };
+    assertPass(validateStdin(runObject), 'integrate must validate');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 runAll();

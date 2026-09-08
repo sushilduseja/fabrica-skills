@@ -1,5 +1,7 @@
 # Fabrica Existing Project Support
 
+> **Historical design record — implemented in `feat/existing-project` (`b220552`).** This was the phased build plan; it is no longer a live instruction set. The implemented behavior is now the source of truth (skills, schema, `skills/shared/run-object-schema.md`, `docs/STATE_MACHINE.md`).
+
 ## Objective
 
 Extend Fabrica so it can safely manage a **pre-existing software project** while preserving all current Fabrica functionality.
