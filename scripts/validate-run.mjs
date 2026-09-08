@@ -9,7 +9,11 @@
  *   node scripts/validate-run.mjs <path-to-fabrica.run.json>
  *   node scripts/validate-run.mjs --stdin < candidate.json
  *   node scripts/validate-run.mjs --stdin --commit <target-path> < candidate.json
+ *   node scripts/validate-run.mjs [--migrate] <path> | --stdin [--migrate] [--commit <path>]
  *
+ * --migrate fills missing gate_levels keys (fab-discover, fab-adopt) from
+ * manifest defaults before validation. Without it, a 14-key run from pre-1.2
+ * fails with a clear required-property error.
  * --commit atomically replaces <target-path> with the validated stdin bytes
  * (temp file + rename in the target directory). Nothing is written unless
  * validation succeeds.
@@ -120,24 +124,28 @@ async function loadAjv() {
  */
 async function main() {
   const rawArgs = process.argv.slice(2);
-  const commitFlag = rawArgs.indexOf('--commit');
+  const migrateMode = rawArgs.includes('--migrate');
+  const rawWithoutMigrate = rawArgs.filter((arg) => arg !== '--migrate');
+  const commitFlag = rawWithoutMigrate.indexOf('--commit');
   let commitPath = null;
   const args = [];
-  for (let i = 0; i < rawArgs.length; i += 1) {
+  for (let i = 0; i < rawWithoutMigrate.length; i += 1) {
     if (i === commitFlag) {
-      commitPath = rawArgs[i + 1];
+      commitPath = rawWithoutMigrate[i + 1];
       if (!commitPath || commitPath.startsWith('-')) {
-        fail('Usage: node scripts/validate-run.mjs [--stdin [--commit <target-path>] | <path-to-fabrica.run.json>]');
+        fail(
+          'Usage: node scripts/validate-run.mjs [--stdin [--commit <target-path>] [--migrate] | <path-to-fabrica.run.json> [--migrate]]',
+        );
       }
       i += 1;
     } else {
-      args.push(rawArgs[i]);
+      args.push(rawWithoutMigrate[i]);
     }
   }
   const stdinMode = args.includes('--stdin');
   const pathArgs = args.filter((arg) => arg !== '--stdin');
   if ((stdinMode && pathArgs.length > 0) || (!stdinMode && pathArgs.length !== 1) || args.length > 2) {
-    fail('Usage: node scripts/validate-run.mjs [--stdin | <path-to-fabrica.run.json>]');
+    fail('Usage: node scripts/validate-run.mjs [--stdin | <path-to-fabrica.run.json>] [--migrate]');
   }
   if (commitPath && !stdinMode) {
     fail('--commit requires --stdin (it commits validated stdin bytes)');
@@ -160,6 +168,32 @@ async function main() {
 
     instance = readJsonFile(absolutePath, targetPath, '[validate-run]');
     inputLabel = targetPath;
+  }
+
+  // Migrate: fill missing gate_levels keys from manifest defaults when --migrate is passed.
+  // Non-destructive: only adds missing keys, never overwrites existing gate values.
+  if (
+    migrateMode &&
+    instance &&
+    typeof instance === 'object' &&
+    instance.gate_levels &&
+    typeof instance.gate_levels === 'object'
+  ) {
+    try {
+      const manifest = readJsonFile(resolve(root, 'skills/manifest.json'), 'skills/manifest.json', '[validate-run]');
+      let filled = 0;
+      for (const skill of manifest.skills || []) {
+        if (!(skill.id in instance.gate_levels)) {
+          instance.gate_levels[skill.id] = skill.default_gate;
+          filled += 1;
+        }
+      }
+      if (filled > 0) {
+        console.error(`[validate-run] migrate: filled ${filled} missing gate_levels key(s) from manifest defaults`);
+      }
+    } catch (err) {
+      fail(`Migrate failed: ${err.message}`);
+    }
   }
 
   // Alias shim (0.3.x): accept deprecated pre-rename skill ids in current_step

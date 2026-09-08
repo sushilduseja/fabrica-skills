@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "repo_version": "1.1.4",
+  "repo_version": "1.2.0",
   "description": "Canonical skill inventory for fabrica-skills. Every structural fact about the factory lives here. Note: `read_only` means read-only with respect to run-object fields. Some read-only skills (fab-retro, fab-handoff) write filesystem artifacts outside the run object.",
   "skills": [
     {
@@ -38,6 +38,24 @@
         "preferred_stack"
       ],
       "error_metadata_path": "skills/core/fab-spec/errors.json"
+    },
+    {
+      "id": "fab-discover",
+      "path": "skills/core/fab-discover",
+      "category": "core",
+      "phase": 0,
+      "description": "Inspect an existing repository and record a bounded project profile.",
+      "default_gate": "auto",
+      "overridable": true,
+      "prerequisites": [],
+      "blocks": ["fab-spec"],
+      "read_only": false,
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "next_action"
+      ],
+      "error_metadata_path": "skills/core/fab-discover/errors.json"
     },
     {
       "id": "fab-plan",
@@ -88,6 +106,26 @@
         "app_stages"
       ],
       "error_metadata_path": "skills/core/fab-scaffold/errors.json"
+    },
+    {
+      "id": "fab-adopt",
+      "path": "skills/core/fab-adopt",
+      "category": "core",
+      "phase": 1,
+      "description": "Adopt a discovered repository for change work without scaffolding.",
+      "default_gate": "checkpoint",
+      "overridable": true,
+      "prerequisites": ["fab-plan"],
+      "blocks": ["fab-build"],
+      "read_only": false,
+      "writes_fields": [
+        "updated_at",
+        "current_step",
+        "current_app_stage",
+        "next_action",
+        "app_stages"
+      ],
+      "error_metadata_path": "skills/core/fab-adopt/errors.json"
     },
     {
       "id": "fab-build",

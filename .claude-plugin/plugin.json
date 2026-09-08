@@ -1,11 +1,15 @@
 {
   "name": "fabrica-skills",
   "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "skills": [
     {
       "name": "fab-spec",
       "path": "skills/core/fab-spec/SKILL.md"
+    },
+    {
+      "name": "fab-discover",
+      "path": "skills/core/fab-discover/SKILL.md"
     },
     {
       "name": "fab-plan",
@@ -14,6 +18,10 @@
     {
       "name": "fab-scaffold",
       "path": "skills/core/fab-scaffold/SKILL.md"
+    },
+    {
+      "name": "fab-adopt",
+      "path": "skills/core/fab-adopt/SKILL.md"
     },
     {
       "name": "fab-build",

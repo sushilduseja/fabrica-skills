@@ -20,10 +20,10 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 
 ## Prerequisites
 
-- `fab-scaffold` complete
+- `fab-scaffold` complete (or `/fab-adopt` when `project_context.origin` is `existing`)
 - Named app stage exists in `app_stages`
-- `docs/blueprint.md` exists
-- `fabrica.run.json` exists and validates (read the app-directory copy after `/fab-scaffold` completes)
+- `docs/blueprint.md` exists (`docs/fabrica/blueprint.md` when `project_context.origin` is `existing`)
+- `fabrica.run.json` exists and validates (read the app-directory copy after `/fab-scaffold` or `/fab-adopt` completes)
 
 ## Input
 
@@ -47,6 +47,7 @@ One named app stage is ready to implement (`status = active` or `status = pendin
 5. Update implementation files before run state. If implementation writes fail, do not mutate `fabrica.run.json`.
 6. Validate the full candidate run object with `node <fabrica-skills>/scripts/validate-run.mjs --stdin` before replacing `fabrica.run.json`; use a temp file and atomic rename.
 7. Implementation code must not contain hardcoded secrets, credentials, or tokens; must validate untrusted inputs at trust boundaries; must use parameterized queries and never interpolate input into SQL, shell, or path expressions; must return safe error messages without stack traces or internals.
+8. When `project_context.origin` is `existing`, confine all writes to the current stage's allowed change paths in `docs/fabrica/blueprint.md`; recheck repository root, baseline, and allowed paths before writing; run only approved literal commands; halt with `invalid_state` on baseline drift and with `gate_blocked` on a dirty worktree without a recorded human decision. New-project behavior is unchanged.
 
 ## Behavior
 

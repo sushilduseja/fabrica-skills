@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0 — 2026-09-08
+
+### Added
+- Existing-project mode: `init-existing-run`, optional `project_context`, `/fab-discover`, `/fab-adopt`
+- Spec/blueprint under `docs/fabrica/` for existing-project runs
+- Manifest skill count 14 → 16
+
+### Fixed
+- Old 14-key `gate_levels` runs now validate with `--migrate` (fills `fab-discover`/`fab-adopt` from manifest defaults, non-destructive)
+
+### Notes
+- Greenfield `init-run` unchanged (no `project_context`)
+- Published 1.1.4 remains the last 14-skill line; upgrade adds two `gate_levels` keys
+
 ## 1.1.4 — 2026-09-07
 
 ### Fixed

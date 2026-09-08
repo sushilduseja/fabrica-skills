@@ -37,7 +37,9 @@
     "fab-verify": "review",
     "fab-decide": "full",
     "fab-retro": "auto",
-    "not-a-skill": "auto"
+    "not-a-skill": "auto",
+    "fab-discover": "auto",
+    "fab-adopt": "checkpoint"
   },
   "preferred_stack": {
     "frontend": null,

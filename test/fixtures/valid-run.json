@@ -38,7 +38,9 @@
     "fab-decide": "full",
     "fab-pr-review": "auto",
     "fab-retro": "auto",
-    "fabrica-code-review": "auto"
+    "fabrica-code-review": "auto",
+    "fab-discover": "auto",
+    "fab-adopt": "checkpoint"
   },
   "preferred_stack": {
     "frontend": null,

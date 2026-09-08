@@ -434,7 +434,9 @@ test('repo contains no shell-string path interpolation (8.3 short-name bug class
       for (const token of forbidden) {
         if (content.includes(token)) offenders.push(`${entry}: ${token}`);
       }
-      if (/spawnSync\(\s*['"`]/.test(content)) offenders.push(`${entry}: spawn with string command`);
+      // Template-literal spawn commands allow interpolation; fixed string
+      // literals (e.g. spawnSync('git', [...])) with array args are safe.
+      if (/spawnSync\(\s*`/.test(content)) offenders.push(`${entry}: spawn with template command`);
     }
   }
   assert.deepStrictEqual(offenders, [], `shell-string path interpolation found: ${offenders.join('; ')}`);

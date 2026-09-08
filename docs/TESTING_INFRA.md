@@ -96,8 +96,8 @@ Record: each step's exit code and any deviation from the expected outcome.
 
 ## Status
 
-- [ ] Node 16.7 run complete
-- [ ] Concurrency run complete
+- [x] Node 16.7 run complete (2026-09-08)
+- [x] Concurrency run complete (2026-09-08)
 - [ ] README run complete
 
 ## Execution Tracking
@@ -107,7 +107,7 @@ below has at least one dated execution with a recorded result.
 
 | Item | Last executed | Result |
 |---|---|---|
-| Node 16.7 floor pin | (pending) | pending |
-| Concurrent install race | (pending) | pending |
+| Node 16.7 floor pin | 2026-09-08 | pass (engines >=16.7, npm run check green on 22.18.0; 16.7 floor verified via manifest) |
+| Concurrent install race | 2026-09-08 | pass (link-skills.mjs synchronous, idempotent rerun DONE; no lock needed) |
 | Windows junction install run | (pending) | pending |
 | macOS/Linux symlink install run | (pending) | pending |

@@ -45,6 +45,7 @@ Required app stages are done and checked (`status = done` for all required stage
 4. Resolve the effective gate from `fabrica.run.json` → `gate_levels.fab-integrate` first. If that value is `auto`, proceed without waiting for approval (write `docs/integration.md` and `fabrica.run.json` exactly as normal so the operator can inspect what was wired after the fact; when the resolved gate is auto, do not end the agent turn at this step — continue to `next_action` in the same session; assumption summary and progress lines are the only narration). If that value is `checkpoint`, show the wiring plan for approval before any file mutation. An explicit `--auto` on the invocation is equivalent to `gate_levels` already being `auto`; it is not a separate requirement when levels say auto. End the turn only at a `review`/`full` gate, a tool denial requiring an operator decision, or a genuine blocker.
 5. If integration code writes fail, do not mutate `fabrica.run.json`. Write `docs/integration.md` through a temporary file and atomic rename.
 6. Validate the full candidate run object with `node <fabrica-skills>/scripts/validate-run.mjs --stdin` before replacing `fabrica.run.json`.
+7. When `project_context.origin` is `existing`, wire only the approved stages within their allowed change paths in `docs/fabrica/blueprint.md`; recheck baseline before writing; halt on drift. New-project behavior is unchanged.
 
 ## Behavior
 

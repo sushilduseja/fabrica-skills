@@ -1,0 +1,33 @@
+{
+  "skill_id": "fab-discover",
+  "errors": [
+    {
+      "type": "missing_input",
+      "trigger": "No explicit existing-project opt-in, change goal, or repository root",
+      "diagnosis": "Discovery requires opt-in plus a concrete goal; neither can be inferred",
+      "rescue_action": "Halt and state exactly which input is missing",
+      "user_message": "Existing-project discovery needs an explicit opt-in, a repository root, and a concrete change goal."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Repository root escapes the working repository or profile path is unsafe",
+      "diagnosis": "Resolved inspection or write path leaves the allowed boundary",
+      "rescue_action": "Halt and report the offending path; do not inspect or write",
+      "user_message": "Discovery path is unsafe. Provide a repository-relative root inside the working repository."
+    },
+    {
+      "type": "external_failure",
+      "trigger": "Inspection command or profile write fails",
+      "diagnosis": "Filesystem or subprocess failure during read-only discovery",
+      "rescue_action": "Leave files untouched where possible and report what failed",
+      "user_message": "Discovery failed partway. Nothing was modified. Retry once the reported error is fixed."
+    },
+    {
+      "type": "validation_failed",
+      "trigger": "Candidate run object fails schema validation",
+      "diagnosis": "Run update violates the run-object schema or gate contract",
+      "rescue_action": "Show validator output and do not write",
+      "user_message": "Run update failed validation. See validator output; nothing was written."
+    }
+  ]
+}

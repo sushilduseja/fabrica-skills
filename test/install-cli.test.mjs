@@ -71,7 +71,7 @@ test('project install creates .agents/skills/fab-spec/SKILL.md plus marker', () 
     );
     assert.strictEqual(marker.install_scope, 'project');
     assert(typeof marker.installed_at === 'string' && marker.installed_at.length > 0);
-    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 15);
+    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 17);
     assertNoStackTrace(result);
   } finally {
     teardown(ctx);
@@ -86,7 +86,7 @@ test('project install is idempotent', () => {
     const before = readFileSync(join(ctx.project, '.agents', 'skills', 'fab-spec', 'SKILL.md'), 'utf-8');
     result = cli(ctx.pkg, ['install'], { cwd: ctx.project, home: ctx.home });
     assertPass(result, combined(result));
-    assert(combined(result).includes('installed 14 skills'));
+    assert(combined(result).includes('installed 16 skills'));
     const after = readFileSync(join(ctx.project, '.agents', 'skills', 'fab-spec', 'SKILL.md'), 'utf-8');
     assert.strictEqual(after, before);
     assert(existsSync(join(ctx.project, '.agents', 'skills', 'fab-spec', '.fabrica-managed.json')));
@@ -243,7 +243,7 @@ test('default install projects all skills into all five harness roots', () => {
       const marker = readMarker(join(root, 'fab-spec', '.fabrica-managed.json'));
       assert.strictEqual(marker.managed_by, 'fabrica-skills');
       assert.strictEqual(marker.skill_id, 'fab-spec');
-      assert.strictEqual(readdirSync(root).length, 15, `expected 14 skills plus alias in ${dir}/skills`);
+      assert.strictEqual(readdirSync(root).length, 17, `expected 16 skills plus alias in ${dir}/skills`);
     }
     assertNoStackTrace(result);
   } finally {
@@ -258,8 +258,8 @@ test('selective --agent=claude,agents only writes two roots', () => {
     assertPass(result, combined(result));
     assert(existsSync(join(ctx.project, '.claude', 'skills', 'fab-spec', 'SKILL.md')));
     assert(existsSync(join(ctx.project, '.agents', 'skills', 'fab-spec', 'SKILL.md')));
-    assert.strictEqual(readdirSync(join(ctx.project, '.claude', 'skills')).length, 15);
-    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 15);
+    assert.strictEqual(readdirSync(join(ctx.project, '.claude', 'skills')).length, 17);
+    assert.strictEqual(readdirSync(join(ctx.project, '.agents', 'skills')).length, 17);
     assert(!existsSync(join(ctx.project, '.cursor')), 'unselected agents root must not be created');
     assert(!existsSync(join(ctx.project, '.codex')), 'unselected agents root must not be created');
     assert(!existsSync(join(ctx.project, '.opencode')), 'unselected agents root must not be created');
@@ -499,6 +499,66 @@ test('init-run without --auto keeps the short next line', () => {
     assertPass(result, combined(result));
     assert(combined(result).includes('next: open this file after /fab-spec'), combined(result));
     assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-existing-run creates existing-mode run state without touching sources', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    const before = readdirSync(ctx.project);
+    const result = cli(ctx.pkg, ['init-existing-run', '--name', 'legacy-app'], {
+      cwd: ctx.project,
+      home: ctx.home,
+    });
+    assertPass(result, combined(result));
+    const written = JSON.parse(readFileSync(out, 'utf-8'));
+    assert.strictEqual(written.project_context.origin, 'existing');
+    assert.strictEqual(written.project_context.project_root, '.');
+    assert.strictEqual(written.project_context.profile_path, 'docs/fabrica/project-profile.md');
+    assert.strictEqual(typeof written.project_context.baseline.captured_at, 'string');
+    assert.strictEqual(written.current_step, 'fab-discover');
+    assert.strictEqual(written.next_action, '/fab-discover');
+    assert.deepStrictEqual(readdirSync(ctx.project).sort(), [...before, 'fabrica.run.json'].sort());
+    const check = run(['scripts/validate-run.mjs', out]);
+    assertPass(check, combined(check));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-existing-run refuses to overwrite without --force', () => {
+  const ctx = setup();
+  try {
+    const args = ['init-existing-run', '--name', 'legacy-app'];
+    assertPass(cli(ctx.pkg, args, { cwd: ctx.project, home: ctx.home }));
+    const result = cli(ctx.pkg, args, { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('Refusing to overwrite'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-existing-run rejects unsafe --root and unknown flags', () => {
+  const ctx = setup();
+  try {
+    const traversal = cli(ctx.pkg, ['init-existing-run', '--root', '../outside'], {
+      cwd: ctx.project,
+      home: ctx.home,
+    });
+    assertFail(traversal);
+    assert(combined(traversal).includes('--root'), combined(traversal));
+    const absolute = cli(ctx.pkg, ['init-existing-run', '--root', '/abs'], {
+      cwd: ctx.project,
+      home: ctx.home,
+    });
+    assertFail(absolute);
+    assertNoStackTrace(traversal);
   } finally {
     teardown(ctx);
   }

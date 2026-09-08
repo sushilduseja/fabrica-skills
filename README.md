@@ -19,7 +19,7 @@ npx fabrica-skills@latest install
 npx fabrica-skills@latest status
 ```
 
-The first command copies 14 skills into the skill folders your agent already reads: `.agents/`, `.claude/`, `.cursor/`, `.codex/`, `.opencode/`. It adds nothing to `package.json` and installs no dependency. The second command lists 14 installed skills. Your agent can now see them.
+The first command copies 16 skills into the skill folders your agent already reads: `.agents/`, `.claude/`, `.cursor/`, `.codex/`, `.opencode/`. It adds nothing to `package.json` and installs no dependency. The second command lists 16 installed skills. Your agent can now see them.
 
 ## Two choices you control
 
@@ -76,27 +76,39 @@ For a full walkthrough from idea to running app, see [examples/fabrica-skills-QU
 ## How a run flows
 
 ```
-Phase 0: Spec and plan
-  /fab-spec -> /fab-plan
-  Produces: docs/spec.md, docs/blueprint.md, fabrica.run.json
+New project:
+  /fab-spec -> /fab-plan -> /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
+  Repeat build/eval → /fab-integrate -> /fab-verify -> /fab-handoff -> /fab-retro
 
-Phase 1: Build one slice at a time
-  /fab-scaffold -> /fab-build <stage> -> /fab-eval <stage>
-  Repeat build and eval until every stage is done.
+Existing project (init-existing-run):
+  init-existing-run -> /fab-discover -> /fab-spec -> /fab-plan -> /fab-adopt
+  -> /fab-build <stage> -> /fab-eval <stage> -> /fab-integrate -> /fab-verify
 
-Phase 2: Connect and verify
-  /fab-integrate -> /fab-verify -> /fab-handoff -> /fab-retro
-  Use as needed: /fab-fix <stage>, /fab-decide, /fab-status
+Use as needed: /fab-fix <stage>, /fab-decide, /fab-status
 ```
 
+New and existing share build, eval, integrate, and verify. New uses `docs/spec.md` and `/fab-scaffold`; existing uses `docs/fabrica/` and `/fab-adopt` (see `docs/STATE_MACHINE.md`).
+
 Full diagram: [docs/STATE_MACHINE.md](https://github.com/sushilduseja/fabrica-skills/blob/main/docs/STATE_MACHINE.md).
+
+## Existing projects
+
+To manage a pre-existing repository (never for a greenfield run), create the run inside that repository:
+
+```
+npx fabrica-skills@latest init-existing-run --name my-app
+```
+
+Then follow the existing-project flow: `/fab-discover` (read-only inspection → `docs/fabrica/project-profile.md`) → `/fab-spec` → `/fab-plan` → `/fab-adopt` (activates work, never scaffolds) → build, eval, integrate, and verify as usual. Spec and blueprint live under `docs/fabrica/`. Adoption rechecks the recorded Git baseline and stops on drift, or on uncommitted work without your explicit decision. Limits: one repository per run; Fabrica never replaces your build, tests, or CI.
 
 ## Every skill, one line each
 
 | Skill | Phase | Stops for approval? | Does this |
 |---|---|---|---|
 | `/fab-spec` | 0 | Yes, unless `--auto` | Turns your idea into a spec. |
+| `/fab-discover` | 0 | No | Surveys an existing repo → `docs/fabrica/project-profile.md`. |
 | `/fab-plan` | 0 | Yes, unless `--auto` | Turns the spec into an architecture and a build order. |
+| `/fab-adopt` | 1 | Yes, unless `--auto` | Registers an existing repo (never scaffolds). |
 | `/fab-scaffold` | 1 | No | Builds the project skeleton. |
 | `/fab-build` | 1 | No | Implements one stage. |
 | `/fab-eval` | 1 | No | Scores one stage on quality. |
@@ -110,7 +122,7 @@ Full diagram: [docs/STATE_MACHINE.md](https://github.com/sushilduseja/fabrica-sk
 | `/fab-retro` | 2 | No | Scores the finished run. |
 | `/fab-code-review` | 2 | No | Reviews changes since a fixed git point. |
 
-The review skill installs under the name `fabrica-code-review`. Run it as `/fab-code-review`.
+The review skill installs under the name `fabrica-code-review`. Run it as `/fab-code-review`. Install creates 16 skills plus the `fab-code-review` alias directory (same content as `fabrica-code-review`); `status` reports 16/16; disk may show 17 dirs per harness.
 
 ## What each stop means
 
@@ -224,7 +236,7 @@ fabrica-skills/
 | `node` is not found | Install Node.js 16.7 or newer. Then run the install command again. |
 | `npx` asks "Ok to proceed?" | Answer `y` once, or run `npx -y fabrica-skills@latest install`. |
 | Installed skills are older than the version you want | Run `npx fabrica-skills@latest update`, then `status` again. |
-| Your agent does not see the slash commands | Point it at a real install path, e.g. `.agents/skills/fab-spec/SKILL.md` or `.claude/skills/fab-spec/SKILL.md` (also `.cursor/skills`, `.codex/skills`, `.opencode/skills`). Or use `.claude-plugin/plugin.json` if your agent supports it. Run `npx fabrica-skills@latest status` to confirm 14/14. |
+| Your agent does not see the slash commands | Point it at a real install path, e.g. `.agents/skills/fab-spec/SKILL.md` or `.claude/skills/fab-spec/SKILL.md` (also `.cursor/skills`, `.codex/skills`, `.opencode/skills`). Or use `.claude-plugin/plugin.json` if your agent supports it. Run `npx fabrica-skills@latest status` to confirm 16/16. |
 | `fabrica.run.json` is missing | Prefer `npx fabrica-skills@latest init-run --name <slug>` (add `--auto` to skip spec/plan/integrate stops). Or start with `/fab-spec`, which can create the file. `/fab-spec` remains the only skill entry point. |
 | A stage is blocked | Run the exact command in `next_action` (usually `/fab-fix <stage>`). Stage names come from `next_action` or `app_stages` in `fabrica.run.json` (or `docs/blueprint.md`) — character-for-character. Do not invent names or copy sample names from docs unless they match your run. Paste the failing output with the command. |
 | Cost shows `unknown` | Expected. This means spend has not been measured yet. |

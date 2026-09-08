@@ -1,0 +1,33 @@
+{
+  "skill_id": "fab-adopt",
+  "errors": [
+    {
+      "type": "prerequisite_missing",
+      "trigger": "Profile, spec, blueprint, allowed paths, or approved commands missing",
+      "diagnosis": "Adoption requires a fully planned existing-project state",
+      "rescue_action": "List the missing items and stop without writing",
+      "user_message": "Adoption needs a project profile, spec, and blueprint with allowed paths first."
+    },
+    {
+      "type": "invalid_state",
+      "trigger": "Repository root, HEAD, or branch no longer matches the recorded baseline",
+      "diagnosis": "The repository moved since discovery/init; adopting now would target the wrong state",
+      "rescue_action": "Halt and report the exact drift; never adopt against a moved baseline",
+      "user_message": "Repository baseline drifted since discovery. Re-run discovery before adopting."
+    },
+    {
+      "type": "gate_blocked",
+      "trigger": "Dirty worktree without a recorded human decision",
+      "diagnosis": "Uncommitted developer work could be disturbed by write-mode adoption",
+      "rescue_action": "Halt and require an explicit human decision (commit, stash, or proceed)",
+      "user_message": "Worktree has uncommitted changes. Decide how to handle them before adoption."
+    },
+    {
+      "type": "validation_failed",
+      "trigger": "Candidate run object fails schema validation",
+      "diagnosis": "Run update violates the run-object schema or gate contract",
+      "rescue_action": "Show validator output and do not write",
+      "user_message": "Run update failed validation. See validator output; nothing was written."
+    }
+  ]
+}
