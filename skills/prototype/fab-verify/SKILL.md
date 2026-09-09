@@ -3,7 +3,6 @@ name: fab-verify
 description: Run a pre-launch checklist and verify the app locally.
 category: prototype
 phase: 2
-disable-model-invocation: true
 default_gate: review
 overridable: false
 ---

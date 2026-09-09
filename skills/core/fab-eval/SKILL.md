@@ -3,7 +3,6 @@ name: fab-eval
 description: Evaluate one app stage against quality criteria.
 category: core
 phase: 1
-disable-model-invocation: true
 default_gate: auto
 overridable: true
 ---

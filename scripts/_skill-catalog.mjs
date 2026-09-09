@@ -230,9 +230,16 @@ export function checkSkillCatalog(root) {
     if (!fmPhase || Number(fmPhase[1]) !== skill.phase) {
       fail(`skill "${skill.id}" frontmatter phase does not match manifest phase "${skill.phase}"`);
     }
-    const fmDisableModel = fm.match(/^disable-model-invocation:\s*(.*)$/m);
-    if (!fmDisableModel || fmDisableModel[1] !== 'true') {
-      fail(`skill "${skill.id}" frontmatter disable-model-invocation must be true`);
+    // disable-model-invocation is forbidden: on affected harness versions it
+    // strips the skill from the invocable listing, so a bare /skill-name
+    // command is ignored and the prompt falls through to default behavior
+    // (no spec, no plan, no approval). Checkpoint behavior stays enforced by
+    // skill prose (end the turn at checkpoint/review/full gates) and by the
+    // run-object gate validators, not by invocation flags.
+    if (/^disable-model-invocation:/m.test(fm)) {
+      fail(
+        `skill "${skill.id}" frontmatter must not set disable-model-invocation: it breaks explicit /${skill.id} invocation on affected harnesses`,
+      );
     }
     const fmGate = fm.match(/^default_gate:\s*(.*)$/m);
     if (!fmGate || fmGate[1] !== skill.default_gate) {

@@ -3,7 +3,6 @@ name: fab-scaffold
 description: Scaffold the app project skeleton and first-stage contracts.
 category: core
 phase: 1
-disable-model-invocation: true
 default_gate: auto
 overridable: true
 ---

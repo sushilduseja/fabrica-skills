@@ -3,7 +3,6 @@ name: fab-adopt
 description: Adopt a discovered repository for change work without scaffolding.
 category: core
 phase: 1
-disable-model-invocation: true
 default_gate: checkpoint
 overridable: true
 ---

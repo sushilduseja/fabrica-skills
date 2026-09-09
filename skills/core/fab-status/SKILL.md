@@ -3,7 +3,6 @@ name: fab-status
 description: Render the current run state as a terminal dashboard.
 category: core
 phase: 1
-disable-model-invocation: true
 default_gate: auto
 overridable: false
 ---

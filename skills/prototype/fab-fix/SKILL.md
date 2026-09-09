@@ -3,7 +3,6 @@ name: fab-fix
 description: Diagnose a failing stage and apply the smallest viable fix.
 category: prototype
 phase: 2
-disable-model-invocation: true
 default_gate: auto
 overridable: true
 ---

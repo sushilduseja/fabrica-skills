@@ -3,7 +3,6 @@ name: fab-plan
 description: Convert a spec into app architecture and a build order.
 category: core
 phase: 0
-disable-model-invocation: true
 default_gate: checkpoint
 overridable: true
 ---

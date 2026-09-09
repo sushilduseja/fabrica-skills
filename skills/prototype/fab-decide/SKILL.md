@@ -3,7 +3,6 @@ name: fab-decide
 description: Capture a human decision.
 category: prototype
 phase: 2
-disable-model-invocation: true
 default_gate: full
 overridable: false
 ---

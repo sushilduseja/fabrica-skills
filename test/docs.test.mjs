@@ -106,4 +106,16 @@ test('VALIDATION links the manual harness matrix', () => {
   assert(existsSync(resolve(root, 'docs', 'RELEASE_HARNESS_MATRIX.md')), 'harness matrix doc must exist');
 });
 
+test('no shipped skill sets disable-model-invocation (breaks /slash invocation)', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const manifest = JSON.parse(readFileSync(resolve(root, 'skills', 'manifest.json'), 'utf-8'));
+  for (const skill of manifest.skills) {
+    const text = readFileSync(resolve(root, skill.path, 'SKILL.md'), 'utf-8');
+    assert(
+      !/^disable-model-invocation:/m.test(text),
+      `${skill.id} sets disable-model-invocation, which breaks explicit /${skill.id} invocation on affected harnesses`,
+    );
+  }
+});
+
 runAll();

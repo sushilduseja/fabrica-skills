@@ -1,7 +1,7 @@
 {
   "name": "fabrica-skills",
   "description": "Agent-readable markdown skills for turning raw product ideas into small working apps",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "skills": [
     {
       "name": "fab-spec",

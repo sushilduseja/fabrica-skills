@@ -3,7 +3,6 @@ name: fab-integrate
 description: Connect completed stages into an end-to-end flow.
 category: prototype
 phase: 2
-disable-model-invocation: true
 default_gate: checkpoint
 overridable: true
 ---

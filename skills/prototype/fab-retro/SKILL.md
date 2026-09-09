@@ -3,7 +3,6 @@ name: fab-retro
 description: Score the run and identify process improvements.
 category: prototype
 phase: 2
-disable-model-invocation: true
 default_gate: auto
 overridable: true
 ---

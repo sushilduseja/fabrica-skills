@@ -1,60 +1,78 @@
 # Changelog
 
-## Unreleased
+## 1.2.2 — 2026-09-09
 
 ### Fixed
+
+- `/fab-spec` ignored on affected harnesses: removed `disable-model-invocation: true` from all 16 skill frontmatters. The flag strips skills from the invocable listing, so bare `/fab-*` commands were ignored and the prompt fell through to default app-building with no spec, plan, or approval. The catalog validator now rejects the flag to prevent re-adding it. Checkpoint gates stay enforced by skill prose and run-object validation.
+
+## 1.2.1 — 2026-09-09
+
+### Fixed
+
 - `/fab-spec` fallthrough after install: install/update messages now name the exact harness paths, the required session restart, and `doctor` verification; `status` distinguishes `copied` from `discoverable after restart`
 - Install is target-aware: `--agent=<name>` (or `FABRICA_AGENT`) projects a single harness; the five-root default is kept for deliberate multi-harness installs
 
 ### Added
+
 - `fabrica-skills doctor [--global] [--agent=list]` post-install verification per harness (exits nonzero while incomplete, never touches `fabrica.run.json`)
 - Manual release harness matrix at `docs/RELEASE_HARNESS_MATRIX.md` (install, restart, invoke `/fab-spec`, confirm checkpoint and `next_action: /fab-plan`, then `/fab-plan` independently)
 
 ### Changed
+
 - `init-run` and `init-existing-run` default the run name to the current folder name (sanitized to a lowercase slug, `app` as fallback); `--name <slug>` remains as an override. Primary examples no longer show `--name`.
 
 ## 1.2.0 — 2026-09-08
 
 ### Added
+
 - Existing-project mode: `init-existing-run`, optional `project_context`, `/fab-discover`, `/fab-adopt`
 - Spec/blueprint under `docs/fabrica/` for existing-project runs
 - Manifest skill count 14 → 16
 
 ### Fixed
+
 - Old 14-key `gate_levels` runs now validate with `--migrate` (fills `fab-discover`/`fab-adopt` from manifest defaults, non-destructive)
 
 ### Notes
+
 - Greenfield `init-run` unchanged (no `project_context`)
 - Published 1.1.4 remains the last 14-skill line; upgrade adds two `gate_levels` keys
 
 ## 1.1.4 — 2026-09-07
 
 ### Fixed
+
 - Release tagging gap: v1.1.3 tag sat off the main line rather than on it; v1.1.4 tag is placed on main so tag, npm package, and main agree (verified published 1.1.3 tarball content identical to its tag: 47/47 shipped files)
 - LICENSE line-ending normalization (.gitattributes)
 
 ### Added
+
 - UV-first Python scaffolds with no-activate fallback (UV used when present or after one explicit install yes; otherwise .venv + path-qualified python; never activate; never silent remote installers)
 
 ## 1.1.3 (2026-09-06)
 
 ### Changed
+
 - Version bump to 1.1.3. `skills/manifest.json` reformatted (multi-line arrays) with no semantic changes — same 14 skills, gates, and field ownership. Drift check passes.
 
 ## 1.1.2 (2026-09-06)
 
 ### Changed
+
 - README and QUICKSTART lead with the zero-dependency install: `npx fabrica-skills@latest install`. No `package.json` changes, no local dependency. The `npm install -D` flow is documented as the pinned-version option for teams that want lockfile-held reproducibility.
 - README documents that `--global` copies skills only and does not add a `fabrica-skills` command to PATH; all CLI calls stay on `npx`.
 - All consumer-facing commands in README and QUICKSTART use the canonical `npx fabrica-skills@latest <command>` form.
 - Troubleshooting gains rows for the first-run npx approval prompt and for refreshing stale installed skills via `update`.
 
 ### Fixed
+
 - Harden path handling for Windows usernames containing spaces: added `assertWithinRoot` write-boundary guard (link/install targets), regression tests for space-containing home directories, and a repo self-scan forbidding shell-string path interpolation (the 8.3 short-name bug class). Audit found zero existing occurrences — all paths already use `path.join` and array-arg subprocess calls.
 
 ## 1.1.1 (2026-09-06)
 
 ### Fixed
+
 - `--auto` mode: skills resolve gates from `fabrica.run.json` `gate_levels` first; invocation `--auto` is equivalent, not required when levels are already auto
 - `fab-spec` does not re-prompt continue-vs-fresh when auto mode already applies (`gate_levels.fab-spec` auto and `next_action` `/fab-spec`)
 - README and QUICKSTART document that `--auto` also skips `fab-integrate`
@@ -63,6 +81,7 @@
 ## 1.1.0 (2026-09-06)
 
 ### Added
+
 - Sequential frontend/backend/database stack prompting in fab-spec, with fast pinned defaults (React + Vite, FastAPI, SQLite) when left blank
 - preferred_stack field in run object schema, respected per-slot by fab-plan
 
@@ -71,12 +90,14 @@
 Docs-only patch. No behavior changes.
 
 ### Fixed
+
 - Stale "forge/check" wording in README
 - Removed outdated pre-publish disclaimer
 - Clarified pre-1.0 skill ids in CONTEXT.md
 - Corrected skill-attribution cells in docs/STATE_MACHINE.md
 
 ### Changed
+
 - README rewritten in Simplified Technical English with a three-step Quickstart
 - Historical design docs moved to docs/archive/ with an index
 - docs/VALIDATION.md now points at npm run check instead of mirroring its output
@@ -88,28 +109,34 @@ Docs-only patch. No behavior changes.
 First stable public release.
 
 ### Added
+
 - npm registry as primary distribution channel
 - Version-consistency enforcement across package.json, manifest.json, plugin.json
 - Lifecycle-script guard in CI release pipeline
 
 ### Fixed
+
 - Removed prepack script that triggered EALLOWSCRIPTS on git-dep installs
 - Version drift between package.json, skills/manifest.json, .claude-plugin/plugin.json
 
 ## 0.3.0
 
 ### Breaking
+
 - Skill ids renamed (fab-intake → fab-spec, ...). Canonical ids are in `skills/manifest.json`.
 - Consumer install path is now harness skill directories via CLI.
 
 ### Added
+
 - `fabrica-skills` CLI: install, update, uninstall, status, validate
 - Project and global install scopes
 - Managed-skill markers to protect foreign skills
 
 ### Fixed
+
 - Fresh Windows clones no longer fail `npm run setup`: frontmatter parsing tolerates CRLF and `.gitattributes` pins LF line endings.
 - Bumped `fast-uri` past 3.1.5 to close GHSA SSRF/host-confusion advisories (`npm audit` clean).
 
 ### Notes
+
 - Historical docs may still use pre-0.3 ids; canonical ids are in `skills/manifest.json`.

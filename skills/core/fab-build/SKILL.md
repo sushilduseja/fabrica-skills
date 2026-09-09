@@ -3,7 +3,6 @@ name: fab-build
 description: Implement one named app stage against the blueprint.
 category: core
 phase: 1
-disable-model-invocation: true
 default_gate: auto
 overridable: true
 ---

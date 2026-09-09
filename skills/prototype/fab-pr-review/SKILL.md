@@ -3,7 +3,6 @@ name: fab-pr-review
 description: Review a GitHub pull request for production defects, security gaps, and intent mismatches with an evidence-backed verdict.
 category: prototype
 phase: 2
-disable-model-invocation: true
 default_gate: auto
 overridable: false
 ---

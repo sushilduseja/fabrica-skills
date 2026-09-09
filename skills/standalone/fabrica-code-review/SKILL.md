@@ -3,7 +3,6 @@ name: fabrica-code-review
 description: Two-axis review of changes since a fixed git point: Standards and Spec, via parallel sub-agents.
 category: standalone
 phase: 2
-disable-model-invocation: true
 default_gate: auto
 overridable: true
 ---

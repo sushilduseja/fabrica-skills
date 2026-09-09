@@ -3,7 +3,6 @@ name: fab-spec
 description: Convert a rough idea into a spec and initialize the run object.
 category: core
 phase: 0
-disable-model-invocation: true
 default_gate: checkpoint
 overridable: true
 ---

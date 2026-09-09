@@ -2,7 +2,7 @@
 
 ## Skill Discovery
 
-Skills live under `skills/core/` and `skills/prototype/`. Each skill is a `SKILL.md` file with frontmatter: name, description, category, phase, disable-model-invocation, default_gate, overridable. The manifest (`skills/manifest.json`) is the source of truth for inventory, paths, prerequisites, gates, and run-object field ownership.
+Skills live under `skills/core/` and `skills/prototype/`. Each skill is a `SKILL.md` file with frontmatter: name, description, category, phase, default_gate, overridable. Never add `disable-model-invocation` — on affected harness versions it strips the skill from the invocable listing, so bare `/fab-<name>` commands are ignored. The manifest (`skills/manifest.json`) is the source of truth for inventory, paths, prerequisites, gates, and run-object field ownership.
 
 Invoke skills as `/fab-<name>`. The frontmatter name excludes the slash.
 
@@ -58,12 +58,12 @@ Before replacing `fabrica.run.json`:
 
 ## Gate Model
 
-| Level | Behavior |
-|---|---|
-| `auto` | No pause |
-| `checkpoint` | Approval before file mutation |
-| `review` | Local checks may run; external/deploy requires approval |
-| `full` | Approval before start and confirmation after completion |
+| Level        | Behavior                                                |
+| ------------ | ------------------------------------------------------- |
+| `auto`       | No pause                                                |
+| `checkpoint` | Approval before file mutation                           |
+| `review`     | Local checks may run; external/deploy requires approval |
+| `full`       | Approval before start and confirmation after completion |
 
 Gate levels are defined in `fabrica.run.json` under `gate_levels`.
 
@@ -74,16 +74,15 @@ All skills use the `fab-` prefix to avoid collision with generic skill names. Th
 ## Error Handling
 
 Skills use a standardized error taxonomy in `last_error`:
+
 - `null` (no error)
 - An object: `{ "type": "<error_type>", "message": "<human-readable detail>" }`
 
 Error types (canonical source: `schemas/run-object.schema.json`):
+
 - `missing_input`: Required input not provided
 - `invalid_state`: Run object in unexpected state
 - `gate_blocked`: Operator did not approve gate
 - `validation_failed`: Run object write failed schema validation
 - `prerequisite_missing`: Skill prerequisite not satisfied
 - `external_failure`: External service or command failed
-
-
-

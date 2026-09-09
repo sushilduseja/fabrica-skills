@@ -3,7 +3,6 @@ name: fab-discover
 description: Inspect an existing repository and record a bounded project profile.
 category: core
 phase: 0
-disable-model-invocation: true
 default_gate: auto
 overridable: true
 ---
