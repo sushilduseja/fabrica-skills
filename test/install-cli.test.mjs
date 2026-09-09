@@ -729,4 +729,95 @@ test('init-existing-run defaults the name to the current folder name', () => {
   }
 });
 
+test('update is idempotent and refreshes managed content', () => {
+  const ctx = setup();
+  try {
+    assertPass(cli(ctx.pkg, ['install', '--agent=claude'], { cwd: ctx.project, home: ctx.home }));
+    const skillMd = join(ctx.project, '.claude', 'skills', 'fab-spec', 'SKILL.md');
+    const before = readFileSync(skillMd, 'utf-8');
+    let result = cli(ctx.pkg, ['update', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('updated 16 skills'), combined(result));
+    assert.strictEqual(readFileSync(skillMd, 'utf-8'), before);
+    result = cli(ctx.pkg, ['doctor', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('uninstall removes all managed skills and reruns cleanly', () => {
+  const ctx = setup();
+  try {
+    assertPass(cli(ctx.pkg, ['install', '--agent=claude'], { cwd: ctx.project, home: ctx.home }));
+    let result = cli(ctx.pkg, ['uninstall', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(!existsSync(join(ctx.project, '.claude', 'skills', 'fab-spec')), 'managed skill must be removed');
+    assert(!existsSync(join(ctx.project, '.claude', 'skills', 'fab-code-review')), 'alias must be removed');
+    result = cli(ctx.pkg, ['uninstall', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('uninstalled 0 skills'), combined(result));
+    result = cli(ctx.pkg, ['doctor', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('not ready'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('doctor and status reject unknown agents cleanly', () => {
+  const ctx = setup();
+  try {
+    let result = cli(ctx.pkg, ['doctor', '--agent=nope'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('Unknown agent'), combined(result));
+    assertNoStackTrace(result);
+    result = cli(ctx.pkg, ['status', '--agent=nope'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('Unknown agent'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('bare doctor honors FABRICA_AGENT selection like install', () => {
+  const ctx = setup();
+  try {
+    const env = { HOME: ctx.home, USERPROFILE: ctx.home, FABRICA_AGENT: 'claude', FABRICA_HARNESS: '' };
+    assertPass(run([join(ctx.pkg, 'bin', 'fabrica-skills.mjs'), 'install'], { cwd: ctx.project, env }));
+    let result = run([join(ctx.pkg, 'bin', 'fabrica-skills.mjs'), 'doctor'], { cwd: ctx.project, env });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('ready'), combined(result));
+    const noEnv = { HOME: ctx.home, USERPROFILE: ctx.home, FABRICA_AGENT: '', FABRICA_HARNESS: '' };
+    result = run([join(ctx.pkg, 'bin', 'fabrica-skills.mjs'), 'doctor'], { cwd: ctx.project, env: noEnv });
+    assertFail(result);
+    assert(combined(result).includes('not ready'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('status reports incomplete when SKILL.md is deleted but the marker survives', () => {
+  const ctx = setup();
+  try {
+    assertPass(cli(ctx.pkg, ['install', '--agent=claude'], { cwd: ctx.project, home: ctx.home }));
+    const skillDir = join(ctx.project, '.claude', 'skills', 'fab-spec');
+    rmSync(join(skillDir, 'SKILL.md'), { force: true });
+    assert(existsSync(join(skillDir, '.fabrica-managed.json')), 'marker must survive for this case');
+    let result = cli(ctx.pkg, ['status', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('incomplete'), combined(result));
+    result = cli(ctx.pkg, ['doctor', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('fab-spec'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
 runAll();

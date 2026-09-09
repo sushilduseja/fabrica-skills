@@ -5,6 +5,7 @@
 ### Fixed
 
 - `/fab-spec` ignored on affected harnesses: removed `disable-model-invocation: true` from all 16 skill frontmatters. The flag strips skills from the invocable listing, so bare `/fab-*` commands were ignored and the prompt fell through to default app-building with no spec, plan, or approval. The catalog validator now rejects the flag to prevent re-adding it. Checkpoint gates stay enforced by skill prose and run-object validation.
+- `doctor` follows the same `--agent`/`FABRICA_AGENT` selection as install, and `status` requires `SKILL.md` presence like `doctor` (marker-only leftovers report as incomplete, not installed).
 
 ## 1.2.1 — 2026-09-09
 

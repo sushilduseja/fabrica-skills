@@ -52,11 +52,11 @@ export const DEFAULT_AGENTS = ['agents', 'claude', 'cursor', 'codex', 'opencode'
  * installed project skill is only discoverable after a session restart.
  */
 export const HARNESS_META = {
-  agents: { label: 'Generic agent (.agents)', restart: 'Restart your agent session' },
-  claude: { label: 'Claude Code (.claude)', restart: 'Restart your Claude Code session' },
-  cursor: { label: 'Cursor (.cursor)', restart: 'Reload the window / restart your Cursor session' },
-  codex: { label: 'Codex CLI (.codex)', restart: 'Restart your Codex session' },
-  opencode: { label: 'opencode (.opencode)', restart: 'Restart your opencode session' },
+  agents: { restart: 'Restart your agent session' },
+  claude: { restart: 'Restart your Claude Code session' },
+  cursor: { restart: 'Reload the window / restart your Cursor session' },
+  codex: { restart: 'Restart your Codex session' },
+  opencode: { restart: 'Restart your opencode session' },
 };
 
 const MANAGED_FILENAME = '.fabrica-managed.json';
@@ -228,19 +228,47 @@ function readMarker(skillDir) {
 }
 
 /**
+ * Reject unknown harness keys with a clean CLI error (no stack trace).
+ * @param {string[]} keys
+ * @returns {void}
+ */
+function assertKnownAgentKeys(keys) {
+  for (const key of keys) {
+    if (!HARNESS[key]) {
+      fail(`Unknown agent: ${key} (expected one of: ${Object.keys(HARNESS).join(', ')})`);
+    }
+  }
+}
+
+/**
+ * A skill counts as installed only when its marker is valid AND its SKILL.md
+ * is present. Marker-only leftovers (deleted skill files) report as missing
+ * so status and doctor agree.
+ * @param {string} root Harness skills root.
+ * @param {string} skillId Manifest skill id.
+ * @returns {boolean}
+ */
+function isSkillInstalled(root, skillId) {
+  const dir = join(root, skillId);
+  const marker = readMarker(dir);
+  return (
+    !!marker &&
+    marker.managed_by === 'fabrica-skills' &&
+    marker.skill_id === skillId &&
+    existsSync(join(dir, 'SKILL.md'))
+  );
+}
+
+/**
  * Resolve requested agent keys to harness roots for a scope.
  * @param {{ agents: string[] | null, global: boolean, cwd: string }} params
  * @returns {Array<{ key: string, root: string }>}
  */
 function resolveHarnessRoots({ agents, global, cwd }) {
   const keys = agents || DEFAULT_AGENTS;
+  assertKnownAgentKeys(keys);
   const scope = global ? 'global' : 'project';
-  return keys.map((key) => {
-    if (!HARNESS[key]) {
-      fail(`Unknown agent: ${key} (expected one of: ${Object.keys(HARNESS).join(', ')})`);
-    }
-    return { key, root: HARNESS[key][scope](cwd) };
-  });
+  return keys.map((key) => ({ key, root: HARNESS[key][scope](cwd) }));
 }
 
 /**
@@ -259,11 +287,7 @@ export function detectActiveHarness(env = process.env) {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  for (const key of keys) {
-    if (!HARNESS[key]) {
-      fail(`Unknown agent: ${key} (expected one of: ${Object.keys(HARNESS).join(', ')})`);
-    }
-  }
+  assertKnownAgentKeys(keys);
   return { keys, source: 'env' };
 }
 
@@ -275,11 +299,7 @@ export function detectActiveHarness(env = process.env) {
  */
 export function resolveInstallKeys({ agents, env = process.env }) {
   if (agents && agents.length > 0) {
-    for (const key of agents) {
-      if (!HARNESS[key]) {
-        fail(`Unknown agent: ${key} (expected one of: ${Object.keys(HARNESS).join(', ')})`);
-      }
-    }
+    assertKnownAgentKeys(agents);
     return { keys: agents, mode: agents.length === 1 ? 'single' : 'multi' };
   }
   const detected = detectActiveHarness(env);
@@ -450,7 +470,7 @@ function cmdUninstall({ pkgRoot, cwd, flags }) {
 function cmdDoctor({ pkgRoot, cwd, flags }) {
   const scope = flags.global ? 'global' : 'project';
   const manifest = loadManifest(pkgRoot);
-  const keys = flags.agents || DEFAULT_AGENTS;
+  const { keys } = resolveInstallKeys({ agents: flags.agents });
   const roots = resolveHarnessRoots({ agents: keys, global: flags.global, cwd });
   console.log('fabrica-skills doctor');
   console.log(`scope: ${scope}`);
@@ -458,13 +478,7 @@ function cmdDoctor({ pkgRoot, cwd, flags }) {
   for (const { key, root } of roots) {
     const missing = [];
     for (const skill of manifest.skills) {
-      const dir = join(root, skill.id);
-      const marker = readMarker(dir);
-      if (!marker || marker.managed_by !== 'fabrica-skills' || marker.skill_id !== skill.id) {
-        missing.push(skill.id);
-        continue;
-      }
-      if (!existsSync(join(dir, 'SKILL.md'))) missing.push(skill.id);
+      if (!isSkillInstalled(root, skill.id)) missing.push(skill.id);
     }
     const present = manifest.skills.length - missing.length;
     if (missing.length === 0) {
@@ -500,13 +514,16 @@ function cmdStatus({ pkgRoot, version, cwd, flags }) {
     let present = 0;
     if (existsSync(root)) {
       for (const id of manifestIds) {
-        const marker = readMarker(join(root, id));
-        if (marker && marker.managed_by === 'fabrica-skills') present += 1;
+        if (isSkillInstalled(root, id)) present += 1;
       }
     }
-    console.log(
-      `  ${key}  ${present}/${manifestIds.length}  ${present === 0 ? '(not installed)' : `${root} (copied — restart session to use /fab-spec)`}`,
-    );
+    const detail =
+      present === manifestIds.length
+        ? `${root} (copied — restart session to use /fab-spec)`
+        : present === 0
+          ? '(not installed)'
+          : `(incomplete: ${present}/${manifestIds.length} — run doctor)`;
+    console.log(`  ${key}  ${present}/${manifestIds.length}  ${detail}`);
   }
   console.log('activation: skills load at session start — restart your agent session, then verify with `doctor`');
   const runPath = join(cwd, 'fabrica.run.json');
@@ -568,15 +585,25 @@ function defaultRunName(cwd, namePattern) {
 }
 
 /**
+ * Resolve the run name: explicit --name wins, else the sanitized folder name.
  * @param {{ pkgRoot: string, cwd: string, flags: CliFlags }} params
- * @returns {void}
+ * @returns {string}
  */
-function cmdInitRun({ pkgRoot, cwd, flags }) {
+function resolveRunName({ pkgRoot, cwd, flags }) {
   const namePattern = readRunObjectNamePattern(pkgRoot);
   const name = flags.name || defaultRunName(cwd, namePattern);
   if (!namePattern.test(name)) {
     fail(`Invalid --name "${name}": must be a lowercase slug (letters, digits, ., _, -)`);
   }
+  return name;
+}
+
+/**
+ * @param {{ pkgRoot: string, cwd: string, flags: CliFlags }} params
+ * @returns {void}
+ */
+function cmdInitRun({ pkgRoot, cwd, flags }) {
+  const name = resolveRunName({ pkgRoot, cwd, flags });
   const outPath = isAbsolute(flags.out || '') ? flags.out : join(cwd, flags.out || 'fabrica.run.json');
   if (existsSync(outPath) && !flags.force) {
     fail(`Refusing to overwrite existing ${outPath} (use --force to overwrite)`);
@@ -682,11 +709,7 @@ function assertRepoRelativePath(value, flag) {
  * @returns {void}
  */
 function cmdInitExistingRun({ pkgRoot, cwd, flags }) {
-  const namePattern = readRunObjectNamePattern(pkgRoot);
-  const name = flags.name || defaultRunName(cwd, namePattern);
-  if (!namePattern.test(name)) {
-    fail(`Invalid --name "${name}": must be a lowercase slug (letters, digits, ., _, -)`);
-  }
+  const name = resolveRunName({ pkgRoot, cwd, flags });
   const projectRoot = flags.root || '.';
   assertRepoRelativePath(projectRoot, '--root');
   const profilePath = flags.profile || 'docs/fabrica/project-profile.md';

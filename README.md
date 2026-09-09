@@ -175,7 +175,7 @@ Skills go to your home folder, not the project folder. A global install resolves
 npx fabrica-skills@latest install --agent=claude
 ```
 
-Use one of `agents`, `claude`, `cursor`, `codex`, `opencode` (for example `--agent=claude`). `FABRICA_AGENT=<name>` selects the same single root for a bare `install`. Omit the flag to project all five roots. Verify any selection with `npx fabrica-skills@latest doctor [--agent=<name>]`.
+Use one of `agents`, `claude`, `cursor`, `codex`, `opencode` (for example `--agent=claude`). `FABRICA_AGENT=<name>` selects the same single root for a bare `install`. Omit the flag to project all five roots. Verify any selection with `npx fabrica-skills@latest doctor` — it follows the same `--agent=<name>`/`FABRICA_AGENT` selection as install.
 
 ### Pin the version for your team
 
