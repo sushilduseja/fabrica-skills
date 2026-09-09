@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { readFileSync } from 'fs';
-import { assertFail, assertNoStackTrace, combined, readJson, test, validateStdin, runAll } from './_harness.mjs';
+import { join } from 'path';
+import { assertFail, assertNoStackTrace, combined, readJson, root, test, validateStdin, runAll } from './_harness.mjs';
 import {
   resolveGateLevel,
   validateFabLaunchGate,
@@ -456,7 +457,7 @@ test('validate-run rejects invalid cost precision', () => {
  * ================================================================ */
 
 test('gate-enforced rules are documented in the corresponding SKILL.md guardrails', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
 
   const cases = [
@@ -468,7 +469,7 @@ test('gate-enforced rules are documented in the corresponding SKILL.md guardrail
   ];
 
   for (const { skill, keywords } of cases) {
-    const content = readFileSync(`${pathById[skill]}/SKILL.md`, 'utf-8');
+    const content = readFileSync(join(root, pathById[skill], 'SKILL.md'), 'utf-8');
     for (const kw of keywords) {
       assert(content.includes(kw), `SKILL.md for ${skill} must document the gate-enforced rule containing "${kw}"`);
     }
@@ -482,7 +483,7 @@ test('gate-enforced rules are documented in the corresponding SKILL.md guardrail
  * ================================================================ */
 
 test('--auto gate config precondition: manifest gates match the documented contract', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const byId = Object.fromEntries(manifest.skills.map((s) => [s.id, s]));
   assert.strictEqual(byId['fab-spec'].default_gate, 'checkpoint');
   assert.strictEqual(byId['fab-spec'].overridable, true);
@@ -526,9 +527,9 @@ test('--auto never bypasses overridable:false, even for checkpoint defaults', ()
 });
 
 test('--auto behavior is documented in the SKILL.md contract files', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
-  const read = (id) => readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
+  const read = (id) => readFileSync(join(root, pathById[id], 'SKILL.md'), 'utf-8');
 
   assert(read('fab-spec').includes('--auto'), 'fab-spec must document the --auto gate conditional');
   assert(read('fab-spec').includes('Assumed from your idea'), 'fab-spec must document the assumption summary block');
@@ -539,7 +540,7 @@ test('--auto behavior is documented in the SKILL.md contract files', () => {
 });
 
 test('locked gates document the terse stop-message format', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
   for (const id of ['fab-verify', 'fab-decide']) {
     const content = readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
@@ -549,7 +550,7 @@ test('locked gates document the terse stop-message format', () => {
 });
 
 test('checkpoint skills document the no-yield rule for auto gates', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
   for (const id of ['fab-spec', 'fab-plan', 'fab-integrate']) {
     const content = readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
@@ -564,9 +565,9 @@ test('checkpoint skills document the no-yield rule for auto gates', () => {
 });
 
 test('fab-spec auto-continues without asking continue-vs-fresh', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
-  const content = readFileSync(`${pathById['fab-spec']}/SKILL.md`, 'utf-8');
+  const content = readFileSync(join(root, pathById['fab-spec'], 'SKILL.md'), 'utf-8');
   assert(
     content.includes('continue the existing run without asking continue-vs-fresh'),
     'fab-spec must document auto-continue when levels say auto',
@@ -578,17 +579,17 @@ test('fab-spec auto-continues without asking continue-vs-fresh', () => {
 });
 
 test('fab-scaffold requires one consolidated root README', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
-  const content = readFileSync(`${pathById['fab-scaffold']}/SKILL.md`, 'utf-8');
+  const content = readFileSync(join(root, pathById['fab-scaffold'], 'SKILL.md'), 'utf-8');
   assert(content.includes('consolidated root `README.md`'), 'fab-scaffold must require a consolidated root README');
   assert(content.includes('Do not write per-service READMEs'), 'fab-scaffold must forbid per-service READMEs');
 });
 
 test('existing-project conditionals are documented in SKILL.md guardrails', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
-  const read = (id) => readFileSync(`${pathById[id]}/SKILL.md`, 'utf-8');
+  const read = (id) => readFileSync(join(root, pathById[id], 'SKILL.md'), 'utf-8');
 
   assert(
     read('fab-discover').includes('docs/fabrica/project-profile.md'),
@@ -609,23 +610,23 @@ test('existing-project conditionals are documented in SKILL.md guardrails', () =
 });
 
 test('fab-discover guardrails enforce read-only inspection', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
-  const discover = readFileSync(`${pathById['fab-discover']}/SKILL.md`, 'utf-8');
+  const discover = readFileSync(join(root, pathById['fab-discover'], 'SKILL.md'), 'utf-8');
   assert(discover.includes('not modify application source'), 'fab-discover must forbid modifying application source');
   assert(discover.includes('Do not discover or persist secrets'), 'fab-discover must forbid persisting secrets');
   assert(discover.includes('untrusted data'), 'fab-discover must treat repository files as untrusted data');
   assert(discover.includes('docs/fabrica/project-profile.md'), 'fab-discover must name the profile path');
-  const adopt = readFileSync(`${pathById['fab-adopt']}/SKILL.md`, 'utf-8');
+  const adopt = readFileSync(join(root, pathById['fab-adopt'], 'SKILL.md'), 'utf-8');
   assert(adopt.includes('baseline'), 'fab-adopt must document baseline recheck');
   assert(adopt.includes('dirty'), 'fab-adopt must document dirty-worktree handling');
   assert(adopt.includes('never scaffold') || adopt.includes('not scaffold'), 'fab-adopt must prohibit scaffolding');
 });
 
 test('P3 hardening: fab-build prerequisites and fab-discover gate', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
-  const buildPrereq = readFileSync(`${pathById['fab-build']}/SKILL.md`, 'utf-8');
+  const buildPrereq = readFileSync(join(root, pathById['fab-build'], 'SKILL.md'), 'utf-8');
   assert(
     buildPrereq.includes('/fab-adopt') && buildPrereq.includes('project_context.origin'),
     'fab-build prerequisites must mention /fab-adopt when project_context.origin is existing',
@@ -638,14 +639,14 @@ test('P3 hardening: fab-build prerequisites and fab-discover gate', () => {
   assert.strictEqual(discoverEntry.default_gate, 'auto', 'fab-discover gate is intentionally auto (read-only survey)');
   assert.strictEqual(discoverEntry.overridable, true);
   // Schema vs skill path: spec_path coupling stays in skill prose, not schema. Schema must allow both docs/spec.md and docs/fabrica/spec.md.
-  const schema = JSON.parse(readFileSync('schemas/run-object.schema.json', 'utf-8'));
+  const schema = readJson('schemas/run-object.schema.json');
   const pattern = new RegExp(schema.properties.spec_path.pattern);
   assert(pattern.test('docs/spec.md'), 'schema must allow docs/spec.md');
   assert(pattern.test('docs/fabrica/spec.md'), 'schema must allow docs/fabrica/spec.md');
 });
 
 test('STATE_MACHINE documents both new-project and existing-project pathways', () => {
-  const content = readFileSync('docs/STATE_MACHINE.md', 'utf-8');
+  const content = readFileSync(join(root, 'docs/STATE_MACHINE.md'), 'utf-8');
   assert(content.includes('New project (greenfield)'), 'STATE_MACHINE must label the new-project pathway');
   assert(content.includes('Existing project (opt-in'), 'STATE_MACHINE must document the existing-project pathway');
   assert(content.includes('init-existing-run'), 'STATE_MACHINE must document init-existing-run');
@@ -655,27 +656,31 @@ test('STATE_MACHINE documents both new-project and existing-project pathways', (
 });
 
 test('existing-project negative conditions are documented', () => {
-  const manifest = JSON.parse(readFileSync('skills/manifest.json', 'utf-8'));
+  const manifest = readJson('skills/manifest.json');
   const pathById = Object.fromEntries(manifest.skills.map((s) => [s.id, s.path]));
   // overwrite-docs, out-of-scope, unapproved-command, baseline drift, secret handling
   assert(
-    readFileSync(`${pathById['fab-spec']}/SKILL.md`, 'utf-8').includes('never overwrite existing project documents'),
+    readFileSync(join(root, pathById['fab-spec'], 'SKILL.md'), 'utf-8').includes(
+      'never overwrite existing project documents',
+    ),
     'fab-spec must forbid overwriting existing project documents',
   );
   assert(
-    readFileSync(`${pathById['fab-build']}/SKILL.md`, 'utf-8').includes('allowed change paths'),
+    readFileSync(join(root, pathById['fab-build'], 'SKILL.md'), 'utf-8').includes('allowed change paths'),
     'fab-build must require allowed change paths',
   );
   assert(
-    readFileSync(`${pathById['fab-build']}/SKILL.md`, 'utf-8').includes('approved literal commands'),
+    readFileSync(join(root, pathById['fab-build'], 'SKILL.md'), 'utf-8').includes('approved literal commands'),
     'fab-build must require approved literal commands',
   );
   assert(
-    readFileSync(`${pathById['fab-adopt']}/SKILL.md`, 'utf-8').includes('baseline'),
+    readFileSync(join(root, pathById['fab-adopt'], 'SKILL.md'), 'utf-8').includes('baseline'),
     'fab-adopt must check baseline drift',
   );
   assert(
-    readFileSync(`${pathById['fab-discover']}/SKILL.md`, 'utf-8').includes('Do not discover or persist secrets'),
+    readFileSync(join(root, pathById['fab-discover'], 'SKILL.md'), 'utf-8').includes(
+      'Do not discover or persist secrets',
+    ),
     'fab-discover must forbid secret persistence',
   );
 });

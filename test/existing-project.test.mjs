@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { copyRepoFixture, root, run, test, assertPass, combined, validateStdin, runAll } from './_harness.mjs';
+import { schemaValid } from './_ajv.mjs';
 
 function makeLegacyApp({ git = false } = {}) {
   const dir = join(tmpdir(), `fabrica-legacy-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
@@ -100,7 +101,7 @@ test('existing-project run lifecycle validates end to end', () => {
     const runObject = JSON.parse(readFileSync(out, 'utf-8'));
 
     const discover = { ...runObject, current_step: 'fab-discover', next_action: '/fab-spec' };
-    assertPass(validateStdin(discover), 'discover update must validate');
+    assert(schemaValid(discover), 'discover update must validate');
 
     const spec = {
       ...discover,
@@ -109,7 +110,7 @@ test('existing-project run lifecycle validates end to end', () => {
       next_action: '/fab-plan',
       preferred_stack: { frontend: null, backend: null, database: null },
     };
-    assertPass(validateStdin(spec), 'existing spec update must validate');
+    assert(schemaValid(spec), 'existing spec update must validate');
 
     const adopt = {
       ...spec,
@@ -127,7 +128,7 @@ test('existing-project run lifecycle validates end to end', () => {
         },
       ],
     };
-    assertPass(validateStdin(adopt), 'adopt activation must validate');
+    assert(schemaValid(adopt), 'adopt activation must validate');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -193,7 +194,7 @@ test('existing-project e2e fixture workflow stays in-memory valid end to end', (
 
     // /fab-discover → /fab-spec (profile would be written to docs/fabrica/project-profile.md)
     runObject = { ...runObject, current_step: 'fab-discover', next_action: '/fab-spec' };
-    assertPass(validateStdin(runObject), 'discover update must validate');
+    assert(schemaValid(runObject), 'discover update must validate');
 
     // /fab-spec writes docs/fabrica/spec.md
     runObject = {
@@ -215,7 +216,7 @@ test('existing-project e2e fixture workflow stays in-memory valid end to end', (
         { name: 'auth-fix', purpose: 'Fix auth', status: 'pending', quality_score: null, artifacts: [], notes: null },
       ],
     };
-    assertPass(validateStdin(runObject), 'existing plan update must validate');
+    assert(schemaValid(runObject), 'existing plan update must validate');
 
     // /fab-adopt activates first stage
     runObject = {
@@ -234,7 +235,7 @@ test('existing-project e2e fixture workflow stays in-memory valid end to end', (
       app_stages: [{ ...runObject.app_stages[0], status: 'done', quality_score: 8, artifacts: ['src/index.js'] }],
       next_action: '/fab-eval auth-fix',
     };
-    assertPass(validateStdin(runObject), 'build done must validate');
+    assert(schemaValid(runObject), 'build done must validate');
     assert.strictEqual(runObject.app_stages[0].artifacts[0], 'src/index.js');
 
     // /fab-eval → /fab-integrate (no scaffold in existing-project mode)
@@ -243,7 +244,7 @@ test('existing-project e2e fixture workflow stays in-memory valid end to end', (
       current_step: 'fab-eval',
       next_action: '/fab-integrate',
     };
-    assertPass(validateStdin(runObject), 'eval must validate');
+    assert(schemaValid(runObject), 'eval must validate');
 
     // /fab-integrate → /fab-verify
     runObject = {
@@ -253,7 +254,7 @@ test('existing-project e2e fixture workflow stays in-memory valid end to end', (
       experiment_phase: 'phase_2_pipeline',
       next_action: '/fab-verify',
     };
-    assertPass(validateStdin(runObject), 'integrate must validate');
+    assert(schemaValid(runObject), 'integrate must validate');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

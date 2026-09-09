@@ -38,3 +38,24 @@ Repeat for each harness (`agents`, `claude`, `cursor`, `codex`, `opencode`):
 In one harness, repeat with `init-run --auto` and confirm
 only the documented automatic progression (spec, plan, integrate proceed;
 `/fab-verify` and `/fab-decide` still stop).
+
+## Non-auto gate fixtures (greenfield + existing-project)
+
+Run in one harness per track. Document pass/fail per row; do not fake
+unit tests of the model.
+
+| Case | Expect |
+|---|---|
+| Non-auto, rich idea text | Questions first (multiple-choice + custom); no `docs/spec.md` write |
+| Non-auto, blank stack replies | Defaults applied; labeled default in artifacts |
+| Non-auto, reject spec | No run-state advance; no durable spec |
+| Non-auto, approve spec then reject plan | Spec retained; no blueprint / no scaffold or adopt |
+| Auto | Writes allowed without approval wait; blueprint log has `auto` rows |
+| Existing non-auto without profile | Halt; no spec under `docs/fabrica/` |
+| Existing non-auto with profile | Questions change-scoped; paths under `docs/fabrica/` only |
+
+For the existing-project track, use `init-existing-run` and confirm
+`/fab-discover` (profile) precedes `/fab-spec`, and `/fab-adopt` never
+scaffolds. Assert no application source or phase artifact is written
+before the corresponding explicit approval, and each resulting
+`next_action` is correct.

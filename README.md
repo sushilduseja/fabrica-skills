@@ -73,6 +73,10 @@ live stats panel. One local server, web UI, no external services.
 
 Run `/fab-spec` in a fresh session after the restart above. If the agent builds the app directly instead of running the spec intake, you are still in the pre-install session: restart the session and invoke `/fab-spec` again. `/fab-plan` is a separate, later step — a checkpointed `/fab-spec` run never executes it for you.
 
+Expected stops without `--auto`: Turn 1 is questions only (short multiple-choice prompts with a recommended default plus a `Custom answer` path — answer, blank, customize, or explicitly skip each item). Then the agent shows the finished spec and waits for `approve spec`. Then `/fab-plan` shows architecture, stack, and stages and waits for `approve blueprint`. Anything else — a bare `yes`, questions, edits, silence — approves nothing and writes nothing.
+
+If the agent starts implementation before you approve: tell it to stop. Confirm which generated files to discard (only unauthorized artifacts go; the run file and approved artifacts stay). Then restart from the unchanged run state with the next `next_action`.
+
 The agent shows you a field called `next_action` after each step. Run that command next. Repeat until the run finishes.
 
 For a full walkthrough from idea to running app, see [examples/fabrica-skills-QUICKSTART.md](https://github.com/sushilduseja/fabrica-skills/blob/main/examples/fabrica-skills-QUICKSTART.md).

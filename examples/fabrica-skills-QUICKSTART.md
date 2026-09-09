@@ -101,6 +101,10 @@ and a small live stats panel. One local server, web UI, no external services.
 
 Expected outcome: the agent asks a few questions, then records your stack answers (or the defaults) in `preferred_stack`. In `--auto` mode it prints an assumption summary instead of waiting. Then `docs/spec.md` is written and `next_action` points to `/fab-plan`.
 
+Without `--auto`, the stops are exact: Turn 1 asks the intake questions as short multiple-choice prompts (recommended default called out, plus `Custom answer`) — no writes in that turn. The approval turn shows the spec and waits for `approve spec`; anything else writes nothing. `/fab-plan` then waits for `approve blueprint` the same way.
+
+If the agent starts building before approval: tell it to stop, confirm which unauthorized files to discard (approved artifacts and `fabrica.run.json` stay), and resume from the unchanged run state.
+
 ### Step 2: Blueprint
 
 ```

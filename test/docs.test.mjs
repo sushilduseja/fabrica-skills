@@ -118,4 +118,25 @@ test('no shipped skill sets disable-model-invocation (breaks /slash invocation)'
   }
 });
 
+test('fab-spec and fab-plan enforce non-auto turn boundaries and explicit approval', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const spec = readFileSync(resolve(root, 'skills', 'core', 'fab-spec', 'SKILL.md'), 'utf-8');
+  const plan = readFileSync(resolve(root, 'skills', 'core', 'fab-plan', 'SKILL.md'), 'utf-8');
+  for (const [id, text] of [
+    ['fab-spec', spec],
+    ['fab-plan', plan],
+  ]) {
+    assert(text.includes('hard turn boundary'), `${id} must name the hard turn boundary`);
+    assert(text.includes('Custom answer'), `${id} must require the custom-answer path`);
+    assert(text.includes(`gate_levels.${id}`), `${id} must resolve the effective gate from gate_levels first`);
+  }
+  assert(spec.includes('Turn 1 is questions only'), 'fab-spec must require a questions-only first turn');
+  assert(spec.includes('approve spec'), 'fab-spec must require artifact-bound approval');
+  assert(plan.includes('approve blueprint'), 'fab-plan must require artifact-bound approval');
+  assert(
+    plan.includes('Interview decisions'),
+    'fab-plan must require the durable Interview decisions log in the blueprint',
+  );
+});
+
 runAll();

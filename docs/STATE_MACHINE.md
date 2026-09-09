@@ -276,5 +276,7 @@ Beyond JSON Schema, the validator rejects:
 | ------------ | ------------------------------------------------------------------------------ |
 | `auto`       | Agent may proceed without pausing, while still validating state before writes. |
 | `checkpoint` | Agent must show the plan or result before file mutation.                       |
+
+Checkpoint is a hard turn boundary: at a checkpoint gate the agent ends its turn after the questions or after the approval prompt — it never continues into writes in the same turn. Approval is bound to the artifact (`approve spec`, `approve blueprint`); a bare `yes`, questions, edits, or silence approve nothing and change nothing. `--auto` (or `gate_levels` already `auto`) is the only bypass, and only for overridable checkpoints.
 | `review`     | Local checks may run; external, destructive, or deploy actions need approval.  |
 | `full`       | Agent needs approval before start and confirmation after completion.           |

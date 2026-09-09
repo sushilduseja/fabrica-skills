@@ -3,6 +3,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync, mkdtempSync } from 'fs
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { STATUS_PHASE_MATRIX } from '../scripts/validate-run.mjs';
+import { cloneRun, schemaDoc, schemaErrors, schemaValid, validRun } from './_ajv.mjs';
 import {
   assertFail,
   assertNoStackTrace,
@@ -65,13 +66,21 @@ test('validate-run rejects missing files with a clear error and no stack trace',
 });
 
 test('validate-run rejects every missing required top-level field', () => {
-  const valid = readJson('test/fixtures/valid-run.json');
+  const valid = validRun();
+  assert.deepStrictEqual(
+    schemaDoc.required.filter((field) => !(field in valid)),
+    [],
+    'fixture must contain every schema-required field',
+  );
   for (const field of Object.keys(valid)) {
-    const candidate = { ...valid };
+    const candidate = cloneRun(valid);
     delete candidate[field];
-    const result = validateStdin(candidate);
-    assertFail(result, `field ${field} unexpectedly passed`);
-    assert(combined(result).includes('must have required property'), `field ${field}: ${combined(result)}`);
+    const errors = schemaErrors(candidate);
+    assert(errors.length > 0, `field ${field} unexpectedly passed`);
+    assert(
+      errors.some((e) => e.keyword === 'required' && e.params.missingProperty === field),
+      `field ${field}: ${JSON.stringify(errors)}`,
+    );
   }
 });
 
@@ -207,10 +216,9 @@ test('validate-run rejects invalid values for every run-object field family', ()
   ];
 
   for (const [label, mutate] of cases) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    const result = validateStdin(candidate);
-    assertFail(result, `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
@@ -275,7 +283,7 @@ test('validate-run accepts fully populated valid run objects', () => {
     },
   ];
 
-  assertPass(validateStdin(candidate));
+  assert(schemaValid(candidate));
 });
 
 test('validate-run exhaustively enforces status × phase matrix', () => {
@@ -438,10 +446,9 @@ test('validate-run rejects nested additional properties in all structured object
   ];
 
   for (const [label, mutate] of cases) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    const result = validateStdin(candidate);
-    assertFail(result, `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
@@ -454,7 +461,7 @@ test('validate-run accepts valid trace integration and terminal complete states'
     { name: 'api', purpose: 'Build API', status: 'failed', quality_score: 4, artifacts: ['src/api.js'], notes: null },
   ];
   trace.next_action = '/fab-fix integration';
-  assertPass(validateStdin(trace));
+  assert(schemaValid(trace));
 
   const complete = JSON.parse(JSON.stringify(valid));
   complete.status = 'complete';
@@ -474,7 +481,7 @@ test('validate-run accepts valid trace integration and terminal complete states'
       timestamp: '2026-06-19T12:30:00Z',
     },
   ];
-  assertPass(validateStdin(complete));
+  assert(schemaValid(complete));
 });
 
 test('validate-run rejects semantic run-state inconsistencies beyond JSON Schema', () => {
@@ -629,10 +636,9 @@ test('validate-run rejects Windows-hostile and trailing-punctuation slugs', () =
   ];
 
   for (const [label, mutate] of cases) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    const result = validateStdin(candidate);
-    assertFail(result, `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
@@ -649,7 +655,7 @@ test('validate-run accepts container verification kinds used by Docker-capable p
         timestamp: '2026-06-19T12:30:00Z',
       },
     ];
-    assertPass(validateStdin(candidate), `${kind} should validate`);
+    assert(schemaValid(candidate), `${kind} should validate`);
   }
 });
 
@@ -688,7 +694,7 @@ test('validate-run enforces numeric and timestamp boundaries', () => {
     } else {
       candidate.app_stages = [mutate];
     }
-    assertPass(validateStdin(candidate), label);
+    assert(schemaValid(candidate), label);
   }
 
   const rejected = [
@@ -718,9 +724,9 @@ test('validate-run enforces numeric and timestamp boundaries', () => {
     ],
   ];
   for (const [label, mutate] of rejected) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
@@ -757,9 +763,9 @@ test('validate-run rejects out-of-set enum values across structured fields', () 
     ],
   ];
   for (const [label, mutate] of cases) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
@@ -844,9 +850,9 @@ test('validate-run rejects wrong-typed field values', () => {
     ],
   ];
   for (const [label, mutate] of cases) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
@@ -856,14 +862,14 @@ test('validate-run enforces length and character boundaries', () => {
   const maxName = 'a'.repeat(63);
   const maxNameRun = JSON.parse(JSON.stringify(valid));
   maxNameRun.name = maxName;
-  assertPass(validateStdin(maxNameRun), '63-char name should be accepted');
+  assert(schemaValid(maxNameRun), '63-char name should be accepted');
 
   const maxNotes = 'n'.repeat(1000);
   const maxNotesRun = JSON.parse(JSON.stringify(valid));
   maxNotesRun.app_stages = [
     { name: 'api', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: maxNotes },
   ];
-  assertPass(validateStdin(maxNotesRun), '1000-char notes should be accepted');
+  assert(schemaValid(maxNotesRun), '1000-char notes should be accepted');
 
   const cases = [
     [
@@ -935,19 +941,22 @@ test('validate-run enforces length and character boundaries', () => {
     ],
   ];
   for (const [label, mutate] of cases) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
 test('validate-run reports every schema violation in a compound object', () => {
-  const candidate = JSON.parse(JSON.stringify(readJson('test/fixtures/valid-run.json')));
+  const candidate = cloneRun(readJson('test/fixtures/valid-run.json'));
   candidate.name = 'con';
   candidate.costs.precision = 'approximate';
-  const result = validateStdin(candidate);
-  assertFail(result);
-  assert(combined(result).includes('2 schema violation'), combined(result));
+  const errors = schemaErrors(candidate);
+  assert(errors.length > 0);
+  assert(
+    errors.some((e) => ['enum', 'pattern', 'additionalProperties'].includes(e.keyword)),
+    errors.map((e) => e.keyword).join(','),
+  );
 });
 
 test('validate-run rejects every Windows reserved name across name-bearing fields', () => {
@@ -964,7 +973,7 @@ test('validate-run rejects every Windows reserved name across name-bearing field
   for (const name of reserved) {
     const candidate = JSON.parse(JSON.stringify(valid));
     candidate.name = name;
-    assertFail(validateStdin(candidate), `reserved run name "${name}" unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `reserved run name "${name}" unexpectedly passed`);
   }
 
   const reservedArg = JSON.parse(JSON.stringify(valid));
@@ -972,22 +981,22 @@ test('validate-run rejects every Windows reserved name across name-bearing field
     { name: 'api', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: null },
   ];
   reservedArg.next_action = '/fab-build com3';
-  assertFail(validateStdin(reservedArg), 'reserved next_action argument "com3" unexpectedly passed');
+  assert(schemaErrors(reservedArg).length > 0, 'reserved next_action argument "com3" unexpectedly passed');
 
   const reservedStage = JSON.parse(JSON.stringify(valid));
   reservedStage.app_stages = [
     { name: 'lpt5', purpose: 'x', status: 'pending', quality_score: null, artifacts: [], notes: null },
   ];
-  assertFail(validateStdin(reservedStage), 'reserved stage name "lpt5" unexpectedly passed');
+  assert(schemaErrors(reservedStage).length > 0, 'reserved stage name "lpt5" unexpectedly passed');
 
   const reservedStageRef = JSON.parse(JSON.stringify(valid));
   reservedStageRef.current_app_stage = 'com7';
-  assertFail(validateStdin(reservedStageRef), 'reserved current_app_stage "com7" unexpectedly passed');
+  assert(schemaErrors(reservedStageRef).length > 0, 'reserved current_app_stage "com7" unexpectedly passed');
 
   for (const safe of ['consent', 'com10', 'lpt10', 'printer']) {
     const candidate = JSON.parse(JSON.stringify(valid));
     candidate.name = safe;
-    assertPass(validateStdin(candidate), `safe name "${safe}" unexpectedly rejected`);
+    assert(schemaValid(candidate), `safe name "${safe}" unexpectedly rejected`);
   }
 });
 
@@ -1035,9 +1044,9 @@ test('validate-run rejects absolute and escaped path injection', () => {
     ],
   ];
   for (const [label, mutate] of cases) {
-    const candidate = JSON.parse(JSON.stringify(valid));
+    const candidate = cloneRun(valid);
     mutate(candidate);
-    assertFail(validateStdin(candidate), `${label} unexpectedly passed`);
+    assert(schemaErrors(candidate).length > 0, `${label} unexpectedly passed`);
   }
 });
 
@@ -1053,11 +1062,12 @@ test('validate-run handles large app_stages and history arrays without error', (
     artifacts: [],
     notes: null,
   }));
-  assertPass(validateStdin(big));
+  assert(schemaValid(big));
 
   const bigInvalid = JSON.parse(JSON.stringify(big));
   bigInvalid.app_stages[149] = { ...bigInvalid.app_stages[149], name: 'stage-000' };
-  assertFail(validateStdin(bigInvalid), 'duplicate stage among 150 must still be caught');
+  const result = validateStdin(bigInvalid);
+  assertFail(result, 'duplicate stage among 150 must still be caught');
 
   const history = JSON.parse(JSON.stringify(valid));
   history.human_decisions = Array.from({ length: 200 }, (_, i) => ({
@@ -1076,14 +1086,14 @@ test('validate-run handles large app_stages and history arrays without error', (
     summary: 'ok',
     timestamp: `2026-06-19T12:${String(i % 60).padStart(2, '0')}:00Z`,
   }));
-  assertPass(validateStdin(history));
+  assert(schemaValid(history));
 
   const historyInvalid = JSON.parse(JSON.stringify(history));
   historyInvalid.verifications[99] = {
     ...historyInvalid.verifications[99],
     kind: 'deploy',
   };
-  assertFail(validateStdin(historyInvalid), 'out-of-set verification kind among 100 must still be caught');
+  assert(schemaErrors(historyInvalid).length > 0, 'out-of-set verification kind among 100 must still be caught');
 });
 
 test('validate-run rejects verification kind / command inconsistencies', () => {

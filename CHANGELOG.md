@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3 — 2026-09-09
+
+### Fixed
+
+- Non-auto spec/plan gates hardened in skill prose: questions-only first turn (multiple-choice plus custom answer, no inference from idea text), hard turn boundaries, artifact-bound approval (`approve spec` / `approve blueprint`, anything else writes nothing), and a durable Interview decisions log in the blueprint labeled `operator` | `default` | `auto`.
+
 ## 1.2.2 — 2026-09-09
 
 ### Fixed
