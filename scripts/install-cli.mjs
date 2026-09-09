@@ -6,11 +6,16 @@
  * carries a `.fabrica-managed.json` marker; update/uninstall only touch
  * marked directories and never foreign skills.
  *
+ * Install is target-aware: an explicit `--agent=<name>` (or `FABRICA_AGENT`)
+ * installs one harness; otherwise every supported harness root is projected.
+ * Copied skills load at session start, so every install/update message ends
+ * with the required restart step and `doctor` verifies readiness per harness.
+ *
  * The source-repo contributor workflow (`npm run setup` + `.skills/`) is
  * unchanged and stays in scripts/link-skills.mjs.
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
-import { dirname, isAbsolute, join, relative, sep } from 'path';
+import { basename, dirname, isAbsolute, join, relative, sep } from 'path';
 import { homedir } from 'os';
 import { randomUUID } from 'crypto';
 import { spawnSync } from 'child_process';
@@ -41,6 +46,18 @@ export const HARNESS = {
 };
 
 export const DEFAULT_AGENTS = ['agents', 'claude', 'cursor', 'codex', 'opencode'];
+
+/**
+ * Per-harness activation guidance. Skills load at session start, so a newly
+ * installed project skill is only discoverable after a session restart.
+ */
+export const HARNESS_META = {
+  agents: { label: 'Generic agent (.agents)', restart: 'Restart your agent session' },
+  claude: { label: 'Claude Code (.claude)', restart: 'Restart your Claude Code session' },
+  cursor: { label: 'Cursor (.cursor)', restart: 'Reload the window / restart your Cursor session' },
+  codex: { label: 'Codex CLI (.codex)', restart: 'Restart your Codex session' },
+  opencode: { label: 'opencode (.opencode)', restart: 'Restart your opencode session' },
+};
 
 const MANAGED_FILENAME = '.fabrica-managed.json';
 
@@ -227,6 +244,49 @@ function resolveHarnessRoots({ agents, global, cwd }) {
 }
 
 /**
+ * Determine the target harness when it can be known without guessing.
+ * Explicit `FABRICA_AGENT` (or `FABRICA_HARNESS`) wins; otherwise null
+ * (caller falls back to the default full set). Ambient harness variables
+ * are intentionally not sniffed — a wrong single-root guess would hide
+ * every other harness.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{ keys: string[], source: string } | null}
+ */
+export function detectActiveHarness(env = process.env) {
+  const explicit = String(env.FABRICA_AGENT || env.FABRICA_HARNESS || '').trim();
+  if (!explicit) return null;
+  const keys = explicit
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const key of keys) {
+    if (!HARNESS[key]) {
+      fail(`Unknown agent: ${key} (expected one of: ${Object.keys(HARNESS).join(', ')})`);
+    }
+  }
+  return { keys, source: 'env' };
+}
+
+/**
+ * Resolve the harness keys for an install/update: explicit `--agent` first,
+ * then `FABRICA_AGENT`/`FABRICA_HARNESS`, then the default full set.
+ * @param {{ agents: string[] | null, env?: NodeJS.ProcessEnv }} params
+ * @returns {{ keys: string[], mode: string }}
+ */
+export function resolveInstallKeys({ agents, env = process.env }) {
+  if (agents && agents.length > 0) {
+    for (const key of agents) {
+      if (!HARNESS[key]) {
+        fail(`Unknown agent: ${key} (expected one of: ${Object.keys(HARNESS).join(', ')})`);
+      }
+    }
+    return { keys: agents, mode: agents.length === 1 ? 'single' : 'multi' };
+  }
+  const detected = detectActiveHarness(env);
+  if (detected) return { keys: detected.keys, mode: 'env' };
+  return { keys: DEFAULT_AGENTS, mode: 'default' };
+}
+/**
  * Copy the packaged skills tree into the versioned global catalog and record CURRENT.
  * @param {string} pkgRoot
  * @param {string} version
@@ -344,9 +404,17 @@ function cmdInstallOrUpdate({ pkgRoot, version, cwd, flags, verb }) {
   if (flags.global) ensureGlobalCatalog(pkgRoot, version);
   const catalog = catalogRoot({ global: flags.global, pkgRoot, version });
   const manifest = loadManifest(pkgRoot);
-  const roots = resolveHarnessRoots({ agents: flags.agents, global: flags.global, cwd });
+  const { keys } = resolveInstallKeys({ agents: flags.agents });
+  const roots = resolveHarnessRoots({ agents: keys, global: flags.global, cwd });
   projectAllSkills({ manifest, catalog, roots, version, scope });
   console.log(`[fabrica-skills] ${verb} ${manifest.skills.length} skills × ${roots.length} harness roots (${scope})`);
+  for (const { key, root } of roots) {
+    const meta = HARNESS_META[key];
+    console.log(`  - ${key}: ${root} (${meta ? meta.restart : 'Restart your agent session'} to load /fab-spec)`);
+  }
+  console.log(
+    'next: restart your agent session, then run `/fab-spec` in a fresh session; verify with `npx fabrica-skills@latest doctor`',
+  );
 }
 
 /**
@@ -373,13 +441,57 @@ function cmdUninstall({ pkgRoot, cwd, flags }) {
 }
 
 /**
+ * Post-install verification: validate managed files per selected harness and
+ * report activation readiness. Copied files are not yet discoverable — the
+ * operator must restart the agent session first.
+ * @param {{ pkgRoot: string, cwd: string, flags: CliFlags }} params
+ * @returns {void}
+ */
+function cmdDoctor({ pkgRoot, cwd, flags }) {
+  const scope = flags.global ? 'global' : 'project';
+  const manifest = loadManifest(pkgRoot);
+  const keys = flags.agents || DEFAULT_AGENTS;
+  const roots = resolveHarnessRoots({ agents: keys, global: flags.global, cwd });
+  console.log('fabrica-skills doctor');
+  console.log(`scope: ${scope}`);
+  let incomplete = 0;
+  for (const { key, root } of roots) {
+    const missing = [];
+    for (const skill of manifest.skills) {
+      const dir = join(root, skill.id);
+      const marker = readMarker(dir);
+      if (!marker || marker.managed_by !== 'fabrica-skills' || marker.skill_id !== skill.id) {
+        missing.push(skill.id);
+        continue;
+      }
+      if (!existsSync(join(dir, 'SKILL.md'))) missing.push(skill.id);
+    }
+    const present = manifest.skills.length - missing.length;
+    if (missing.length === 0) {
+      console.log(
+        `  ${key}  ${present}/${manifest.skills.length}  ${root} (copied — restart session to use /fab-spec)`,
+      );
+    } else {
+      incomplete += 1;
+      console.log(`  ${key}  ${present}/${manifest.skills.length}  (incomplete: missing ${missing.join(', ')})`);
+    }
+  }
+  if (incomplete === 0) {
+    console.log('ready: restart your agent session, then run `/fab-spec` in a fresh session');
+  } else {
+    console.log('not ready: run `npx fabrica-skills@latest install [--agent=<name>]`, then restart your agent session');
+    process.exitCode = 1;
+  }
+}
+
+/**
  * @param {{ pkgRoot: string, version: string, cwd: string, flags: CliFlags }} params
  * @returns {void}
  */
 function cmdStatus({ pkgRoot, version, cwd, flags }) {
   const scope = flags.global ? 'global' : 'project';
   const manifestIds = loadManifest(pkgRoot).skills.map((s) => s.id);
-  const roots = resolveHarnessRoots({ agents: null, global: flags.global, cwd });
+  const roots = resolveHarnessRoots({ agents: flags.agents, global: flags.global, cwd });
   console.log('fabrica-skills status');
   console.log(`scope: ${scope}`);
   console.log(`package: ${version}`);
@@ -392,8 +504,11 @@ function cmdStatus({ pkgRoot, version, cwd, flags }) {
         if (marker && marker.managed_by === 'fabrica-skills') present += 1;
       }
     }
-    console.log(`  ${key}  ${present}/${manifestIds.length}  ${present === 0 ? '(not installed)' : root}`);
+    console.log(
+      `  ${key}  ${present}/${manifestIds.length}  ${present === 0 ? '(not installed)' : `${root} (copied — restart session to use /fab-spec)`}`,
+    );
   }
+  console.log('activation: skills load at session start — restart your agent session, then verify with `doctor`');
   const runPath = join(cwd, 'fabrica.run.json');
   if (existsSync(runPath)) {
     try {
@@ -432,12 +547,34 @@ function readRunObjectNamePattern(pkgRoot) {
 }
 
 /**
+ * Default run name from the current folder name, sanitized to the run-object
+ * slug pattern. Falls back to 'app' when the folder name cannot be salvaged
+ * (empty, reserved name, or no valid characters). The name is only a label
+ * inside fabrica.run.json; it never selects or creates a directory.
+ * @param {string} cwd Working directory (the project root).
+ * @param {RegExp} namePattern Slug pattern from schemas/run-object.schema.json.
+ * @returns {string}
+ */
+function defaultRunName(cwd, namePattern) {
+  const raw = basename(cwd)
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^[^a-z0-9]+/, '')
+    .replace(/[^a-z0-9]+$/, '')
+    .slice(0, 63)
+    .replace(/[^a-z0-9]+$/, '');
+  if (raw && namePattern.test(raw)) return raw;
+  return 'app';
+}
+
+/**
  * @param {{ pkgRoot: string, cwd: string, flags: CliFlags }} params
  * @returns {void}
  */
 function cmdInitRun({ pkgRoot, cwd, flags }) {
-  const name = flags.name || 'app';
-  if (!readRunObjectNamePattern(pkgRoot).test(name)) {
+  const namePattern = readRunObjectNamePattern(pkgRoot);
+  const name = flags.name || defaultRunName(cwd, namePattern);
+  if (!namePattern.test(name)) {
     fail(`Invalid --name "${name}": must be a lowercase slug (letters, digits, ., _, -)`);
   }
   const outPath = isAbsolute(flags.out || '') ? flags.out : join(cwd, flags.out || 'fabrica.run.json');
@@ -545,8 +682,9 @@ function assertRepoRelativePath(value, flag) {
  * @returns {void}
  */
 function cmdInitExistingRun({ pkgRoot, cwd, flags }) {
-  const name = flags.name || 'app';
-  if (!readRunObjectNamePattern(pkgRoot).test(name)) {
+  const namePattern = readRunObjectNamePattern(pkgRoot);
+  const name = flags.name || defaultRunName(cwd, namePattern);
+  if (!namePattern.test(name)) {
     fail(`Invalid --name "${name}": must be a lowercase slug (letters, digits, ., _, -)`);
   }
   const projectRoot = flags.root || '.';
@@ -635,7 +773,7 @@ function cmdValidate({ pkgRoot, flags }) {
 
 /**
  * Run the fabrica-skills CLI command.
- * @param {string} cmd install | update | uninstall | status | validate | init-run | init-existing-run
+ * @param {string} cmd install | update | uninstall | status | doctor | validate | init-run | init-existing-run
  * @param {string[]} argv Flags and positionals after the command.
  * @param {{pkgRoot: string, version: string}} ctx Package context.
  */
@@ -661,6 +799,9 @@ export async function runCli(cmd, argv, ctx) {
     case 'status':
       cmdStatus({ pkgRoot, version, cwd, flags });
       break;
+    case 'doctor':
+      cmdDoctor({ pkgRoot, cwd, flags });
+      break;
     case 'validate':
       cmdValidate({ pkgRoot, flags });
       break;
@@ -672,7 +813,7 @@ export async function runCli(cmd, argv, ctx) {
       break;
     default:
       fail(
-        `Unknown command: ${cmd} (expected install, update, uninstall, status, validate, init-run, or init-existing-run)`,
+        `Unknown command: ${cmd} (expected install, update, uninstall, status, doctor, validate, init-run, or init-existing-run)`,
       );
       break;
   }

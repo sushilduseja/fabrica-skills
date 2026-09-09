@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- `/fab-spec` fallthrough after install: install/update messages now name the exact harness paths, the required session restart, and `doctor` verification; `status` distinguishes `copied` from `discoverable after restart`
+- Install is target-aware: `--agent=<name>` (or `FABRICA_AGENT`) projects a single harness; the five-root default is kept for deliberate multi-harness installs
+
+### Added
+- `fabrica-skills doctor [--global] [--agent=list]` post-install verification per harness (exits nonzero while incomplete, never touches `fabrica.run.json`)
+- Manual release harness matrix at `docs/RELEASE_HARNESS_MATRIX.md` (install, restart, invoke `/fab-spec`, confirm checkpoint and `next_action: /fab-plan`, then `/fab-plan` independently)
+
+### Changed
+- `init-run` and `init-existing-run` default the run name to the current folder name (sanitized to a lowercase slug, `app` as fallback); `--name <slug>` remains as an override. Primary examples no longer show `--name`.
+
 ## 1.2.0 — 2026-09-08
 
 ### Added

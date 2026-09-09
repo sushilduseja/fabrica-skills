@@ -19,7 +19,7 @@ npx fabrica-skills@latest install
 npx fabrica-skills@latest status
 ```
 
-The first command copies 16 skills into the skill folders your agent already reads: `.agents/`, `.claude/`, `.cursor/`, `.codex/`, `.opencode/`. It adds nothing to `package.json` and installs no dependency. The second command lists 16 installed skills. Your agent can now see them.
+The first command copies 16 skills into the skill folders your agent already reads: `.agents/`, `.claude/`, `.cursor/`, `.codex/`, `.opencode/`. It adds nothing to `package.json` and installs no dependency. The second command lists 16 installed skills per harness root as `copied`. Skills load at session start: restart your agent session first. Your agent can then see `/fab-spec` in a fresh session. Verify with `npx fabrica-skills@latest doctor`.
 
 ## Two choices you control
 
@@ -44,7 +44,7 @@ By default, the agent stops and shows you the spec and the plan before it writes
 Add `--auto` to skip the spec, plan, and integrate approval stops. The agent writes the spec, the plan, and the wiring without waiting, then shows you a short summary of what it assumed.
 
 ```
-npx fabrica-skills@latest init-run --name my-app --auto
+npx fabrica-skills@latest init-run --auto
 ```
 
 Two steps always stop for you, with or without `--auto`:
@@ -54,11 +54,13 @@ Two steps always stop for you, with or without `--auto`:
 
 ## First run
 
-Create a run file.
+Create a run file. Run this in your project folder — the command works where you already are.
 
 ```
-npx fabrica-skills@latest init-run --name my-app
+npx fabrica-skills@latest init-run
 ```
+
+The run takes its name from the current folder (sanitized to a lowercase slug, `app` as fallback). `--name <slug>` overrides it. The name is only a label in `fabrica.run.json`; it creates no folder and selects no directory.
 
 Ask your agent to start intake.
 
@@ -68,6 +70,8 @@ Idea: TaskFlow — a local-first team task board. Tasks in three columns
 (todo / doing / done) with move, title + notes, text search, and a small
 live stats panel. One local server, web UI, no external services.
 ```
+
+Run `/fab-spec` in a fresh session after the restart above. If the agent builds the app directly instead of running the spec intake, you are still in the pre-install session: restart the session and invoke `/fab-spec` again. `/fab-plan` is a separate, later step — a checkpointed `/fab-spec` run never executes it for you.
 
 The agent shows you a field called `next_action` after each step. Run that command next. Repeat until the run finishes.
 
@@ -96,10 +100,10 @@ Full diagram: [docs/STATE_MACHINE.md](https://github.com/sushilduseja/fabrica-sk
 To manage a pre-existing repository (never for a greenfield run), create the run inside that repository:
 
 ```
-npx fabrica-skills@latest init-existing-run --name my-app
+npx fabrica-skills@latest init-existing-run
 ```
 
-Then follow the existing-project flow: `/fab-discover` (read-only inspection → `docs/fabrica/project-profile.md`) → `/fab-spec` → `/fab-plan` → `/fab-adopt` (activates work, never scaffolds) → build, eval, integrate, and verify as usual. Spec and blueprint live under `docs/fabrica/`. Adoption rechecks the recorded Git baseline and stops on drift, or on uncommitted work without your explicit decision. Limits: one repository per run; Fabrica never replaces your build, tests, or CI.
+Install first, restart your agent session, then follow the existing-project flow: `/fab-discover` (read-only inspection → `docs/fabrica/project-profile.md`) → `/fab-spec` → `/fab-plan` → `/fab-adopt` (activates work, never scaffolds) → build, eval, integrate, and verify as usual. Spec and blueprint live under `docs/fabrica/`. Adoption rechecks the recorded Git baseline and stops on drift, or on uncommitted work without your explicit decision. Limits: one repository per run; Fabrica never replaces your build, tests, or CI.
 
 ## Every skill, one line each
 
@@ -164,6 +168,14 @@ npx fabrica-skills@latest install --global
 Skills go to your home folder, not the project folder. A global install resolves through `os.homedir()` to your real home directory: `C:\Users\<name>` on Windows, `/home/<name>` on Linux, `/Users/<name>` on macOS.
 
 `--global` copies skills only. It does not put a `fabrica-skills` command on your PATH. Always run the CLI through `npx`.
+
+### Install for one harness only
+
+```
+npx fabrica-skills@latest install --agent=claude
+```
+
+Use one of `agents`, `claude`, `cursor`, `codex`, `opencode` (for example `--agent=claude`). `FABRICA_AGENT=<name>` selects the same single root for a bare `install`. Omit the flag to project all five roots. Verify any selection with `npx fabrica-skills@latest doctor [--agent=<name>]`.
 
 ### Pin the version for your team
 
@@ -236,8 +248,9 @@ fabrica-skills/
 | `node` is not found | Install Node.js 16.7 or newer. Then run the install command again. |
 | `npx` asks "Ok to proceed?" | Answer `y` once, or run `npx -y fabrica-skills@latest install`. |
 | Installed skills are older than the version you want | Run `npx fabrica-skills@latest update`, then `status` again. |
-| Your agent does not see the slash commands | Point it at a real install path, e.g. `.agents/skills/fab-spec/SKILL.md` or `.claude/skills/fab-spec/SKILL.md` (also `.cursor/skills`, `.codex/skills`, `.opencode/skills`). Or use `.claude-plugin/plugin.json` if your agent supports it. Run `npx fabrica-skills@latest status` to confirm 16/16. |
-| `fabrica.run.json` is missing | Prefer `npx fabrica-skills@latest init-run --name <slug>` (add `--auto` to skip spec/plan/integrate stops). Or start with `/fab-spec`, which can create the file. `/fab-spec` remains the only skill entry point. |
+| Your agent does not see the slash commands | Restart your agent session first — skills load at session start. Then run `npx fabrica-skills@latest doctor` to confirm 16/16, and point the agent at a real install path in a fresh session, e.g. `.agents/skills/fab-spec/SKILL.md` or `.claude/skills/fab-spec/SKILL.md` (also `.cursor/skills`, `.codex/skills`, `.opencode/skills`). Or use `.claude-plugin/plugin.json` if your agent supports it. |
+| `/fab-spec` falls through to normal app-building | You are in the pre-install session. Restart the session, invoke `/fab-spec` again in the fresh session, and confirm `next_action` is `/fab-plan` before running `/fab-plan` separately. |
+| `fabrica.run.json` is missing | Prefer `npx fabrica-skills@latest init-run` (add `--auto` to skip spec/plan/integrate stops). Or start with `/fab-spec`, which can create the file. `/fab-spec` remains the only skill entry point. |
 | A stage is blocked | Run the exact command in `next_action` (usually `/fab-fix <stage>`). Stage names come from `next_action` or `app_stages` in `fabrica.run.json` (or `docs/blueprint.md`) — character-for-character. Do not invent names or copy sample names from docs unless they match your run. Paste the failing output with the command. |
 | Cost shows `unknown` | Expected. This means spend has not been measured yet. |
 | The agent wants to deploy externally | Stop, unless you want this. This tool builds local prototypes first. |

@@ -564,4 +564,169 @@ test('init-existing-run rejects unsafe --root and unknown flags', () => {
   }
 });
 
+test('install prints activation guidance with exact paths and doctor', () => {
+  const ctx = setup();
+  try {
+    const result = cli(ctx.pkg, ['install', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    const out = combined(result);
+    assert(out.includes('installed 16 skills × 1 harness roots'), out);
+    assert(out.includes('  - claude:'), out);
+    assert(out.includes(join(ctx.project, '.claude', 'skills')), out);
+    assert(out.includes('restart'), out);
+    assert(out.includes('/fab-spec'), out);
+    assert(out.includes('fresh session'), out);
+    assert(out.includes('doctor'), out);
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('FABRICA_AGENT=claude bare install writes only the claude root', () => {
+  const ctx = setup();
+  try {
+    const result = run([join(ctx.pkg, 'bin', 'fabrica-skills.mjs'), 'install'], {
+      cwd: ctx.project,
+      env: { HOME: ctx.home, USERPROFILE: ctx.home, FABRICA_AGENT: 'claude', FABRICA_HARNESS: '' },
+    });
+    assertPass(result, combined(result));
+    assert(existsSync(join(ctx.project, '.claude', 'skills', 'fab-spec', 'SKILL.md')));
+    assert(!existsSync(join(ctx.project, '.agents')), 'non-target roots must stay untouched');
+    assert(!existsSync(join(ctx.project, '.cursor')), 'non-target roots must stay untouched');
+    assert(!existsSync(join(ctx.project, '.codex')), 'non-target roots must stay untouched');
+    assert(!existsSync(join(ctx.project, '.opencode')), 'non-target roots must stay untouched');
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('unknown agent fails cleanly without a stack trace', () => {
+  const ctx = setup();
+  try {
+    const result = cli(ctx.pkg, ['install', '--agent=nope'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('Unknown agent'), combined(result));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('doctor reports not-ready before install and ready after', () => {
+  const ctx = setup();
+  try {
+    let result = cli(ctx.pkg, ['doctor', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertFail(result);
+    assert(combined(result).includes('not ready'), combined(result));
+    assert(combined(result).includes('install'), combined(result));
+    assert(!existsSync(join(ctx.project, 'fabrica.run.json')), 'doctor must not create a run object');
+    assertPass(cli(ctx.pkg, ['install', '--agent=claude'], { cwd: ctx.project, home: ctx.home }));
+    result = cli(ctx.pkg, ['doctor', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    const out = combined(result);
+    assert(out.includes('ready'), out);
+    assert(out.includes('restart'), out);
+    assert(out.includes('/fab-spec'), out);
+    assert(out.includes('fresh session'), out);
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('status distinguishes copied skills from undiscoverable ones', () => {
+  const ctx = setup();
+  try {
+    let result = cli(ctx.pkg, ['status', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    assert(combined(result).includes('(not installed)'), combined(result));
+    assertPass(cli(ctx.pkg, ['install', '--agent=claude'], { cwd: ctx.project, home: ctx.home }));
+    result = cli(ctx.pkg, ['status', '--agent=claude'], { cwd: ctx.project, home: ctx.home });
+    assertPass(result, combined(result));
+    const out = combined(result);
+    assert(out.includes('copied — restart session to use /fab-spec'), out);
+    assert(out.includes('activation: skills load at session start'), out);
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('doctor leaves run-object gate defaults unchanged', () => {
+  const ctx = setup();
+  try {
+    const out = join(ctx.project, 'fabrica.run.json');
+    assertPass(cli(ctx.pkg, ['init-run', '--name', 'gates-app'], { cwd: ctx.project, home: ctx.home }));
+    const manifest = JSON.parse(readFileSync(join(ctx.pkg, 'skills/manifest.json'), 'utf-8'));
+    const before = JSON.parse(readFileSync(out, 'utf-8'));
+    assert.deepStrictEqual(Object.keys(before.gate_levels).sort(), manifest.skills.map((s) => s.id).sort());
+    const doctor = cli(ctx.pkg, ['doctor'], { cwd: ctx.project, home: ctx.home });
+    assertFail(doctor);
+    assert.strictEqual(
+      readFileSync(out, 'utf-8'),
+      JSON.stringify(before, null, 2) + '\n',
+      'doctor must not modify fabrica.run.json',
+    );
+    for (const skill of manifest.skills) {
+      assert.strictEqual(before.gate_levels[skill.id], skill.default_gate);
+    }
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run defaults the name to the current folder name', () => {
+  const ctx = setup();
+  try {
+    const dir = join(ctx.project, 'taskflow');
+    mkdirSync(dir, { recursive: true });
+    const result = cli(ctx.pkg, ['init-run'], { cwd: dir, home: ctx.home });
+    assertPass(result, combined(result));
+    const written = JSON.parse(readFileSync(join(dir, 'fabrica.run.json'), 'utf-8'));
+    assert.strictEqual(written.name, 'taskflow');
+    const check = run(['scripts/validate-run.mjs', join(dir, 'fabrica.run.json')]);
+    assertPass(check, combined(check));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-run falls back to app for unsalvageable folder names', () => {
+  const ctx = setup();
+  try {
+    const dir = join(ctx.project, '!!!');
+    mkdirSync(dir, { recursive: true });
+    const result = cli(ctx.pkg, ['init-run'], { cwd: dir, home: ctx.home });
+    assertPass(result, combined(result));
+    const written = JSON.parse(readFileSync(join(dir, 'fabrica.run.json'), 'utf-8'));
+    assert.strictEqual(written.name, 'app');
+    const check = run(['scripts/validate-run.mjs', join(dir, 'fabrica.run.json')]);
+    assertPass(check, combined(check));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('init-existing-run defaults the name to the current folder name', () => {
+  const ctx = setup();
+  try {
+    const dir = join(ctx.project, 'legacy-shop');
+    mkdirSync(dir, { recursive: true });
+    const result = cli(ctx.pkg, ['init-existing-run'], { cwd: dir, home: ctx.home });
+    assertPass(result, combined(result));
+    const written = JSON.parse(readFileSync(join(dir, 'fabrica.run.json'), 'utf-8'));
+    assert.strictEqual(written.name, 'legacy-shop');
+    assert.strictEqual(written.project_context.origin, 'existing');
+    const check = run(['scripts/validate-run.mjs', join(dir, 'fabrica.run.json')]);
+    assertPass(check, combined(check));
+    assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
 runAll();

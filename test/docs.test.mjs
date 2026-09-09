@@ -80,4 +80,30 @@ test('README documents os.homedir() cross-platform global install paths', () => 
   assert(!readme.includes('sushildusejas'), 'README must not contain a fabricated home path');
 });
 
+test('README documents the session-restart activation requirement', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const readme = readFileSync(resolve(root, 'README.md'), 'utf-8');
+  assert(readme.includes('restart your agent session'), 'README must name the session restart');
+  assert(readme.includes('fresh session'), 'README must require a fresh session for /fab-spec');
+  assert(readme.includes('doctor'), 'README must point at the doctor verification command');
+  assert(
+    readme.includes('--agent=claude') || readme.includes('--agent=<name>'),
+    'README must document single-harness installs',
+  );
+});
+
+test('QUICKSTART documents restart before first invocation', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const quickstart = readFileSync(resolve(root, 'examples', 'fabrica-skills-QUICKSTART.md'), 'utf-8');
+  assert(quickstart.includes('Restart your agent session'), 'QUICKSTART must require a session restart');
+  assert(quickstart.includes('doctor'), 'QUICKSTART must point at the doctor verification command');
+});
+
+test('VALIDATION links the manual harness matrix', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const validation = readFileSync(resolve(root, 'docs', 'VALIDATION.md'), 'utf-8');
+  assert(validation.includes('RELEASE_HARNESS_MATRIX'), 'VALIDATION must link the manual harness matrix');
+  assert(existsSync(resolve(root, 'docs', 'RELEASE_HARNESS_MATRIX.md')), 'harness matrix doc must exist');
+});
+
 runAll();

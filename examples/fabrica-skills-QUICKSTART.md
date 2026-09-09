@@ -39,6 +39,14 @@ Expected outcome:
 [fabrica-skills] installed 16 skills × 5 harness roots (project)
 ```
 
+Skills load at session start. Restart your agent session before the next step, then verify:
+
+```
+npx fabrica-skills@latest doctor
+```
+
+Expected outcome: every selected harness reports its skills as copied. Prefer one harness? Re-run with `install --agent=<name>` (`agents`, `claude`, `cursor`, `codex`, `opencode`) and verify with `doctor --agent=<name>`.
+
 Optional check that your agent sees the skills:
 
 ```
@@ -54,7 +62,7 @@ Two variants:
 
 ## 2. Open the project in your agent
 
-Open the `taskflow` folder in your agent. Use the `/fab-*` names below, or point the agent at the skill file directly:
+Restart your agent session first (skills load at session start — `/fab-spec` in the pre-install session falls through to normal app-building). Then open the `taskflow` folder in your agent. Use the `/fab-*` names below, or point the agent at the skill file directly:
 
 ```
 Follow .agents/skills/fab-spec/SKILL.md
@@ -77,7 +85,7 @@ Stack: `/fab-spec` asks for frontend, backend, and database, one at a time. Leav
 Speed: approve each checkpoint, or add `--auto` to skip the spec, plan, and integrate stops. Copy this:
 
 ```
-npx fabrica-skills@latest init-run --name taskflow --auto
+npx fabrica-skills@latest init-run --auto
 ```
 
 `--auto` never skips the pre-launch check or a decision only you can make. In `--auto` mode the agent emits no extra messages: the assumption summary and progress lines are the only narration.
@@ -181,7 +189,8 @@ Expected outcome: resumable session notes in `docs/handoff.md`, a retrospective 
 | A stage is blocked (score < 6) | `/fab-fix <stage-name>`: use the stage name from `next_action`, and paste the failing output with it |
 | Not sure where you are | `/fab-status`, or read `next_action` in `fabrica.run.json` |
 | Need to pause / resume later | `/fab-handoff`, then resume from `docs/handoff.md` next session |
-| Agent does not see `/fab-*` | Tell it: `Follow .agents/skills/<skill-name>/SKILL.md` |
+| Agent does not see `/fab-*` | Restart the session, run `npx fabrica-skills@latest doctor`, then tell it: `Follow .agents/skills/<skill-name>/SKILL.md` in the fresh session |
+| `/fab-spec` builds the app instead of running intake | You are in the pre-install session. Restart, invoke `/fab-spec` again, confirm `next_action` is `/fab-plan`, then run `/fab-plan` separately |
 
 ## Clean up (optional)
 

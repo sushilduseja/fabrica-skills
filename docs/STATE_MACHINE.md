@@ -138,7 +138,7 @@ flowchart LR
 Opt-in is explicit: `init-existing-run` creates run state with `project_context` (origin, project root, profile path, Git baseline). No application source is inspected or modified at init time.
 
 ```text
-init-existing-run --name <slug> --root . --profile docs/fabrica/project-profile.md
+init-existing-run [--root .] [--profile docs/fabrica/project-profile.md]
 /fab-discover          # read-only inspection → docs/fabrica/project-profile.md (next_action: /fab-spec)
 /fab-spec              # writes docs/fabrica/spec.md (requires profile)
 /fab-plan              # writes docs/fabrica/blueprint.md (allowed change paths + approved literal commands)
