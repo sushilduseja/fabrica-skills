@@ -4,7 +4,7 @@ Run the mechanical checkpoint harness first:
 bash test/e2e-checkpoint-gate.sh
 ```
 
-The harness is the mechanical contract. The manual scenarios below cover the conversational protocol that `validate-run.mjs` cannot see.
+The harness is the mechanical contract. The manual scenarios below cover the conversational protocol that `validate-run.mjs` cannot see. A run created before this enforcement that already holds an artifact path under `checkpoint` must mint a fresh approval before its next write; runs parked in later phases are unaffected.
 
 # Agent-Executed Manual Tests
 

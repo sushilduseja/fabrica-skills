@@ -1,22 +1,24 @@
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index 9726fa6..8595cf1 100644
+index 9726fa6..01f9c2e 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,5 +1,12 @@
+@@ -1,5 +1,14 @@
  # Changelog
  
-+## Unreleased
++## 1.2.4 — 2026-09-10
 +
 +### Fixed
 +
 +- Review-round checkpoint corrections: approval-before-write ordering, explicit ambiguous-reply handling, stack skip/default consistency, interview deduplication, both existing-project artifact paths, tracked e2e coverage, and first-approval semantics.
 +- Human-minted checkpoint approval: `fabrica-skills approve <spec|blueprint|adoption|integration>` requires an interactive terminal; chat text never authorizes a checkpoint write.
++- Approve-command hardening: `--file=<path>` equals form honored (no wrong-file mint), prompt accepts only exact two-token verdicts, closed-stdin refuses instead of hanging.
++- Legacy re-approval documented: pre-enforcement runs re-entering an artifact step mint a fresh approval; harness install-output dirs (`.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.opencode/`) added to `.gitignore`.
 +
  ## 1.2.3 — 2026-09-09
  
  ### Fixed
 diff --git a/README.md b/README.md
-index cc13dce..6ab5b34 100644
+index cc13dce..a75aeaf 100644
 --- a/README.md
 +++ b/README.md
 @@ -39,14 +39,18 @@ You can override any slot. The agent uses your choice unless it conflicts with t
@@ -40,13 +42,14 @@ index cc13dce..6ab5b34 100644
  Two steps always stop for you, with or without `--auto`:
  
  - The pre-launch check, before anything reaches a real user.
-@@ -255,6 +259,9 @@ fabrica-skills/
+@@ -255,6 +259,10 @@ fabrica-skills/
  | Your agent does not see the slash commands | Restart your agent session first — skills load at session start. Then run `npx fabrica-skills@latest doctor` to confirm 16/16, and point the agent at a real install path in a fresh session, e.g. `.agents/skills/fab-spec/SKILL.md` or `.claude/skills/fab-spec/SKILL.md` (also `.cursor/skills`, `.codex/skills`, `.opencode/skills`). Or use `.claude-plugin/plugin.json` if your agent supports it. |
  | `/fab-spec` falls through to normal app-building | You are in the pre-install session. Restart the session, invoke `/fab-spec` again in the fresh session, and confirm `next_action` is `/fab-plan` before running `/fab-plan` separately. |
  | `fabrica.run.json` is missing | Prefer `npx fabrica-skills@latest init-run` (add `--auto` to skip spec/plan/integrate stops). Or start with `/fab-spec`, which can create the file. `/fab-spec` remains the only skill entry point. |
 +| The agent treated `yes`/`ok` as approval, or I need to revise after approval | The agent must ask one short clarifying question for ambiguous replies. Use the human-minted terminal command for `revise` or `reject`; chat text never authorizes a checkpoint write. |
 +| The agent says approval is done but validation rejects the write | Run `npx -y fabrica-skills@latest approve <spec|blueprint|adoption|integration> --file <ABSOLUTE path>` yourself in a terminal, then tell the agent `done`. |
 +| The validator passes but the artifact may differ from what was approved | The validator proves that an approval record was recorded. It does not bind the approval to artifact content. A silent post-approval revision remains a contract violation. |
++| A pre-fix run re-enters spec/plan and validation rejects the write | Approval binds to each write: mint a fresh approval with the terminal command, then proceed. Runs parked in later phases are unaffected. |
  | A stage is blocked | Run the exact command in `next_action` (usually `/fab-fix <stage>`). Stage names come from `next_action` or `app_stages` in `fabrica.run.json` (or `docs/blueprint.md`) — character-for-character. Do not invent names or copy sample names from docs unless they match your run. Paste the failing output with the command. |
  | Cost shows `unknown` | Expected. This means spend has not been measured yet. |
  | The agent wants to deploy externally | Stop, unless you want this. This tool builds local prototypes first. |
@@ -71,7 +74,7 @@ index a1f269e..ac003a9 100644
    process.exit(cmd ? 0 : 1);
  }
 diff --git a/docs/AGENT_E2E_TESTS.md b/docs/AGENT_E2E_TESTS.md
-index 6173db5..640235a 100644
+index 6173db5..9be2545 100644
 --- a/docs/AGENT_E2E_TESTS.md
 +++ b/docs/AGENT_E2E_TESTS.md
 @@ -1,9 +1,24 @@
@@ -81,7 +84,7 @@ index 6173db5..640235a 100644
 +bash test/e2e-checkpoint-gate.sh
 +```
 +
-+The harness is the mechanical contract. The manual scenarios below cover the conversational protocol that `validate-run.mjs` cannot see.
++The harness is the mechanical contract. The manual scenarios below cover the conversational protocol that `validate-run.mjs` cannot see. A run created before this enforcement that already holds an artifact path under `checkpoint` must mint a fresh approval before its next write; runs parked in later phases are unaffected.
 +
  # Agent-Executed Manual Tests
  
@@ -100,22 +103,33 @@ index 6173db5..640235a 100644
  
  ```bash
 diff --git a/examples/fabrica-skills-QUICKSTART.md b/examples/fabrica-skills-QUICKSTART.md
-index 5ba624f..b53f71f 100644
+index 5ba624f..c340886 100644
 --- a/examples/fabrica-skills-QUICKSTART.md
 +++ b/examples/fabrica-skills-QUICKSTART.md
-@@ -101,7 +101,7 @@ and a small live stats panel. One local server, web UI, no external services.
+@@ -101,9 +101,9 @@ and a small live stats panel. One local server, web UI, no external services.
  
  Expected outcome: the agent asks a few questions, then records your stack answers (or the defaults) in `preferred_stack`. In `--auto` mode it prints an assumption summary instead of waiting. Then `docs/spec.md` is written and `next_action` points to `/fab-plan`.
  
 -Without `--auto`, the stops are exact: Turn 1 asks the intake questions as short multiple-choice prompts (recommended default called out, plus `Custom answer`) — no writes in that turn. The approval turn shows the spec and waits for `approve spec`; anything else writes nothing. `/fab-plan` then waits for `approve blueprint` the same way.
 +Without `--auto`, the stops are exact: Turn 1 asks the intake questions as short multiple-choice prompts (recommended default called out, plus `Custom answer`) — no writes in that turn. The approval turn shows the spec and waits for the operator to run `fabrica-skills approve spec`; a bare `yes` triggers one short clarifying question, never a guess. `/fab-plan` then waits for `fabrica-skills approve blueprint`; later `/fab-adopt` and `/fab-integrate` stops use the same terminal command pattern.
  
- If the agent starts building before approval: tell it to stop, confirm which unauthorized files to discard (approved artifacts and `fabrica.run.json` stay), and resume from the unchanged run state.
+-If the agent starts building before approval: tell it to stop, confirm which unauthorized files to discard (approved artifacts and `fabrica.run.json` stay), and resume from the unchanged run state.
++If the agent starts building before approval: tell it to stop, confirm which unauthorized files to discard (approved artifacts and `fabrica.run.json` stay), and resume from the unchanged run state. A run created before this enforcement that already holds `spec_path`/`blueprint_path` under `checkpoint` must mint a fresh approval before its next spec/plan write; runs parked in later phases are unaffected.
+ 
+ ### Step 2: Blueprint
  
 diff --git a/package.json b/package.json
-index fb88bdf..565e3c3 100644
+index fb88bdf..6decffc 100644
 --- a/package.json
 +++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "fabrica-skills",
+-  "version": "1.2.3",
++  "version": "1.2.4",
+   "private": false,
+   "allowScripts": {},
+   "type": "module",
 @@ -51,8 +51,9 @@
      "lint": "eslint --ext .js,.mjs scripts/ test/ bin/ && prettier --check scripts/ test/ bin/",
      "lint:fix": "eslint --ext .js,.mjs --fix scripts/ test/ bin/ && prettier --write scripts/ test/ bin/",
@@ -207,10 +221,10 @@ index ee09cfa..b5ceafe 100644
  }
 diff --git a/scripts/approve.mjs b/scripts/approve.mjs
 new file mode 100644
-index 0000000..bc6a713
+index 0000000..e642526
 --- /dev/null
 +++ b/scripts/approve.mjs
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,168 @@
 +#!/usr/bin/env node
 +/**
 + * Human-minted checkpoint approval (SD-6).
@@ -288,6 +302,42 @@ index 0000000..bc6a713
 +  return lines.join('\n');
 +}
 +
++/**
++ * Parse approve argv without touching fs or TTY (unit-testable).
++ * Accepts `--file <path>` and `--file=<path>`; anything else is rejected.
++ * @param {string[]} argv
++ * @param {string} cwd
++ * @returns {{ artifact: string, file: string }}
++ */
++export function parseApproveArgs(argv, cwd) {
++  const artifact = argv.find((a) => !a.startsWith('-'));
++  if (!APPROVALS[artifact]) {
++    throw new Error(`unknown artifact "${artifact ?? ''}" (expected one of: ${Object.keys(APPROVALS).join(', ')})`);
++  }
++  const fi = argv.findIndex((a) => a === '--file' || a.startsWith('--file='));
++  let fileValue;
++  if (fi !== -1) {
++    fileValue = argv[fi].includes('=') ? argv[fi].slice('--file='.length) : argv[fi + 1];
++    if (!fileValue) throw new Error('--file requires a run-object path');
++  }
++  return { artifact, file: resolve(cwd, fileValue ?? 'fabrica.run.json') };
++}
++
++/**
++ * Parse one prompt line into a verdict, or null when it is not an exact
++ * `<approve|revise|reject> <noun>` reply (F-1: trailing tokens never mint).
++ * @param {string} answer
++ * @param {string} noun
++ * @returns {string|null}
++ */
++export function parsePromptAnswer(answer, noun) {
++  const parts = answer.trim().split(/\s+/);
++  if (parts.length !== 2) return null;
++  const [verdict, name] = parts;
++  if (name !== noun || !['approve', 'revise', 'reject'].includes(verdict)) return null;
++  return verdict;
++}
++
 +function approveFail(msg) {
 +  console.error(`[approve] ERROR: ${msg}`);
 +  process.exitCode = 1;
@@ -295,13 +345,14 @@ index 0000000..bc6a713
 +}
 +
 +export async function runApprove(argv, cwd) {
-+  const artifact = argv.find((a) => !a.startsWith('-'));
++  let artifact;
++  let file;
++  try {
++    ({ artifact, file } = parseApproveArgs(argv, cwd));
++  } catch (err) {
++    return approveFail(err.message);
++  }
 +  const spec = APPROVALS[artifact];
-+  if (!spec)
-+    return approveFail(`unknown artifact "${artifact ?? ''}" (expected one of: ${Object.keys(APPROVALS).join(', ')})`);
-+  const fi = argv.indexOf('--file');
-+  if (fi !== -1 && !argv[fi + 1]) return approveFail('--file requires a run-object path');
-+  const file = resolve(cwd, fi !== -1 ? argv[fi + 1] : 'fabrica.run.json');
 +  if (!process.stdin.isTTY) {
 +    return approveFail(
 +      'approval requires an interactive terminal (stdin is not a TTY) — run this command yourself in a terminal; piped input, including agent-driven pipes, is refused and records nothing.',
@@ -316,15 +367,17 @@ index 0000000..bc6a713
 +  }
 +  console.log(buildApprovalSummary(run, artifact));
 +  const rl = createInterface({ input: process.stdin, output: process.stdout });
-+  const answer = await new Promise((res) =>
++  // F-3: stdin closed with no line (EOF on a PTY) must refuse, never hang.
++  const answer = await new Promise((res) => {
++    rl.on('close', () => res(null));
 +    rl.question(
 +      `Type 'approve ${spec.noun}' to approve, 'revise ${spec.noun}' to send back, or 'reject ${spec.noun}' to stop: `,
 +      res,
-+    ),
-+  );
++    );
++  });
 +  rl.close();
-+  const [verdict, noun] = answer.trim().split(/\s+/);
-+  if (noun !== spec.noun || !['approve', 'revise', 'reject'].includes(verdict)) {
++  const verdict = answer == null ? null : parsePromptAnswer(answer, spec.noun);
++  if (!verdict) {
 +    return approveFail('not approved — file unchanged.');
 +  }
 +  const now = new Date().toISOString();
@@ -893,15 +946,16 @@ index 3eb4d8f..702ea20 100644
      "fab-spec": "checkpoint",
      "fab-plan": "checkpoint",
 diff --git a/test/skill-gates.test.mjs b/test/skill-gates.test.mjs
-index 94e0685..41b44b9 100644
+index 94e0685..4384d22 100644
 --- a/test/skill-gates.test.mjs
 +++ b/test/skill-gates.test.mjs
 @@ -1,7 +1,18 @@
  import assert from 'assert';
 -import { readFileSync } from 'fs';
-+import { readFileSync, rmSync, mkdtempSync, writeFileSync } from 'fs';
- import { join } from 'path';
+-import { join } from 'path';
 -import { assertFail, assertNoStackTrace, combined, readJson, root, test, validateStdin, runAll } from './_harness.mjs';
++import { readFileSync, rmSync, mkdtempSync, writeFileSync } from 'fs';
++import { join, resolve } from 'path';
 +import { tmpdir } from 'os';
 +import {
 +  assertFail,
@@ -923,7 +977,7 @@ index 94e0685..41b44b9 100644
    validateCostPrecisionGate,
 +  validateCheckpointApprovalGate,
  } from '../scripts/_skill-gates.mjs';
-+import { appendApproval, buildApprovalSummary } from '../scripts/approve.mjs';
++import { appendApproval, buildApprovalSummary, parseApproveArgs, parsePromptAnswer } from '../scripts/approve.mjs';
  
  /* ================================================================
   *  Unit-level: direct calls to each gate validator
@@ -937,7 +991,7 @@ index 94e0685..41b44b9 100644
    assert(pattern.test('docs/spec.md'), 'schema must allow docs/spec.md');
    assert(pattern.test('docs/fabrica/spec.md'), 'schema must allow docs/fabrica/spec.md');
  });
-@@ -685,4 +699,192 @@ test('existing-project negative conditions are documented', () => {
+@@ -685,4 +699,216 @@ test('existing-project negative conditions are documented', () => {
    );
  });
  
@@ -1127,6 +1181,30 @@ index 94e0685..41b44b9 100644
 +  const summary = buildApprovalSummary(run, 'spec');
 +  assert(summary.includes('React + Vite') && summary.includes('FastAPI') && summary.includes('SQLite'));
 +  assert(summary.includes('spec_path'));
++});
++
++test('approve prompt parsing accepts only exact two-token verdicts', () => {
++  assert.strictEqual(parsePromptAnswer('approve spec', 'spec'), 'approve');
++  assert.strictEqual(parsePromptAnswer('revise spec', 'spec'), 'revise');
++  assert.strictEqual(parsePromptAnswer('reject spec', 'spec'), 'reject');
++  assert.strictEqual(parsePromptAnswer('approve  spec', 'spec'), 'approve');
++  for (const bad of ['approve spec now', 'APPROVE spec', 'yes', '', 'approve', 'approve blueprint', 'ok go ahead']) {
++    assert.strictEqual(parsePromptAnswer(bad, 'spec'), null, `must refuse ${JSON.stringify(bad)}`);
++  }
++});
++
++test('approve arg parsing honors both --file forms', () => {
++  const space = parseApproveArgs(['spec', '--file', 'sub/run.json'], '/r');
++  assert.strictEqual(space.artifact, 'spec');
++  assert.strictEqual(space.file, resolve('/r', 'sub/run.json'));
++  const equals = parseApproveArgs(['blueprint', '--file=sub/run.json'], '/r');
++  assert.strictEqual(equals.artifact, 'blueprint');
++  assert.strictEqual(equals.file, resolve('/r', 'sub/run.json'));
++  const bare = parseApproveArgs(['adoption'], '/r');
++  assert.strictEqual(bare.file, resolve('/r', 'fabrica.run.json'));
++  assert.throws(() => parseApproveArgs(['bogus'], '/r'), /unknown artifact/);
++  assert.throws(() => parseApproveArgs(['spec', '--file'], '/r'), /--file requires/);
++  assert.throws(() => parseApproveArgs(['spec', '--file='], '/r'), /--file requires/);
 +});
 +
  runAll();

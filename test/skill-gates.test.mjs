@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { readFileSync, rmSync, mkdtempSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { tmpdir } from 'os';
 import {
   assertFail,
@@ -24,7 +24,7 @@ import {
   validateCostPrecisionGate,
   validateCheckpointApprovalGate,
 } from '../scripts/_skill-gates.mjs';
-import { appendApproval, buildApprovalSummary } from '../scripts/approve.mjs';
+import { appendApproval, buildApprovalSummary, parseApproveArgs, parsePromptAnswer } from '../scripts/approve.mjs';
 
 /* ================================================================
  *  Unit-level: direct calls to each gate validator
@@ -885,6 +885,30 @@ test('approve summary surfaces pending stack values', () => {
   const summary = buildApprovalSummary(run, 'spec');
   assert(summary.includes('React + Vite') && summary.includes('FastAPI') && summary.includes('SQLite'));
   assert(summary.includes('spec_path'));
+});
+
+test('approve prompt parsing accepts only exact two-token verdicts', () => {
+  assert.strictEqual(parsePromptAnswer('approve spec', 'spec'), 'approve');
+  assert.strictEqual(parsePromptAnswer('revise spec', 'spec'), 'revise');
+  assert.strictEqual(parsePromptAnswer('reject spec', 'spec'), 'reject');
+  assert.strictEqual(parsePromptAnswer('approve  spec', 'spec'), 'approve');
+  for (const bad of ['approve spec now', 'APPROVE spec', 'yes', '', 'approve', 'approve blueprint', 'ok go ahead']) {
+    assert.strictEqual(parsePromptAnswer(bad, 'spec'), null, `must refuse ${JSON.stringify(bad)}`);
+  }
+});
+
+test('approve arg parsing honors both --file forms', () => {
+  const space = parseApproveArgs(['spec', '--file', 'sub/run.json'], '/r');
+  assert.strictEqual(space.artifact, 'spec');
+  assert.strictEqual(space.file, resolve('/r', 'sub/run.json'));
+  const equals = parseApproveArgs(['blueprint', '--file=sub/run.json'], '/r');
+  assert.strictEqual(equals.artifact, 'blueprint');
+  assert.strictEqual(equals.file, resolve('/r', 'sub/run.json'));
+  const bare = parseApproveArgs(['adoption'], '/r');
+  assert.strictEqual(bare.file, resolve('/r', 'fabrica.run.json'));
+  assert.throws(() => parseApproveArgs(['bogus'], '/r'), /unknown artifact/);
+  assert.throws(() => parseApproveArgs(['spec', '--file'], '/r'), /--file requires/);
+  assert.throws(() => parseApproveArgs(['spec', '--file='], '/r'), /--file requires/);
 });
 
 runAll();

@@ -1,11 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.2.4 — 2026-09-10
 
 ### Fixed
 
 - Review-round checkpoint corrections: approval-before-write ordering, explicit ambiguous-reply handling, stack skip/default consistency, interview deduplication, both existing-project artifact paths, tracked e2e coverage, and first-approval semantics.
 - Human-minted checkpoint approval: `fabrica-skills approve <spec|blueprint|adoption|integration>` requires an interactive terminal; chat text never authorizes a checkpoint write.
+- Approve-command hardening: `--file=<path>` equals form honored (no wrong-file mint), prompt accepts only exact two-token verdicts, closed-stdin refuses instead of hanging.
+- Legacy re-approval documented: pre-enforcement runs re-entering an artifact step mint a fresh approval; harness install-output dirs (`.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.opencode/`) added to `.gitignore`.
 
 ## 1.2.3 — 2026-09-09
 

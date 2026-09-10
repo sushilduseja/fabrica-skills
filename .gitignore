@@ -15,6 +15,13 @@ docs/retro.md
 # Local skill install output
 .skills/
 
+# Agent harness roots (created by fabrica-skills install in consumer repos)
+.agents/
+.claude/
+.codex/
+.cursor/
+.opencode/
+
 # Dependency/install artifacts
 node_modules/
 .npm/

@@ -103,7 +103,7 @@ Expected outcome: the agent asks a few questions, then records your stack answer
 
 Without `--auto`, the stops are exact: Turn 1 asks the intake questions as short multiple-choice prompts (recommended default called out, plus `Custom answer`) — no writes in that turn. The approval turn shows the spec and waits for the operator to run `fabrica-skills approve spec`; a bare `yes` triggers one short clarifying question, never a guess. `/fab-plan` then waits for `fabrica-skills approve blueprint`; later `/fab-adopt` and `/fab-integrate` stops use the same terminal command pattern.
 
-If the agent starts building before approval: tell it to stop, confirm which unauthorized files to discard (approved artifacts and `fabrica.run.json` stay), and resume from the unchanged run state.
+If the agent starts building before approval: tell it to stop, confirm which unauthorized files to discard (approved artifacts and `fabrica.run.json` stay), and resume from the unchanged run state. A run created before this enforcement that already holds `spec_path`/`blueprint_path` under `checkpoint` must mint a fresh approval before its next spec/plan write; runs parked in later phases are unaffected.
 
 ### Step 2: Blueprint
 

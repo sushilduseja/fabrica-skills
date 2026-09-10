@@ -262,6 +262,7 @@ fabrica-skills/
 | The agent treated `yes`/`ok` as approval, or I need to revise after approval | The agent must ask one short clarifying question for ambiguous replies. Use the human-minted terminal command for `revise` or `reject`; chat text never authorizes a checkpoint write. |
 | The agent says approval is done but validation rejects the write | Run `npx -y fabrica-skills@latest approve <spec|blueprint|adoption|integration> --file <ABSOLUTE path>` yourself in a terminal, then tell the agent `done`. |
 | The validator passes but the artifact may differ from what was approved | The validator proves that an approval record was recorded. It does not bind the approval to artifact content. A silent post-approval revision remains a contract violation. |
+| A pre-fix run re-enters spec/plan and validation rejects the write | Approval binds to each write: mint a fresh approval with the terminal command, then proceed. Runs parked in later phases are unaffected. |
 | A stage is blocked | Run the exact command in `next_action` (usually `/fab-fix <stage>`). Stage names come from `next_action` or `app_stages` in `fabrica.run.json` (or `docs/blueprint.md`) — character-for-character. Do not invent names or copy sample names from docs unless they match your run. Paste the failing output with the command. |
 | Cost shows `unknown` | Expected. This means spend has not been measured yet. |
 | The agent wants to deploy externally | Stop, unless you want this. This tool builds local prototypes first. |
