@@ -51,8 +51,9 @@
     "lint": "eslint --ext .js,.mjs scripts/ test/ bin/ && prettier --check scripts/ test/ bin/",
     "lint:fix": "eslint --ext .js,.mjs --fix scripts/ test/ bin/ && prettier --write scripts/ test/ bin/",
     "typecheck": "tsc --noEmit",
-    "check": "npm run validate && npm test && npm run lint && npm run typecheck",
-    "setup": "npm run validate && node scripts/link-skills.mjs"
+    "check": "npm run validate && npm test && npm run test:e2e && npm run lint && npm run typecheck",
+    "setup": "npm run validate && node scripts/link-skills.mjs",
+    "test:e2e": "bash test/e2e-checkpoint-gate.sh"
   },
   "dependencies": {
     "ajv": "^8.17.0",

@@ -3,7 +3,17 @@ import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } f
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { copyRepoFixture, root, run, test, assertPass, combined, validateStdin, runAll } from './_harness.mjs';
+import {
+  copyRepoFixture,
+  root,
+  run,
+  test,
+  assertPass,
+  assertFail,
+  combined,
+  validateStdin,
+  runAll,
+} from './_harness.mjs';
 import { schemaValid } from './_ajv.mjs';
 
 function makeLegacyApp({ git = false } = {}) {
@@ -48,6 +58,25 @@ function pkgBin(args, cwd) {
   } finally {
     rmSync(pkg, { recursive: true, force: true });
   }
+}
+
+/**
+ * Build a schema-valid checkpoint approval record for a spec/plan write.
+ * Mirrors the contract enforced by validateCheckpointApprovalGate.
+ * @param {string} step — 'fab-spec' | 'fab-plan'
+ * @param {string} [artifact] — human artifact name for the decision text
+ */
+function approvalRecord(step, artifact = step === 'fab-spec' ? 'spec' : 'blueprint') {
+  const t = '2026-01-01T00:00:00.000Z';
+  return {
+    step,
+    decision_needed: `Approve the ${artifact} before it is written`,
+    options: ['approve', 'revise', 'reject'],
+    decision: 'approve',
+    rationale: 'Operator verdict typed in a local terminal via fabrica-skills approve.',
+    triggered_at: t,
+    resolved_at: t,
+  };
 }
 
 test('existing-project init creates run state and touches nothing else', () => {
@@ -196,17 +225,25 @@ test('existing-project e2e fixture workflow stays in-memory valid end to end', (
     runObject = { ...runObject, current_step: 'fab-discover', next_action: '/fab-spec' };
     assert(schemaValid(runObject), 'discover update must validate');
 
-    // /fab-spec writes docs/fabrica/spec.md
-    runObject = {
+    // /fab-spec writes docs/fabrica/spec.md — checkpoint gate demands an
+    // approval record; a record-less write must be rejected by the validator.
+    const specWriteNoApproval = {
       ...runObject,
       current_step: 'fab-spec',
       spec_path: 'docs/fabrica/spec.md',
       next_action: '/fab-plan',
       preferred_stack: { frontend: null, backend: null, database: null },
     };
+    assertFail(validateStdin(specWriteNoApproval), 'checkpoint spec write without approval record must fail');
+
+    runObject = {
+      ...specWriteNoApproval,
+      human_decisions: [approvalRecord('fab-spec')],
+    };
     assertPass(validateStdin(runObject), 'existing spec update must validate');
 
-    // /fab-plan writes docs/fabrica/blueprint.md with allowed paths
+    // /fab-plan writes docs/fabrica/blueprint.md with allowed paths — the
+    // blueprint write carries its own fab-plan approval record.
     runObject = {
       ...runObject,
       current_step: 'fab-plan',
@@ -215,8 +252,9 @@ test('existing-project e2e fixture workflow stays in-memory valid end to end', (
       app_stages: [
         { name: 'auth-fix', purpose: 'Fix auth', status: 'pending', quality_score: null, artifacts: [], notes: null },
       ],
+      human_decisions: [approvalRecord('fab-spec'), approvalRecord('fab-plan')],
     };
-    assert(schemaValid(runObject), 'existing plan update must validate');
+    assertPass(validateStdin(runObject), 'existing plan update must validate');
 
     // /fab-adopt activates first stage
     runObject = {

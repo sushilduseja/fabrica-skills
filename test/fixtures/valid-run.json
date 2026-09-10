@@ -23,7 +23,17 @@
     "by_step": {}
   },
   "verifications": [],
-  "human_decisions": [],
+  "human_decisions": [
+    {
+      "step": "fab-spec",
+      "decision_needed": "Approve the spec before it is written to docs/spec.md",
+      "options": ["approve", "revise", "reject"],
+      "decision": "approve",
+      "rationale": "Operator verdict typed in a local terminal via fabrica-skills approve.",
+      "triggered_at": "2026-06-19T11:50:00Z",
+      "resolved_at": "2026-06-19T11:55:00Z"
+    }
+  ],
   "gate_levels": {
     "fab-spec": "checkpoint",
     "fab-plan": "checkpoint",

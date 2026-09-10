@@ -1,25 +1,22 @@
 import assert from 'assert';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { test, runAll } from './_harness.mjs';
+import { test, runAll, root } from './_harness.mjs';
 
 test('all skills have execution guardrails and error handling', () => {
-  const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'skills', 'manifest.json'), 'utf-8'));
+  const manifest = JSON.parse(readFileSync(resolve(root, 'skills', 'manifest.json'), 'utf-8'));
   const allowedErrors = new Set(
-    JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'schemas', 'run-object.schema.json'), 'utf-8'))
-      .properties.last_error.oneOf[1].properties.type.enum,
+    JSON.parse(readFileSync(resolve(root, 'schemas', 'run-object.schema.json'), 'utf-8')).properties.last_error.oneOf[1]
+      .properties.type.enum,
   );
 
   for (const skill of manifest.skills) {
-    const skillText = readFileSync(resolve(import.meta.dirname, '..', skill.path, 'SKILL.md'), 'utf-8');
+    const skillText = readFileSync(resolve(root, skill.path, 'SKILL.md'), 'utf-8');
     assert(skillText.includes('## Execution Guardrails'), `${skill.id} missing execution guardrails`);
     assert(skillText.includes('## Error Handling'), `${skill.id} missing error handling`);
 
     const errMeta = JSON.parse(
-      readFileSync(
-        resolve(import.meta.dirname, '..', skill.error_metadata_path || skill.path + '/errors.json'),
-        'utf-8',
-      ),
+      readFileSync(resolve(root, skill.error_metadata_path || skill.path + '/errors.json'), 'utf-8'),
     );
     const skillErrorTypes = new Set((errMeta.errors || []).map((e) => e.type));
     for (const errorType of skillErrorTypes) {
@@ -34,7 +31,6 @@ test('all skills have execution guardrails and error handling', () => {
 });
 
 test('example docs are separated from live run write paths', () => {
-  const root = resolve(import.meta.dirname, '..');
   assert(existsSync(resolve(root, 'docs/examples/spec.md')), 'docs/examples/spec.md must exist');
   assert(existsSync(resolve(root, 'docs/examples/blueprint.md')), 'docs/examples/blueprint.md must exist');
   assert(!existsSync(resolve(root, 'docs/spec.md')), 'docs/spec.md must not be a checked-in source file');
@@ -51,7 +47,6 @@ function gitinclude(entry, gitignore) {
 }
 
 test('all generated-file patterns are covered by .gitignore', () => {
-  const root = resolve(import.meta.dirname, '..');
   const gitignore = readFileSync(resolve(root, '.gitignore'), 'utf-8');
 
   const generatedPaths = [
@@ -71,7 +66,6 @@ test('all generated-file patterns are covered by .gitignore', () => {
 });
 
 test('README documents os.homedir() cross-platform global install paths', () => {
-  const root = resolve(import.meta.dirname, '..');
   const readme = readFileSync(resolve(root, 'README.md'), 'utf-8');
   assert(readme.includes('os.homedir()'), 'README must document os.homedir()');
   assert(readme.includes('C:\\Users\\<name>'), 'README must list the Windows home path');
@@ -81,7 +75,6 @@ test('README documents os.homedir() cross-platform global install paths', () => 
 });
 
 test('README documents the session-restart activation requirement', () => {
-  const root = resolve(import.meta.dirname, '..');
   const readme = readFileSync(resolve(root, 'README.md'), 'utf-8');
   assert(readme.includes('restart your agent session'), 'README must name the session restart');
   assert(readme.includes('fresh session'), 'README must require a fresh session for /fab-spec');
@@ -93,21 +86,18 @@ test('README documents the session-restart activation requirement', () => {
 });
 
 test('QUICKSTART documents restart before first invocation', () => {
-  const root = resolve(import.meta.dirname, '..');
   const quickstart = readFileSync(resolve(root, 'examples', 'fabrica-skills-QUICKSTART.md'), 'utf-8');
   assert(quickstart.includes('Restart your agent session'), 'QUICKSTART must require a session restart');
   assert(quickstart.includes('doctor'), 'QUICKSTART must point at the doctor verification command');
 });
 
 test('VALIDATION links the manual harness matrix', () => {
-  const root = resolve(import.meta.dirname, '..');
   const validation = readFileSync(resolve(root, 'docs', 'VALIDATION.md'), 'utf-8');
   assert(validation.includes('RELEASE_HARNESS_MATRIX'), 'VALIDATION must link the manual harness matrix');
   assert(existsSync(resolve(root, 'docs', 'RELEASE_HARNESS_MATRIX.md')), 'harness matrix doc must exist');
 });
 
 test('no shipped skill sets disable-model-invocation (breaks /slash invocation)', () => {
-  const root = resolve(import.meta.dirname, '..');
   const manifest = JSON.parse(readFileSync(resolve(root, 'skills', 'manifest.json'), 'utf-8'));
   for (const skill of manifest.skills) {
     const text = readFileSync(resolve(root, skill.path, 'SKILL.md'), 'utf-8');
@@ -119,7 +109,6 @@ test('no shipped skill sets disable-model-invocation (breaks /slash invocation)'
 });
 
 test('fab-spec and fab-plan enforce non-auto turn boundaries and explicit approval', () => {
-  const root = resolve(import.meta.dirname, '..');
   const spec = readFileSync(resolve(root, 'skills', 'core', 'fab-spec', 'SKILL.md'), 'utf-8');
   const plan = readFileSync(resolve(root, 'skills', 'core', 'fab-plan', 'SKILL.md'), 'utf-8');
   for (const [id, text] of [
@@ -129,14 +118,112 @@ test('fab-spec and fab-plan enforce non-auto turn boundaries and explicit approv
     assert(text.includes('hard turn boundary'), `${id} must name the hard turn boundary`);
     assert(text.includes('Custom answer'), `${id} must require the custom-answer path`);
     assert(text.includes(`gate_levels.${id}`), `${id} must resolve the effective gate from gate_levels first`);
+    assert(
+      text.includes('A missing run file never implies auto'),
+      `${id} must define the fallback gate when the run file or key is missing`,
+    );
+    assert(
+      text.includes('STOP — end the agent turn here'),
+      `${id} must mark turn boundaries with explicit STOP blocks`,
+    );
+    assert(
+      text.includes('"decision": "approve"'),
+      `${id} must document the human_decisions approval record shape that the validator enforces`,
+    );
+    assert(
+      text.includes('fails `validate-run.mjs`'),
+      `${id} must state that validation mechanically refuses record-less checkpoint writes`,
+    );
   }
   assert(spec.includes('Turn 1 is questions only'), 'fab-spec must require a questions-only first turn');
   assert(spec.includes('approve spec'), 'fab-spec must require artifact-bound approval');
   assert(plan.includes('approve blueprint'), 'fab-plan must require artifact-bound approval');
   assert(
+    plan.includes('run only in the write turn after an explicit `approve blueprint`'),
+    'fab-plan write steps must be explicitly gated on the approval turn (no unqualified write step before the approval step)',
+  );
+  assert(
+    spec.includes('do not interpret it yourself'),
+    'fab-spec must define the ambiguous-reply rule (one clarifying question, never self-interpreted)',
+  );
+  assert(
+    plan.includes('do not interpret it yourself'),
+    'fab-plan must define the ambiguous-reply rule (one clarifying question, never self-interpreted)',
+  );
+  assert(
+    spec.includes('the only permitted run-object mutation'),
+    'fab-spec must scope non-approval turns to the audit-record append',
+  );
+  assert(
+    plan.includes('the only permitted run-object mutation'),
+    'fab-plan must scope non-approval turns to the audit-record append',
+  );
+  assert(
+    spec.indexOf('approve spec') < spec.indexOf('steps 4–7 of this list run only in the approval turn'),
+    'fab-spec approval ask must precede the write block (ordering is the D1 bug class, not just wording)',
+  );
+  assert(
+    plan.indexOf('approve blueprint') <
+      plan.indexOf('run only in the write turn after an explicit `approve blueprint`'),
+    'fab-plan approval step must precede the write block (ordering is the D1 bug class, not just wording)',
+  );
+  assert(
+    spec.includes('fabrica-skills approve'),
+    'fab-spec must route approval through the operator-run approve command',
+  );
+  assert(
+    plan.includes('fabrica-skills approve'),
+    'fab-plan must route approval through the operator-run approve command',
+  );
+  assert(spec.includes('authorizes nothing'), 'fab-spec must state that chat text authorizes nothing');
+  assert(plan.includes('authorizes nothing'), 'fab-plan must state that chat text authorizes nothing');
+  assert(
     plan.includes('Interview decisions'),
     'fab-plan must require the durable Interview decisions log in the blueprint',
   );
+  // The interview can never collapse to zero questions (anti-self-inference rule).
+  assert(
+    spec.includes('Zero questions is a contract violation'),
+    'fab-spec must forbid skipping the interview when the idea looks complete',
+  );
+  assert(spec.includes('in every non-auto interview'), 'fab-spec must always ask the universal question set');
+  assert(
+    spec.includes('inferring an answer from idea text and presenting it as settled is a contract violation'),
+    'fab-spec must forbid silent inference of interview answers',
+  );
+});
+
+test('fab-adopt and fab-integrate define the checkpoint turn protocol', () => {
+  const manifest = JSON.parse(readFileSync(resolve(root, 'skills', 'manifest.json'), 'utf-8'));
+  const read = (id) => {
+    const skill = manifest.skills.find((s) => s.id === id);
+    assert(skill, `${id} must exist in the manifest`);
+    return readFileSync(resolve(root, skill.path, 'SKILL.md'), 'utf-8');
+  };
+  const adopt = read('fab-adopt');
+  const integrate = read('fab-integrate');
+  for (const [id, text, token] of [
+    ['fab-adopt', adopt, 'approve adoption'],
+    ['fab-integrate', integrate, 'approve integration'],
+  ]) {
+    assert(text.includes('STOP — end the agent turn here'), `${id} must mark its turn boundary with a STOP block`);
+    assert(text.includes(token), `${id} must require an artifact-bound approval token (${token})`);
+    assert(text.includes('"decision": "approve"'), `${id} must document the approval-record shape`);
+    assert(text.includes('do not interpret it yourself'), `${id} must define the ambiguous-reply rule`);
+    assert(
+      text.includes('the only permitted run-object mutation'),
+      `${id} must scope non-approval turns to the audit-record append`,
+    );
+    assert(
+      text.indexOf(token) < text.indexOf('Write turn'),
+      `${id} approval ask must precede its write block (ordering is the D1 bug class)`,
+    );
+    assert(
+      text.includes('fabrica-skills approve'),
+      `${id} must route approval through the operator-run approve command`,
+    );
+    assert(text.includes('authorizes nothing'), `${id} must state that chat text authorizes nothing`);
+  }
 });
 
 runAll();

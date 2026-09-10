@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Review-round checkpoint corrections: approval-before-write ordering, explicit ambiguous-reply handling, stack skip/default consistency, interview deduplication, both existing-project artifact paths, tracked e2e coverage, and first-approval semantics.
+- Human-minted checkpoint approval: `fabrica-skills approve <spec|blueprint|adoption|integration>` requires an interactive terminal; chat text never authorizes a checkpoint write.
+
 ## 1.2.3 — 2026-09-09
 
 ### Fixed

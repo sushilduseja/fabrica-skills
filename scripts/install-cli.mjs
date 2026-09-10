@@ -21,6 +21,7 @@ import { randomUUID } from 'crypto';
 import { spawnSync } from 'child_process';
 import { SKILL_ID_RE, SKILL_PATH_RE, assertWithinRoot, lstatIfPresent, readJsonFile } from './_path-utils.mjs';
 import { resolveGateLevel } from './_skill-gates.mjs';
+import { runApprove } from './approve.mjs';
 
 export const HARNESS = {
   agents: {
@@ -802,6 +803,10 @@ function cmdValidate({ pkgRoot, flags }) {
  */
 export async function runCli(cmd, argv, ctx) {
   const { pkgRoot, version } = ctx;
+  if (cmd === 'approve') {
+    await runApprove(argv, process.cwd());
+    return;
+  }
   let flags;
   try {
     flags = parseFlags(argv);
@@ -836,7 +841,7 @@ export async function runCli(cmd, argv, ctx) {
       break;
     default:
       fail(
-        `Unknown command: ${cmd} (expected install, update, uninstall, status, doctor, validate, init-run, or init-existing-run)`,
+        `Unknown command: ${cmd} (expected install, update, uninstall, status, doctor, validate, init-run, init-existing-run, or approve)`,
       );
       break;
   }

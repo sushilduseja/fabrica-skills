@@ -39,13 +39,17 @@ You can override any slot. The agent uses your choice unless it conflicts with t
 
 ### Choose your speed: approve each step, or run on auto
 
-By default, the agent stops and shows you the spec and the plan before it writes anything. You approve, then it continues.
+By default, the agent stops and shows you the spec and the plan before it writes anything. You approve, then it continues. This stop is mechanically enforced: the run validator refuses any checkpoint-gated spec or blueprint write that does not carry its approval record (`human_decisions` entry with `decision: "approve"`), so an agent cannot persist the spec or blueprint without your explicit `approve spec` / `approve blueprint`.
 
-Add `--auto` to skip the spec, plan, and integrate approval stops. The agent writes the spec, the plan, and the wiring without waiting, then shows you a short summary of what it assumed.
+Add `--auto` to skip the spec, plan, adoption, and integration approval stops. The agent writes the spec, the plan, the adoption state, and the wiring without waiting, then shows you a short summary of what it assumed.
 
 ```
 npx fabrica-skills@latest init-run --auto
 ```
+
+The mode of an in-flight run is whatever `gate_levels` in `fabrica.run.json` says — persisted levels win. Retyping a skill with `--auto` (for example `/fab-spec --auto` on a run whose levels say `checkpoint`) does not downgrade it; to switch a run to auto, edit its `gate_levels` or start a fresh `init-run --auto`.
+
+Approval is token-bound. A bare `yes` or `ok` is never treated as approval — the agent asks one short clarifying question instead of guessing. The explicit tokens are `approve spec`, `approve blueprint`, `approve adoption`, and `approve integration`.
 
 Two steps always stop for you, with or without `--auto`:
 
@@ -255,6 +259,9 @@ fabrica-skills/
 | Your agent does not see the slash commands | Restart your agent session first — skills load at session start. Then run `npx fabrica-skills@latest doctor` to confirm 16/16, and point the agent at a real install path in a fresh session, e.g. `.agents/skills/fab-spec/SKILL.md` or `.claude/skills/fab-spec/SKILL.md` (also `.cursor/skills`, `.codex/skills`, `.opencode/skills`). Or use `.claude-plugin/plugin.json` if your agent supports it. |
 | `/fab-spec` falls through to normal app-building | You are in the pre-install session. Restart the session, invoke `/fab-spec` again in the fresh session, and confirm `next_action` is `/fab-plan` before running `/fab-plan` separately. |
 | `fabrica.run.json` is missing | Prefer `npx fabrica-skills@latest init-run` (add `--auto` to skip spec/plan/integrate stops). Or start with `/fab-spec`, which can create the file. `/fab-spec` remains the only skill entry point. |
+| The agent treated `yes`/`ok` as approval, or I need to revise after approval | The agent must ask one short clarifying question for ambiguous replies. Use the human-minted terminal command for `revise` or `reject`; chat text never authorizes a checkpoint write. |
+| The agent says approval is done but validation rejects the write | Run `npx -y fabrica-skills@latest approve <spec|blueprint|adoption|integration> --file <ABSOLUTE path>` yourself in a terminal, then tell the agent `done`. |
+| The validator passes but the artifact may differ from what was approved | The validator proves that an approval record was recorded. It does not bind the approval to artifact content. A silent post-approval revision remains a contract violation. |
 | A stage is blocked | Run the exact command in `next_action` (usually `/fab-fix <stage>`). Stage names come from `next_action` or `app_stages` in `fabrica.run.json` (or `docs/blueprint.md`) — character-for-character. Do not invent names or copy sample names from docs unless they match your run. Paste the failing output with the command. |
 | Cost shows `unknown` | Expected. This means spend has not been measured yet. |
 | The agent wants to deploy externally | Stop, unless you want this. This tool builds local prototypes first. |

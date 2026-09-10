@@ -232,6 +232,65 @@ export function validateCostPrecisionGate(run) {
 }
 
 /**
+ * Validate checkpoint-gated artifact writes (fab-spec, fab-plan).
+ *
+ * Key contracts:
+ *   - When gate_levels.<skill> is "checkpoint", the skill may only persist its
+ *     artifact (spec_path / blueprint_path) if a human_decisions approval
+ *     record exists: step "<skill>", decision "approve", resolved_at set.
+ *     This makes the approval turn mechanically enforced by validate-run.mjs
+ *     (schema + gates) at the same choke-point that guards every write,
+ *     instead of relying on model good faith.
+ *   - The rule is scoped to the write moment: it fires only while
+ *     current_step is still the artifact-owning skill, so later phases
+ *     (build, verify, ...) are unaffected.
+ *   - Gate levels other than "checkpoint" (e.g. "auto") are exempt — --auto
+ *     remains the only documented bypass.
+ *   - Mechanical semantics are first-approval: ANY resolved "approve" record
+ *     for the step satisfies the gate, including when a later "revise"/"reject"
+ *     record exists. This is deliberate: the audit trail requires appending
+ *     non-approval records to a run whose artifact field is already set, and a
+ *     last-record-wins rule would reject those legitimate audit appends.
+ *     Detecting a post-approval silent content revision would require binding
+ *     the record to artifact content (hash/version), which needs a schema
+ *     change — documented as a follow-up, not silently assumed.
+ *
+ * @param {RunObject} run — parsed fabrica.run.json
+ * @returns {string[]}
+ */
+export function validateCheckpointApprovalGate(run) {
+  const errors = [];
+  const decisions = Array.isArray(run.human_decisions) ? run.human_decisions : [];
+
+  /** @type {[string, string][]} */
+  const checkpointArtifacts = [
+    ['fab-spec', 'spec_path'],
+    ['fab-plan', 'blueprint_path'],
+  ];
+
+  for (const [step, field] of checkpointArtifacts) {
+    if (!run.gate_levels || run.gate_levels[step] !== 'checkpoint') continue;
+    if (run.current_step !== step) continue;
+    if (!run[field]) continue;
+
+    const approved = decisions.some(
+      (d) => d.step === step && d.decision === 'approve' && d.resolved_at !== null && d.resolved_at !== undefined,
+    );
+    if (!approved) {
+      const artifact = field === 'spec_path' ? 'spec' : 'blueprint';
+      errors.push(
+        `gate_levels.${step} is "checkpoint" and ${field} is set, but human_decisions contains no approval ` +
+          `record for "${step}" (required shape: step "${step}", decision "approve", resolved_at set) — ` +
+          `present the ${artifact} and wait for explicit operator approval (e.g. "approve ${artifact}") ` +
+          `before writing the ${artifact} file (docs/${artifact}.md, or docs/fabrica/${artifact}.md in existing-project mode)`,
+      );
+    }
+  }
+
+  return errors;
+}
+
+/**
  * Resolve the effective gate level for a skill invocation.
  *
  * `--auto` is an explicit opt-in override: it downgrades overridable
@@ -270,5 +329,6 @@ export function validateAllGates(run) {
     ...validateNextActionGate(run),
     ...validateTimestampOrderGate(run),
     ...validateCostPrecisionGate(run),
+    ...validateCheckpointApprovalGate(run),
   ];
 }

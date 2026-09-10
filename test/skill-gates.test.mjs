@@ -1,7 +1,18 @@
 import assert from 'assert';
-import { readFileSync } from 'fs';
+import { readFileSync, rmSync, mkdtempSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { assertFail, assertNoStackTrace, combined, readJson, root, test, validateStdin, runAll } from './_harness.mjs';
+import { tmpdir } from 'os';
+import {
+  assertFail,
+  assertNoStackTrace,
+  combined,
+  readJson,
+  root,
+  test,
+  validateStdin,
+  run,
+  runAll,
+} from './_harness.mjs';
 import {
   resolveGateLevel,
   validateFabLaunchGate,
@@ -11,7 +22,9 @@ import {
   validateNextActionGate,
   validateTimestampOrderGate,
   validateCostPrecisionGate,
+  validateCheckpointApprovalGate,
 } from '../scripts/_skill-gates.mjs';
+import { appendApproval, buildApprovalSummary } from '../scripts/approve.mjs';
 
 /* ================================================================
  *  Unit-level: direct calls to each gate validator
@@ -640,7 +653,8 @@ test('P3 hardening: fab-build prerequisites and fab-discover gate', () => {
   assert.strictEqual(discoverEntry.overridable, true);
   // Schema vs skill path: spec_path coupling stays in skill prose, not schema. Schema must allow both docs/spec.md and docs/fabrica/spec.md.
   const schema = readJson('schemas/run-object.schema.json');
-  const pattern = new RegExp(schema.properties.spec_path.pattern);
+  const specStringBranch = schema.properties.spec_path.oneOf.find((b) => b.type === 'string');
+  const pattern = new RegExp(specStringBranch.pattern);
   assert(pattern.test('docs/spec.md'), 'schema must allow docs/spec.md');
   assert(pattern.test('docs/fabrica/spec.md'), 'schema must allow docs/fabrica/spec.md');
 });
@@ -683,6 +697,194 @@ test('existing-project negative conditions are documented', () => {
     ),
     'fab-discover must forbid secret persistence',
   );
+});
+
+/* ================================================================
+ *  Unit-level: validateCheckpointApprovalGate (spec/plan checkpoints)
+ * ================================================================ */
+
+test('checkpoint gate: fab-spec write with no approval record is rejected', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [];
+  const errors = validateCheckpointApprovalGate(run);
+  assert(errors.length === 1, `expected exactly 1 error, got ${errors.length}: ${errors.join('; ')}`);
+  assert(errors[0].includes('gate_levels.fab-spec'), errors[0]);
+  assert(errors[0].includes('spec_path'), errors[0]);
+  assert(errors[0].includes('approve spec'), errors[0]);
+});
+
+test('checkpoint gate: fab-spec write with approval record is accepted', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  assert.deepStrictEqual(validateCheckpointApprovalGate(run), [], 'fixture itself must satisfy the gate');
+});
+
+test('checkpoint gate: approval record without resolved_at does not count', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = run.human_decisions.map((d) => ({ ...d, resolved_at: null }));
+  const errors = validateCheckpointApprovalGate(run);
+  assert(errors.length === 1, 'unresolved approval must not satisfy the checkpoint');
+});
+
+test('checkpoint gate: wrong step or decision token does not count', () => {
+  const base = readJson('test/fixtures/valid-run.json');
+  const wrongStep = {
+    ...base,
+    human_decisions: [{ ...base.human_decisions[0], step: 'fab-verify' }],
+  };
+  assert(
+    validateCheckpointApprovalGate(wrongStep).length === 1,
+    'approval recorded against another step must not count',
+  );
+
+  const wrongDecision = {
+    ...base,
+    human_decisions: [{ ...base.human_decisions[0], decision: 'continue' }],
+  };
+  assert(
+    validateCheckpointApprovalGate(wrongDecision).length === 1,
+    'non-"approve" decision must not satisfy the checkpoint',
+  );
+});
+
+test('checkpoint gate: fab-plan write requires its own approval record', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.current_step = 'fab-plan';
+  run.blueprint_path = 'docs/blueprint.md';
+  const withoutRecord = validateCheckpointApprovalGate(run);
+  assert(withoutRecord.length === 1, 'blueprint write without fab-plan approval must be rejected');
+  assert(withoutRecord[0].includes('approve blueprint'), withoutRecord[0]);
+
+  run.human_decisions = [
+    ...run.human_decisions,
+    {
+      step: 'fab-plan',
+      decision_needed: 'Approve the blueprint before it is written',
+      options: ['approve', 'revise', 'reject'],
+      decision: 'approve',
+      rationale: "Operator replied 'approve blueprint'",
+      triggered_at: '2026-06-19T12:10:00Z',
+      resolved_at: '2026-06-19T12:15:00Z',
+    },
+  ];
+  assert.deepStrictEqual(validateCheckpointApprovalGate(run), [], 'blueprint write with record must pass');
+});
+
+test('checkpoint gate: auto gate levels are exempt from the approval requirement', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.gate_levels['fab-spec'] = 'auto';
+  run.human_decisions = [];
+  assert.deepStrictEqual(validateCheckpointApprovalGate(run), [], '--auto writes must not require an approval record');
+});
+
+test('checkpoint gate: rule is scoped to the write moment (later phases unaffected)', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.current_step = 'fab-scaffold';
+  run.human_decisions = [];
+  assert.deepStrictEqual(
+    validateCheckpointApprovalGate(run),
+    [],
+    'record-less history must not block unrelated later-phase skills',
+  );
+});
+
+test('checkpoint gate: nothing written yet requires no approval record', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.spec_path = null;
+  run.human_decisions = [];
+  assert.deepStrictEqual(validateCheckpointApprovalGate(run), [], 'fresh runs must not require a record');
+});
+
+test('checkpoint gate: a later revise record does not void a prior approval (first-approval semantics)', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [
+    ...run.human_decisions,
+    {
+      step: 'fab-spec',
+      decision_needed: 'Approve the revised spec',
+      options: ['approve', 'revise', 'reject'],
+      decision: 'revise',
+      rationale: 'Operator requested a revision after the first write',
+      triggered_at: '2026-06-19T12:20:00Z',
+      resolved_at: '2026-06-19T12:21:00Z',
+    },
+  ];
+  assert.deepStrictEqual(
+    validateCheckpointApprovalGate(run),
+    [],
+    'mechanical scope is first-approval: a later non-approve record must not block, so audit-record appends stay legal',
+  );
+});
+
+test('checkpoint gate: rejection message names both new-project and existing-project artifact paths', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [];
+  const errors = validateCheckpointApprovalGate(run);
+  assert(errors[0].includes('docs/spec.md'), errors[0]);
+  assert(errors[0].includes('docs/fabrica/spec.md'), errors[0]);
+  assert(errors[0].includes('approve spec'), errors[0]);
+});
+
+test('validateAllGates includes the checkpoint approval gate', async () => {
+  const { validateAllGates } = await import('../scripts/_skill-gates.mjs');
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [];
+  assert(
+    validateAllGates(run).some((e) => e.includes('gate_levels.fab-spec')),
+    'validateAllGates must surface checkpoint approval violations',
+  );
+});
+
+test('validate-run CLI rejects a checkpoint spec write without approval (--stdin)', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [];
+  const result = validateStdin(run);
+  assertFail(result);
+  assertNoStackTrace(result);
+  assert(combined(result).includes('no approval'), combined(result));
+});
+
+test('canonical fixture carries the approval record required by the checkpoint gate', () => {
+  const fixture = readJson('test/fixtures/valid-run.json');
+  const record = fixture.human_decisions.find((d) => d.step === 'fab-spec' && d.decision === 'approve');
+  assert(record, 'canonical fixture must carry a fab-spec approval record');
+  assert(record.resolved_at, 'canonical fixture approval must be resolved');
+  assert.deepStrictEqual(validateCheckpointApprovalGate(fixture), []);
+});
+
+test('approve mints a record the checkpoint gate accepts', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.human_decisions = [];
+  const minted = appendApproval(run, 'spec', 'approve', '2026-06-19T12:30:00Z');
+  const rec = minted.human_decisions.at(-1);
+  assert.strictEqual(rec.step, 'fab-spec');
+  assert.strictEqual(rec.decision, 'approve');
+  assert.deepStrictEqual(rec.options, ['approve', 'revise', 'reject']);
+  assert(rec.resolved_at);
+  assert.deepStrictEqual(validateCheckpointApprovalGate(minted), []);
+});
+
+test('approve refuses piped stdin without touching the run file', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'fabrica-approve-'));
+  try {
+    const target = join(dir, 'fabrica.run.json');
+    writeFileSync(target, `${JSON.stringify(readJson('test/fixtures/valid-run.json'))}\n`, 'utf-8');
+    const before = readFileSync(target, 'utf-8');
+    const result = run(['scripts/approve.mjs', 'spec', '--file', target], { input: 'approve spec\n' });
+    assertFail(result);
+    assert(combined(result).includes('terminal'), combined(result));
+    assert.strictEqual(readFileSync(target, 'utf-8'), before);
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('approve summary surfaces pending stack values', () => {
+  const run = readJson('test/fixtures/valid-run.json');
+  run.preferred_stack = { frontend: 'React + Vite', backend: 'FastAPI', database: 'SQLite' };
+  const summary = buildApprovalSummary(run, 'spec');
+  assert(summary.includes('React + Vite') && summary.includes('FastAPI') && summary.includes('SQLite'));
+  assert(summary.includes('spec_path'));
 });
 
 runAll();

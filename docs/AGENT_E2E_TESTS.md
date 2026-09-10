@@ -1,8 +1,23 @@
+Run the mechanical checkpoint harness first:
+
+```bash
+bash test/e2e-checkpoint-gate.sh
+```
+
+The harness is the mechanical contract. The manual scenarios below cover the conversational protocol that `validate-run.mjs` cannot see.
+
 # Agent-Executed Manual Tests
 
 Behavioral specs with no executable enforcement. They are carried out by an AI
 agent reading the markdown skills in `.skills/`. Run these by hand and record the
 observed output against the expected output at each step. Use a disposable clone.
+
+> The mechanical part of the spec/plan checkpoint contract (record-less writes
+> are refused by `scripts/validate-run.mjs`, `--commit` atomicity, auto
+> exemption, pending-decision and later-phase scoping, existing-project paths,
+> first-approval semantics) is covered by the executable harness
+> `bash test/e2e-checkpoint-gate.sh` — run that first; the manual scenarios
+> below cover the conversational turn protocol that a validator cannot see.
 
 ## Setup
 
