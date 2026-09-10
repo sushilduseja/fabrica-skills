@@ -911,4 +911,37 @@ test('approve arg parsing honors both --file forms', () => {
   assert.throws(() => parseApproveArgs(['spec', '--file='], '/r'), /--file requires/);
 });
 
+test('appendApproval resists __proto__ pollution', () => {
+  const run = {
+    current_step: 'fab-spec',
+    gate_levels: { 'fab-spec': 'checkpoint' },
+    human_decisions: [],
+    __proto__: { polluted: 'yes' },
+  };
+  appendApproval(run, 'spec', 'approve', '2026-01-01T00:00:00Z');
+  assert.strictEqual({}.polluted, undefined, 'spread mint must not pollute Object.prototype');
+});
+
+test('bin approve entry refuses piped stdin without touching the run file', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'fabrica-bin-approve-'));
+  try {
+    const target = join(dir, 'fabrica.run.json');
+    writeFileSync(target, `${JSON.stringify(readJson('test/fixtures/valid-run.json'))}\n`, 'utf-8');
+    const before = readFileSync(target, 'utf-8');
+    const result = run([join(root, 'bin', 'fabrica-skills.mjs'), 'approve', 'spec', '--file', target], {
+      input: 'approve spec\n',
+    });
+    assertFail(result);
+    assert(combined(result).includes('terminal'), combined(result));
+    assert.strictEqual(
+      readFileSync(target, 'utf-8'),
+      before,
+      'refused approval must leave the run file byte-identical',
+    );
+    assertNoStackTrace(result);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 runAll();

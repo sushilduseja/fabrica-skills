@@ -4,10 +4,14 @@
 
 ### Fixed
 
+- CI `audit` gate: bumped transitive `js-yaml` past GHSA-2883-xcg3-v3hh (`npm audit` clean).
+- Ported the portable QA-suite assertions into committed tests (prototype-pollution guard, bin-routed approve refusal, pack-contents approval surface, help/unknown-command approve hints); QA-only PTY/benchmark scripts retired.
+
 - Review-round checkpoint corrections: approval-before-write ordering, explicit ambiguous-reply handling, stack skip/default consistency, interview deduplication, both existing-project artifact paths, tracked e2e coverage, and first-approval semantics.
 - Human-minted checkpoint approval: `fabrica-skills approve <spec|blueprint|adoption|integration>` requires an interactive terminal; chat text never authorizes a checkpoint write.
 - Approve-command hardening: `--file=<path>` equals form honored (no wrong-file mint), prompt accepts only exact two-token verdicts, closed-stdin refuses instead of hanging.
 - Legacy re-approval documented: pre-enforcement runs re-entering an artifact step mint a fresh approval; harness install-output dirs (`.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.opencode/`) added to `.gitignore`.
+- Portable e2e harness: `test/e2e-checkpoint-gate.sh` replaced with node-native `test/e2e-checkpoint-gate.mjs` (same 14 checks) so `npm run check` passes without bash.
 
 ## 1.2.3 — 2026-09-09
 

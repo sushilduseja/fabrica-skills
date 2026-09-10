@@ -2,6 +2,7 @@ import assert from 'assert';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { spawnSync } from 'node:child_process';
 import {
   copyRepoFixture,
   mutateJson,
@@ -212,6 +213,35 @@ test('unknown command exits nonzero', () => {
     assertFail(result);
     assert(combined(result).includes('Unknown command'), combined(result));
     assertNoStackTrace(result);
+  } finally {
+    teardown(ctx);
+  }
+});
+
+test('npm pack ships the approval surface', () => {
+  // Fixed argv (no interpolation); shell is required to spawn npm.cmd on Windows.
+  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const packed = spawnSync(npm, ['pack', '--dry-run', '--json'], {
+    cwd: root,
+    encoding: 'utf-8',
+    shell: process.platform === 'win32',
+  });
+  assert.strictEqual(packed.status, 0, combined(packed));
+  const files = JSON.parse(packed.stdout)[0].files.map((f) => f.path);
+  assert(files.includes('scripts/approve.mjs'), 'packed tarball must ship scripts/approve.mjs');
+  assert(files.includes('bin/fabrica-skills.mjs'), 'packed tarball must ship the bin entry');
+});
+
+test('help and unknown-command hint list the approve command', () => {
+  const ctx = setup();
+  try {
+    const help = cli(ctx.pkg, ['--help'], { cwd: ctx.project, home: ctx.home });
+    assertPass(help, combined(help));
+    assert(combined(help).includes('approve <spec|blueprint|adoption|integration>'), combined(help));
+    const unknown = cli(ctx.pkg, ['frobnicate'], { cwd: ctx.project, home: ctx.home });
+    assertFail(unknown);
+    assert(combined(unknown).includes('or approve'), combined(unknown));
+    assertNoStackTrace(unknown);
   } finally {
     teardown(ctx);
   }

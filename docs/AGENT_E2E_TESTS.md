@@ -1,7 +1,7 @@
 Run the mechanical checkpoint harness first:
 
 ```bash
-bash test/e2e-checkpoint-gate.sh
+npm run test:e2e
 ```
 
 The harness is the mechanical contract. The manual scenarios below cover the conversational protocol that `validate-run.mjs` cannot see. A run created before this enforcement that already holds an artifact path under `checkpoint` must mint a fresh approval before its next write; runs parked in later phases are unaffected.
@@ -16,7 +16,7 @@ observed output against the expected output at each step. Use a disposable clone
 > are refused by `scripts/validate-run.mjs`, `--commit` atomicity, auto
 > exemption, pending-decision and later-phase scoping, existing-project paths,
 > first-approval semantics) is covered by the executable harness
-> `bash test/e2e-checkpoint-gate.sh` — run that first; the manual scenarios
+> `npm run test:e2e` — run that first; the manual scenarios
 > below cover the conversational turn protocol that a validator cannot see.
 
 ## Setup
