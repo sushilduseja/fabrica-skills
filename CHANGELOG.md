@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.5 — 2026-09-12
+
+### Fixed
+
+- `/fab-pr-review` now mirrors the reference implementation: the full canonical review-engine prose (collector-first bundle contract, SHA confirm, intent order, 8-axis review, confidence-gated findings, independent second pass, 4-verdict output, `finally` cleanup, opt-in local save) plus the previously missing support files — `review-rubric.md`, `prompts/second-pass.md`, `prompts/security.md`, `scripts/collect_pr.py`, `scripts/cleanup_bundle.py`, `scripts/save_review.py` — which install to every harness root alongside the skill. Fabrica frontmatter and the repo-mandated Guardrails/Error sections preserved; manifest, `errors.json`, and all other skills untouched.
+
 ## 1.2.4 — 2026-09-10
 
 ### Fixed
